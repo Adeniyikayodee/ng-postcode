@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "Nigeria's National Digital Alphanumeric Postcode: offline parsing and validation, plus an API client. Unofficial."
 license = "MIT"
+repository = "https://github.com/Adeniyikayodee/ng-postcode"
 keywords = ["nigeria", "postcode", "address", "validation"]
 categories = ["parser-implementations", "api-bindings"]
 readme = "README.md"
