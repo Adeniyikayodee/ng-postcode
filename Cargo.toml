@@ -1,0 +1,29 @@
+[package]
+name = "ng-postcode"
+version = "0.1.0"
+edition = "2021"
+description = "Nigeria's National Digital Alphanumeric Postcode: offline parsing and validation, plus an API client. Unofficial."
+license = "MIT"
+keywords = ["nigeria", "postcode", "address", "validation"]
+categories = ["parser-implementations", "api-bindings"]
+readme = "README.md"
+
+[features]
+serde = ["dep:serde"]
+api = ["serde", "serde/derive", "dep:serde_json"]
+client = ["api", "dep:ureq"]
+
+[dependencies]
+serde = { version = "1", optional = true }
+serde_json = { version = "1", optional = true }
+ureq = { version = "3", optional = true }
+
+[dev-dependencies]
+serde_json = "1"
+
+[[example]]
+name = "lookup"
+required-features = ["client"]
+
+[package.metadata.docs.rs]
+all-features = true

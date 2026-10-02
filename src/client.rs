@@ -1,0 +1,90 @@
+//! A blocking HTTP client: the only part of the crate that performs I/O.
+
+use std::fmt;
+use std::time::Duration;
+
+use serde::de::DeserializeOwned;
+
+use crate::api::{ApiError, Request, BASE_URL};
+
+const TIMEOUT: Duration = Duration::from_secs(10);
+
+pub struct Client {
+    agent: ureq::Agent,
+    base_url: String,
+    api_key: String,
+}
+
+#[derive(Debug)]
+pub enum Error {
+    /// The request never produced a response: DNS, TLS, timeout and the like.
+    Transport(ureq::Error),
+    Api(ApiError),
+}
+
+impl Client {
+    pub fn new(api_key: impl Into<String>) -> Self {
+        let config = ureq::Agent::config_builder()
+            // Error statuses carry a JSON body that `Request::decode` reads.
+            .http_status_as_error(false)
+            .timeout_global(Some(TIMEOUT))
+            .build();
+        Self {
+            agent: config.into(),
+            base_url: BASE_URL.to_owned(),
+            api_key: api_key.into(),
+        }
+    }
+
+    /// Points the client at another host, such as a staging stack or a mock.
+    pub fn with_base_url(self, base_url: impl Into<String>) -> Self {
+        Self {
+            base_url: base_url.into(),
+            ..self
+        }
+    }
+
+    pub fn send<T: DeserializeOwned>(&self, request: &Request<T>) -> Result<T, Error> {
+        let call = self
+            .agent
+            .get(format!("{}{}", self.base_url, request.path))
+            .header("X-API-Key", &self.api_key);
+        let mut response = request
+            .query
+            .iter()
+            .fold(call, |call, (key, value)| call.query(key, value))
+            .call()?;
+        let body = response.body_mut().read_to_string()?;
+        Ok(request.decode(response.status().as_u16(), &body)?)
+    }
+}
+
+impl From<ureq::Error> for Error {
+    fn from(error: ureq::Error) -> Self {
+        Self::Transport(error)
+    }
+}
+
+impl From<ApiError> for Error {
+    fn from(error: ApiError) -> Self {
+        Self::Api(error)
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Transport(error) => error.fmt(f),
+            Self::Api(error) => error.fmt(f),
+        }
+    }
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Transport(error) => Some(error),
+            Self::Api(error) => Some(error),
+        }
+    }
+}
