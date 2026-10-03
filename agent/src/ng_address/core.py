@@ -45,6 +45,13 @@ def find_typed_postcode(text: str) -> Postcode | None:
     return next((code for code in codes if isinstance(code, Postcode)), None)
 
 
+def written_as_code(text: str, code: Postcode) -> bool:
+    """Whether the code stands hyphenated or compact. A spaced match can be ordinary
+    words, as in "No 12 Oba St 45"."""
+    upper = text.upper()
+    return str(code) in upper or code.compact in upper
+
+
 def precision_of(place_rank: int) -> Precision:
     """Nominatim ranks buildings and named places 30, roads 26 to 27, and areas lower."""
     if place_rank >= 28:

@@ -19,6 +19,7 @@ from .core import (
     is_the_place,
     landmark_for,
     unresolved,
+    written_as_code,
 )
 from .geocode import GeocodeFailure
 from .models import Geocoded, ParsedAddress, ParseFailure, Resolution
@@ -46,16 +47,22 @@ class Resolver:
         """Resolve `text`. A caller that has already read the address, such as a host
         model, passes its reading as `parsed`, which replaces the parser."""
         typed = find_typed_postcode(text)
+        before: list[str] = []
         if typed is not None:
             assigned, note = await self._assigned(typed)
-            if assigned is not False or location is None:
+            strict = written_as_code(text, typed)
+            if assigned or (strict and (assigned is None or location is None)):
                 return from_typed(typed, assigned, note)
-            # An unassigned code is a typo; the pin is still good evidence.
-            written = [f"Postcode {typed} is written in the address.", note]
-            return with_evidence(written, await self._by_location(location), None)
+            # An unassigned code is a typo, and an unconfirmed spaced one may be plain words.
+            lead = (
+                f"Postcode {typed} is written in the address."
+                if strict
+                else f"'{typed.spaced}' in the address may be a postcode."
+            )
+            before = [lead, note]
         if location is not None:
-            return await self._by_location(location)
-        return await self._by_text(text, parsed)
+            return with_evidence(before, await self._by_location(location), None)
+        return with_evidence(before, await self._by_text(text, parsed), None)
 
     async def _assigned(self, code: Postcode) -> tuple[bool | None, str]:
         if self.nipost is None:
