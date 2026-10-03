@@ -4,8 +4,10 @@
 [![crates.io](https://img.shields.io/crates/v/ng-postcode.svg)](https://crates.io/crates/ng-postcode)
 [![PyPI](https://img.shields.io/pypi/v/ng-postcode.svg?label=pypi%20ng-postcode)](https://pypi.org/project/ng-postcode/)
 [![MCP server](https://img.shields.io/pypi/v/ng-postcode-mcp.svg?label=pypi%20ng-postcode-mcp)](https://pypi.org/project/ng-postcode-mcp/)
+[![npm](https://img.shields.io/npm/v/ng-postcode-js.svg?label=npm%20ng-postcode-js)](https://www.npmjs.com/package/ng-postcode-js)
+[![npm MCP server](https://img.shields.io/npm/v/ng-postcode-mcp.svg?label=npm%20ng-postcode-mcp)](https://www.npmjs.com/package/ng-postcode-mcp)
 
-Developer tools for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026: libraries for Rust and Python, an MCP server for AI assistants, and a resolver that turns described addresses into postcodes.
+Developer tools for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026: libraries for Rust, Python, and JavaScript, MCP servers for AI assistants on PyPI and npm, and a resolver that turns described addresses into postcodes.
 
 A postcode has 11 characters in five segments, written `EK-01-A03-FK-01`: state, LGA, district, area and building unit.
 
@@ -24,7 +26,9 @@ Each package has its own README with full usage.
 
 ## Quick start
 
-**AI assistants.** The MCP server works with any MCP client. It runs over stdio as `uvx ng-postcode-mcp`, with the API key in the environment. Most clients take this entry in their MCP settings:
+**AI assistants**
+
+The MCP server works with any MCP client. It runs over stdio as `uvx ng-postcode-mcp`, with the API key in the environment. Most clients take this entry in their MCP settings:
 
 ```json
 {
@@ -38,7 +42,7 @@ Each package has its own README with full usage.
 }
 ```
 
-With Node instead of Python, use `"command": "npx"` and `"args": ["-y", "ng-postcode-mcp"]`; that edition has every tool except address resolution. Per-client steps for Cursor, VS Code, Codex, Claude and others are in the [MCP server README](mcp#install). Validation works without a key. The server is listed in the MCP Registry as `io.github.Adeniyikayodee/ng-postcode`.
+To run it with Node, use `"command": "npx"` and `"args": ["-y", "ng-postcode-mcp"]`; that edition has every tool except address resolution. Per-client steps for Cursor, VS Code, Codex, Claude and others are in the [MCP server README](mcp#install). Validation works without a key. The server is listed in the MCP Registry as `io.github.Adeniyikayodee/ng-postcode`.
 
 **Python**
 
@@ -93,10 +97,10 @@ Input may be hyphenated, spaced or compact, in either case. The compact form mat
 
 ## Design
 
-- **One behaviour, three languages.** Rust, Python and JavaScript all run the cases in [`spec/`](spec), so they cannot drift apart. The Node MCP server registers its tools from [`spec/mcp.json`](spec/mcp.json), which the Python server generates.
-- **Offline first.** Parsing and validation never touch the network. API access is a separate, optional layer.
-- **Errors are values.** Expected failures, such as a malformed code or a rejected API key, are returned, not raised.
-- **Careful with money and guesses.** The MCP server caps lookups at the free level unless told otherwise, and never corrects a mistyped code into a paid call. The resolver gives an area or district code when that is all the evidence supports.
+- **One behaviour, three languages:** Rust, Python and JavaScript all run the cases in [`spec/`](spec), so they cannot drift apart. The Node MCP server registers its tools from [`spec/mcp.json`](spec/mcp.json), which the Python server generates.
+- **Offline first:** parsing and validation never touch the network. API access is a separate, optional layer.
+- **Errors are values:** expected failures, such as a malformed code or a rejected API key, come back as return values.
+- **Careful with money and guesses:** the MCP server caps lookups at the free level unless told otherwise, and never corrects a mistyped code into a paid call. The resolver gives an area or district code when that is all the evidence supports.
 
 ## Status
 
@@ -109,7 +113,7 @@ Input may be hyphenated, spaced or compact, in either case. The compact form mat
 Observed on 3 October 2026:
 
 - Every endpoint needs a key, including search, assembly and level 1 lookup, which the docs describe as public.
-- Lookup also returns `status` (`valid`, `not_found`, `invalid`) and `verified`. A malformed code is answered with HTTP 200 and `status: invalid`, not an error.
+- Lookup also returns `status` (`valid`, `not_found`, `invalid`) and `verified`. A malformed code is answered with HTTP 200 and `status: invalid`.
 - Autocomplete suggestions carry only `code`, the value of the next segment. The documented `label` is not sent.
 - Reverse geocoding also returns `depth`.
 - Nearby search, which the docs leave unspecified, returns a list of `postcode`, `display` and `distance_m`, nearest first.

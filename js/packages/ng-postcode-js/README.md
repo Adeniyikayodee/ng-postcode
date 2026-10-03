@@ -12,7 +12,7 @@ No runtime dependencies. Needs Node 20 or later, or any runtime with `fetch`.
 
 ## Offline
 
-Expected failures are returned as values, not thrown, so the type checker makes you handle them.
+Expected failures are returned as values, so the type checker makes you handle them.
 
 ```ts
 import { Postcode, parse } from "ng-postcode-js";
