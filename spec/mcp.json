@@ -1,0 +1,899 @@
+{
+  "instructions": "Tools for Nigeria's 11-character building postcode, e.g. EK-01-A03-FK-01 (state, LGA, district, area, building unit).\n- validate_postcode is offline and free: use it first on any code a user typed.\n- lookup_postcode level 1 only confirms a code exists. Levels 2 and up add the address and building details, consume NIPOST credits, and are capped by the server's NG_POSTCODE_MAX_LEVEL.\n- resolve_address turns a described address into a code. It answers only as precisely as its evidence allows: pass on its level and confidence, and ask the user its question instead of guessing. A location pin is the most reliable input.\n- Never substitute a suggested correction without confirming it with the user.\n- Addresses returned are personal data: use them only for the user's request.",
+  "tools": [
+    {
+      "name": "validate_postcode",
+      "title": "Validate a Nigerian postcode",
+      "description": "Check a postcode's structure offline and return its canonical forms and segments.\n\nFree and instant. Does not confirm the code is assigned to a building; use\nlookup_postcode for that.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "postcode": {
+            "description": "Code in any style, e.g. 'ek 01 a03 fk 01'.",
+            "title": "Postcode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "postcode"
+        ],
+        "title": "validate_postcodeArguments"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Segments": {
+            "properties": {
+              "state": {
+                "title": "State",
+                "type": "string"
+              },
+              "lga": {
+                "title": "Lga",
+                "type": "string"
+              },
+              "district": {
+                "title": "District",
+                "type": "string"
+              },
+              "area": {
+                "title": "Area",
+                "type": "string"
+              },
+              "unit": {
+                "title": "Unit",
+                "type": "string"
+              }
+            },
+            "required": [
+              "state",
+              "lga",
+              "district",
+              "area",
+              "unit"
+            ],
+            "title": "Segments",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "valid": {
+            "description": "Whether the code is well formed. It may still be unassigned.",
+            "title": "Valid",
+            "type": "boolean"
+          },
+          "postcode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Canonical form, e.g. EK-01-A03-FK-01.",
+            "title": "Postcode"
+          },
+          "compact": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Compact form for storage, e.g. EK01A03FK01.",
+            "title": "Compact"
+          },
+          "spaced": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Form shown to people, e.g. EK 01 A03 FK 01.",
+            "title": "Spaced"
+          },
+          "segments": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Segments"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why the code is malformed.",
+            "title": "Error"
+          },
+          "suggestion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A well-formed code if look-alike characters (O/0, I/1, S/5, B/8) were the only problem. Confirm it with the user before using it.",
+            "title": "Suggestion"
+          }
+        },
+        "required": [
+          "valid",
+          "postcode",
+          "compact",
+          "spaced",
+          "segments",
+          "error",
+          "suggestion"
+        ],
+        "title": "Validation",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "lookup_postcode",
+      "title": "Look up a Nigerian postcode",
+      "description": "Confirm a postcode is assigned and, at higher levels, return its address details.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "postcode": {
+            "description": "Code in any style, e.g. EK-01-A03-FK-01.",
+            "title": "Postcode",
+            "type": "string"
+          },
+          "level": {
+            "default": 1,
+            "description": "1: validity only (free). 2: adds the administrative and recent house address. 3: adds building use. Levels 2+ consume NIPOST credits.",
+            "maximum": 5,
+            "minimum": 1,
+            "title": "Level",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "postcode"
+        ],
+        "title": "lookup_postcodeArguments"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Address": {
+            "properties": {
+              "state_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "State Name"
+              },
+              "lga_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Lga Name"
+              },
+              "locality_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Locality Name"
+              },
+              "zone": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Geopolitical zone, e.g. SOUTH WEST.",
+                "title": "Zone"
+              }
+            },
+            "required": [
+              "state_name",
+              "lga_name",
+              "locality_name",
+              "zone"
+            ],
+            "title": "Address",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "postcode": {
+            "title": "Postcode",
+            "type": "string"
+          },
+          "valid": {
+            "description": "Whether the code is assigned to a building.",
+            "title": "Valid",
+            "type": "boolean"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "valid, not_found, or invalid for a malformed code.",
+            "title": "Status"
+          },
+          "verified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Verified"
+          },
+          "administrative_address": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Address"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Level 2 and up."
+          },
+          "recent_house_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Level 2 and up. Personal data.",
+            "title": "Recent House Address"
+          },
+          "building_use_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Level 3 and up, e.g. residential.",
+            "title": "Building Use Status"
+          },
+          "other_building_info": {
+            "default": null,
+            "description": "Level 4 and up, unstructured.",
+            "title": "Other Building Info"
+          },
+          "point_geometry": {
+            "default": null,
+            "description": "Level 5, unstructured.",
+            "title": "Point Geometry"
+          }
+        },
+        "required": [
+          "postcode",
+          "valid",
+          "administrative_address",
+          "recent_house_address",
+          "building_use_status"
+        ],
+        "title": "PostcodeDetails",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "autocomplete_postcode",
+      "title": "Autocomplete a Nigerian postcode",
+      "description": "Suggest completions for the next segment of a partly typed postcode.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "partial": {
+            "description": "The start of a code, e.g. 'EK 01 A'.",
+            "minLength": 1,
+            "title": "Partial",
+            "type": "string"
+          }
+        },
+        "required": [
+          "partial"
+        ],
+        "title": "autocomplete_postcodeArguments"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Completion": {
+            "properties": {
+              "code": {
+                "description": "The value of the next segment, e.g. A03, not a full prefix.",
+                "title": "Code",
+                "type": "string"
+              },
+              "label": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "A name for the code, when NIPOST sends one.",
+                "title": "Label"
+              }
+            },
+            "required": [
+              "code"
+            ],
+            "title": "Completion",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "segment": {
+            "anyOf": [
+              {
+                "enum": [
+                  "state",
+                  "lga",
+                  "district",
+                  "area",
+                  "unit"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The segment being completed.",
+            "title": "Segment"
+          },
+          "suggestions": {
+            "items": {
+              "$ref": "#/$defs/Completion"
+            },
+            "title": "Suggestions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "segment",
+          "suggestions"
+        ],
+        "title": "Completions",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "find_postcode_at_location",
+      "title": "Find the postcode at a location",
+      "description": "Return the postcode of the nearest building to a coordinate in Nigeria.\n\nNames and the house address are withheld unless NG_POSTCODE_MAX_LEVEL is 2 or more.\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "description": "Latitude in decimal degrees, e.g. 7.6211.",
+            "maximum": 90,
+            "minimum": -90,
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "description": "Longitude in decimal degrees, e.g. 5.2214.",
+            "maximum": 180,
+            "minimum": -180,
+            "title": "Longitude",
+            "type": "number"
+          },
+          "max_distance_m": {
+            "anyOf": [
+              {
+                "maximum": 250,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Search radius in metres. Defaults to 25.",
+            "title": "Max Distance M"
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "find_postcode_at_locationArguments"
+      },
+      "outputSchema": {
+        "$defs": {
+          "NearestBuilding": {
+            "properties": {
+              "postcode": {
+                "title": "Postcode",
+                "type": "string"
+              },
+              "display": {
+                "title": "Display",
+                "type": "string"
+              },
+              "distance_m": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Distance M"
+              },
+              "confidence": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "high, medium or low, graded by distance.",
+                "title": "Confidence"
+              },
+              "state_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Level 2 and up.",
+                "title": "State Name"
+              },
+              "lga_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Level 2 and up.",
+                "title": "Lga Name"
+              },
+              "locality_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Level 2 and up.",
+                "title": "Locality Name"
+              },
+              "address": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Recent house address. Level 2 and up.",
+                "title": "Address"
+              }
+            },
+            "required": [
+              "postcode",
+              "display",
+              "distance_m",
+              "confidence",
+              "state_name",
+              "lga_name",
+              "locality_name",
+              "address"
+            ],
+            "title": "NearestBuilding",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "found": {
+            "description": "False when no building is within the radius.",
+            "title": "Found",
+            "type": "boolean"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/NearestBuilding"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Enclosing area code, e.g. EK-01-A03-FK.",
+            "title": "Area"
+          },
+          "district": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "District"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "radius_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The radius the API actually applied.",
+            "title": "Radius M"
+          },
+          "depth": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "How deep the match goes, e.g. unit.",
+            "title": "Depth"
+          }
+        },
+        "required": [
+          "found",
+          "unit",
+          "area",
+          "district",
+          "state",
+          "message",
+          "radius_m"
+        ],
+        "title": "Location",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "resolve_address",
+      "title": "Resolve a Nigerian address to a postcode",
+      "description": "Turn a described Nigerian address into a postcode, only as precisely as the\nevidence allows.\n\nA full building code comes only from a postcode written in the address, a location\npin, or a landmark that is the address itself. Otherwise the result is an area or\ndistrict prefix with a `question` for the user. Read the address yourself and fill\n`landmarks` and `geocode_queries`; the address text is sent to the configured\ngeocoder.\n",
+      "inputSchema": {
+        "type": "object",
+        "$defs": {
+          "Landmark": {
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "relation": {
+                "description": "How the address relates to the landmark. 'at' means the address is the landmark itself; any other value means a different building nearby.",
+                "enum": [
+                  "at",
+                  "near",
+                  "opposite",
+                  "behind",
+                  "beside",
+                  "after",
+                  "before",
+                  "off",
+                  "inside"
+                ],
+                "title": "Relation",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "relation"
+            ],
+            "title": "Landmark",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "address": {
+            "description": "The address exactly as the user gave it.",
+            "title": "Address",
+            "type": "string"
+          },
+          "landmarks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/$defs/Landmark"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Landmarks named in the address, each with how the address relates to it. Use 'at' only when the address is the landmark itself.",
+            "title": "Landmarks"
+          },
+          "geocode_queries": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 3,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Up to three map search strings you derive from the address: named places and streets with the town and state, most specific first, without directional words like 'back of'.",
+            "title": "Geocode Queries"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "maximum": 90,
+                "minimum": -90,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Latitude of a location pin the user shared.",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "maximum": 180,
+                "minimum": -180,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Longitude of that pin. Give it with latitude.",
+            "title": "Longitude"
+          }
+        },
+        "required": [
+          "address"
+        ],
+        "title": "resolve_addressArguments"
+      },
+      "outputSchema": {
+        "additionalProperties": false,
+        "description": "The answer, never more precise than the evidence behind it.",
+        "properties": {
+          "status": {
+            "enum": [
+              "resolved",
+              "partial",
+              "unresolved"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A full postcode at building level, else a prefix.",
+            "title": "Code"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "building",
+                  "area",
+                  "district",
+                  "lga"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "enum": [
+                  "high",
+                  "medium",
+                  "low"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "enum": [
+                  "typed",
+                  "location",
+                  "geocoded"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method"
+          },
+          "question": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What to ask the user to get a better answer.",
+            "title": "Question"
+          },
+          "evidence": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence",
+            "type": "array"
+          }
+        },
+        "required": [
+          "status",
+          "code",
+          "level",
+          "confidence",
+          "method",
+          "question",
+          "evidence"
+        ],
+        "title": "Resolution",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    }
+  ]
+}

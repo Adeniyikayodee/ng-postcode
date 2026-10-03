@@ -7,7 +7,18 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
+import pytest
+from mcp import Client
+
+from ng_postcode_mcp import Settings, create_server
+from ng_postcode_mcp.server import INSTRUCTIONS
+
 ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture
+def anyio_backend() -> str:
+    return "asyncio"
 
 
 def server_json() -> dict[str, Any]:
@@ -49,3 +60,15 @@ def test_the_python_bundle_pins_this_version() -> None:
     manifest: dict[str, Any] = json.loads((bundle / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["version"] == released
     assert f'"ng-postcode-mcp=={released}"' in (bundle / "server" / "main.py").read_text()
+
+
+@pytest.mark.anyio
+async def test_the_shared_contract_matches_this_server() -> None:
+    shared = ROOT.parent / "spec" / "mcp.json"
+    if not shared.exists():  # the contract lives in the repository, not the sdist
+        return
+    async with Client(create_server(Settings(api_key=None))) as client:
+        tools = (await client.list_tools()).tools
+    live = [t.model_dump(mode="json", by_alias=True, exclude_none=True) for t in tools]
+    recorded: dict[str, Any] = json.loads(shared.read_text(encoding="utf-8"))
+    assert recorded == {"instructions": INSTRUCTIONS, "tools": live}, "run scripts/mcp_spec.py"
