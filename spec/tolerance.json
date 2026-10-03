@@ -15,6 +15,8 @@
     { "name": "error_wins_over_data", "request": "lookup", "status": 200, "body": {"data": {"postcode": "X", "valid": true}, "error": {"code": "bad_request", "message": "no"}}, "outcome": "rejected", "code": "bad_request" },
     { "name": "error_status_with_data", "request": "lookup", "status": 500, "body": {"data": {}}, "outcome": "malformed" },
     { "name": "error_status_without_envelope", "request": "lookup", "status": 503, "body": {"message": "unavailable"}, "outcome": "malformed" },
+    { "name": "lookup_without_valid", "request": "lookup", "status": 200, "body": {"data": {"postcode": "FC-03-B06-AG-12"}}, "outcome": "malformed" },
+    { "name": "reverse_without_found", "request": "reverse", "status": 200, "body": {"data": {"unit": null}}, "outcome": "malformed" },
     { "name": "null_data", "request": "lookup", "status": 200, "body": {"data": null}, "outcome": "malformed" },
     { "name": "empty_object", "request": "nearby", "status": 200, "body": {}, "outcome": "malformed" },
     { "name": "data_of_the_wrong_type", "request": "nearby", "status": 200, "body": {"data": {"results": []}}, "outcome": "malformed" },

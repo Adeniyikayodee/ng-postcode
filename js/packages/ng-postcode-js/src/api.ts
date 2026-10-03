@@ -233,12 +233,12 @@ function readNearby(data: unknown): readonly NearbyUnit[] | undefined {
 }
 
 function readLookup(data: unknown): Lookup | undefined {
-  if (!isObject(data)) return undefined;
+  if (!isObject(data) || typeof data.valid !== "boolean") return undefined;
   const admin = object(data, "administrative_address");
   const recent = object(data, "recent_house_address");
   return {
     postcode: text(data, "postcode") ?? "",
-    valid: data.valid === true,
+    valid: data.valid,
     status: text(data, "status"),
     verified: typeof data.verified === "boolean" ? data.verified : null,
     administrative_address: admin && {
@@ -266,10 +266,10 @@ function readAutocomplete(data: unknown): Autocomplete | undefined {
 }
 
 function readReverse(data: unknown): Reverse | undefined {
-  if (!isObject(data)) return undefined;
+  if (!isObject(data) || typeof data.found !== "boolean") return undefined;
   const unit = object(data, "unit");
   return {
-    found: data.found === true,
+    found: data.found,
     coordinate: readCoordinate(data.coordinate),
     unit: unit && {
       postcode: text(unit, "postcode") ?? "",
