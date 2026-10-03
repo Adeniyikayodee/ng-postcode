@@ -62,14 +62,14 @@ from ng_postcode.api import lookup
 from ng_postcode.client import Client  # pip install "ng-postcode[client]"
 
 with Client(api_key="nipost_live_...") as client:
-    found = client.send(lookup(Postcode("EK01A03FK01"), level=1))
+    found = client.send(lookup(Postcode("FC03B06AG12"), level=1))
 ```
 
 ```rust
 use ng_postcode::{api, client::Client}; // features = ["client"]
 
 let client = Client::new(std::env::var("NG_POSTCODE_API_KEY")?);
-let found = client.send(&api::lookup("EK-01-A03-FK-01".parse()?, 1)?)?;
+let found = client.send(&api::lookup("FC-03-B06-AG-12".parse()?, 1)?)?;
 ```
 
 The API layer also covers autocomplete, reverse geocoding and nearby search.
