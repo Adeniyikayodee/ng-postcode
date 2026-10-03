@@ -52,11 +52,11 @@ ng-postcode = { version = "0.1", features = ["client"] }
 use ng_postcode::{api, client::Client};
 
 let client = Client::new(std::env::var("NG_POSTCODE_API_KEY")?);
-let found = client.send(&api::lookup("EK-01-A03-FK-01".parse()?, 2))?;
+let found = client.send(&api::lookup("EK-01-A03-FK-01".parse()?, 2)?)?;
 println!("{:?}", found.administrative_address);
 ```
 
-`api` covers lookup, autocomplete, reverse geocoding and nearby search. Each function returns a `Request` value and `Request::decode` turns a status and body into a typed result, so the `api` feature alone works with any HTTP client, sync or async. The `client` feature adds a small blocking one.
+`api` covers lookup, autocomplete, reverse geocoding and nearby search. Each function returns a `Request` value, or `InvalidRequest` for one the API cannot answer, such as an empty autocomplete or a coordinate that is not finite, and `Request::decode` turns a status and body into a typed result, so the `api` feature alone works with any HTTP client, sync or async. The `client` feature adds a small blocking one.
 
 ## Features
 

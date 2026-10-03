@@ -28,35 +28,69 @@ pub struct Coordinate {
     pub lng: f64,
 }
 
+/// Why a request was not built. Nothing is sent.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum InvalidRequest {
+    /// The lookup level is outside 1 to 5.
+    Level(u8),
+    /// The autocomplete text is empty, which the live API never answers.
+    EmptyQuery,
+    /// The named coordinate or distance is not a finite number.
+    NotFinite(&'static str),
+}
+
 /// Resolves a postcode. Levels are cumulative from 1 (validity only) to 5,
-/// and the API caps the answer at the level granted to the key. A level
-/// outside that range is sent as the nearest one inside it.
-pub fn lookup(code: Postcode, level: u8) -> Request<Lookup> {
-    let level = level.clamp(1, 5);
+/// and the API caps the answer at the level granted to the key.
+pub fn lookup(code: Postcode, level: u8) -> Result<Request<Lookup>, InvalidRequest> {
+    if !(1..=5).contains(&level) {
+        return Err(InvalidRequest::Level(level));
+    }
     let query = [("code", code.to_string()), ("level", level.to_string())];
-    Request::get("/v1/lookup", query)
+    Ok(Request::get("/v1/lookup", query))
 }
 
 /// Suggests completions for a partial postcode such as `EK 01 A`.
-///
-/// Do not send an empty `partial`: the live API never answers one.
-pub fn autocomplete(partial: &str) -> Request<Autocomplete> {
-    Request::get("/v1/search/autocomplete", [("q", partial.to_owned())])
+pub fn autocomplete(partial: &str) -> Result<Request<Autocomplete>, InvalidRequest> {
+    if partial.trim().is_empty() {
+        return Err(InvalidRequest::EmptyQuery);
+    }
+    let query = [("q", partial.to_owned())];
+    Ok(Request::get("/v1/search/autocomplete", query))
 }
 
 /// Finds the postcode of the nearest building, within 25 m unless
-/// `max_distance_m` says otherwise. The API clamps it to 250 m, and rejects a
-/// coordinate or distance that is not a finite number as `bad_request`.
-pub fn reverse(at: Coordinate, max_distance_m: Option<f64>) -> Request<Reverse> {
-    let distance = max_distance_m.map(|metres| ("max_distance_m", metres.to_string()));
-    Request::get("/v1/search/reverse", at.query().into_iter().chain(distance))
+/// `max_distance_m` says otherwise. The API clamps it to 250 m.
+pub fn reverse(
+    at: Coordinate,
+    max_distance_m: Option<f64>,
+) -> Result<Request<Reverse>, InvalidRequest> {
+    let query = around(at, "max_distance_m", max_distance_m)?;
+    Ok(Request::get("/v1/search/reverse", query))
 }
 
 /// Lists buildings around a point, nearest first, within 300 m unless
 /// `radius_m` says otherwise. Empty when nothing is in range.
-pub fn nearby(at: Coordinate, radius_m: Option<f64>) -> Request<Vec<NearbyUnit>> {
-    let radius = radius_m.map(|metres| ("radius", metres.to_string()));
-    Request::get("/v1/search/nearby", at.query().into_iter().chain(radius))
+pub fn nearby(
+    at: Coordinate,
+    radius_m: Option<f64>,
+) -> Result<Request<Vec<NearbyUnit>>, InvalidRequest> {
+    let query = around(at, "radius", radius_m)?;
+    Ok(Request::get("/v1/search/nearby", query))
+}
+
+fn around(
+    at: Coordinate,
+    key: &'static str,
+    metres: Option<f64>,
+) -> Result<Vec<(&'static str, String)>, InvalidRequest> {
+    [("lat", Some(at.lat)), ("lng", Some(at.lng)), (key, metres)]
+        .into_iter()
+        .filter_map(|(key, value)| Some((key, value?)))
+        .map(|(key, value)| match value.is_finite() {
+            true => Ok((key, value.to_string())),
+            false => Err(InvalidRequest::NotFinite(key)),
+        })
+        .collect()
 }
 
 impl<T> Request<T> {
@@ -97,12 +131,6 @@ impl<T: DeserializeOwned> Request<T> {
             Ok(_) => Err(malformed("neither data nor error".to_owned())),
             Err(error) => Err(malformed(error.to_string())),
         }
-    }
-}
-
-impl Coordinate {
-    fn query(self) -> [(&'static str, String); 2] {
-        [("lat", self.lat.to_string()), ("lng", self.lng.to_string())]
     }
 }
 
@@ -165,6 +193,18 @@ impl fmt::Display for ApiError {
 }
 
 impl std::error::Error for ApiError {}
+
+impl fmt::Display for InvalidRequest {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Level(level) => write!(f, "level must be 1 to 5, got {level}"),
+            Self::EmptyQuery => f.write_str("autocomplete text must not be empty"),
+            Self::NotFinite(name) => write!(f, "{name} must be a finite number"),
+        }
+    }
+}
+
+impl std::error::Error for InvalidRequest {}
 
 /// Fields above the level granted to the key are `None`.
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
@@ -248,8 +288,7 @@ pub struct NearbyUnit {
     pub postcode: String,
     #[serde(deserialize_with = "or_default")]
     pub display: String,
-    /// Required: a unit without a distance fails the decode rather than read as 0 m.
-    pub distance_m: f64,
+    pub distance_m: Option<f64>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
@@ -259,7 +298,7 @@ pub struct NearestUnit {
     pub postcode: String,
     #[serde(deserialize_with = "or_default")]
     pub display: String,
-    pub distance_m: f64,
+    pub distance_m: Option<f64>,
     /// `high`, `medium` or `low`, graded by distance.
     pub confidence: Option<String>,
     /// Level 2.
@@ -288,28 +327,33 @@ mod tests {
     #[test]
     fn builds_requests() {
         let code: Postcode = "ek01a03fk01".parse().unwrap();
-        let request = lookup(code, 3);
+        let request = lookup(code, 3).unwrap();
         assert_eq!(request.path, "/v1/lookup");
         assert_eq!(
             request.query,
             pairs([("code", "EK-01-A03-FK-01"), ("level", "3")])
         );
 
-        assert_eq!(lookup(code, 0).query[1].1, "1");
-        assert_eq!(lookup(code, 9).query[1].1, "5");
+        assert_eq!(lookup(code, 0), Err(InvalidRequest::Level(0)));
+        assert_eq!(autocomplete(" "), Err(InvalidRequest::EmptyQuery));
+        let nowhere = Coordinate {
+            lat: f64::NAN,
+            ..HERE
+        };
+        assert_eq!(nearby(nowhere, None), Err(InvalidRequest::NotFinite("lat")));
 
-        let request = autocomplete("EK 01 A");
+        let request = autocomplete("EK 01 A").unwrap();
         assert_eq!(request.path, "/v1/search/autocomplete");
         assert_eq!(request.query, pairs([("q", "EK 01 A")]));
 
-        let request = reverse(HERE, Some(100.0));
+        let request = reverse(HERE, Some(100.0)).unwrap();
         assert_eq!(request.path, "/v1/search/reverse");
         assert_eq!(
             request.query,
             pairs([("lat", "7.62"), ("lng", "5.22"), ("max_distance_m", "100")])
         );
 
-        let request = nearby(HERE, None);
+        let request = nearby(HERE, None).unwrap();
         assert_eq!(request.path, "/v1/search/nearby");
         assert_eq!(request.query, pairs([("lat", "7.62"), ("lng", "5.22")]));
     }
@@ -324,6 +368,7 @@ mod tests {
             "building_use_status": "residential"
         } }"#;
         let found = lookup("EK-01-A03-FK-01".parse().unwrap(), 3)
+            .unwrap()
             .decode(200, body)
             .unwrap();
         assert!(found.valid);
@@ -339,6 +384,7 @@ mod tests {
     fn decodes_fields_missing_below_the_granted_level() {
         let body = r#"{ "data": { "postcode": "EK-01-A03-FK-01", "valid": true } }"#;
         let found = lookup("EK-01-A03-FK-01".parse().unwrap(), 1)
+            .unwrap()
             .decode(200, body)
             .unwrap();
         assert_eq!(found.administrative_address, None);
@@ -347,19 +393,19 @@ mod tests {
     #[test]
     fn decodes_autocomplete_and_reverse() {
         let body = r#"{ "data": { "segment": "lga", "suggestions": [{ "code": "EK-01", "label": "ADO EKITI" }] } }"#;
-        let found = autocomplete("EK").decode(200, body).unwrap();
+        let found = autocomplete("EK").unwrap().decode(200, body).unwrap();
         assert_eq!(found.segment, Some(Segment::Lga));
         assert_eq!(found.suggestions[0].code, "EK-01");
 
         let body = r#"{ "data": { "found": false, "coordinate": [5.22, 7.62], "message": "no unit in range", "radius_m": 25 } }"#;
-        let found = reverse(HERE, None).decode(200, body).unwrap();
+        let found = reverse(HERE, None).unwrap().decode(200, body).unwrap();
         assert_eq!((found.found, found.unit), (false, None));
         assert_eq!(found.radius_m, Some(25.0));
     }
 
     #[test]
     fn turns_error_envelopes_and_bad_bodies_into_values() {
-        let request = lookup("EK-01-A03-FK-01".parse().unwrap(), 1);
+        let request = lookup("EK-01-A03-FK-01".parse().unwrap(), 1).unwrap();
 
         // What the live API answered on 2 October 2026 when called without a key.
         let body = r#"{"error":{"code":"auth_required","message":"an API key is required; pass it in the X-API-Key header"}}"#;
@@ -381,7 +427,7 @@ mod tests {
 
     #[test]
     fn tolerates_what_the_api_may_add_or_leave_out() {
-        let request = lookup("EK-01-A03-FK-01".parse().unwrap(), 1);
+        let request = lookup("EK-01-A03-FK-01".parse().unwrap(), 1).unwrap();
         let body =
             r#"{"data":{"postcode":"EK-01-A03-FK-01","valid":true},"meta":{"request_id":"r1"}}"#;
         assert!(request.decode(200, body).unwrap().valid);
@@ -395,11 +441,18 @@ mod tests {
         assert_eq!(request.decode(429, body), Err(expected));
 
         let body = r#"{"data":{"segment":"street","suggestions":null}}"#;
-        let found = autocomplete("EK").decode(200, body).unwrap();
+        let found = autocomplete("EK").unwrap().decode(200, body).unwrap();
         assert_eq!((found.segment, found.suggestions.len()), (None, 0));
 
         let body = r#"{"data":[{"postcode":null,"distance_m":3}]}"#;
-        let units = nearby(HERE, None).decode(200, body).unwrap();
-        assert_eq!((units[0].postcode.as_str(), units[0].distance_m), ("", 3.0));
+        let units = nearby(HERE, None).unwrap().decode(200, body).unwrap();
+        assert_eq!(
+            (units[0].postcode.as_str(), units[0].distance_m),
+            ("", Some(3.0))
+        );
+
+        let body = r#"{"data":{"found":true,"unit":{"postcode":"EK-01-A03-FK-01"}}}"#;
+        let found = reverse(HERE, None).unwrap().decode(200, body).unwrap();
+        assert_eq!(found.unit.unwrap().distance_m, None);
     }
 }

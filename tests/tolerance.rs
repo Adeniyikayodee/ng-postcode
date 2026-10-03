@@ -30,10 +30,10 @@ fn every_case_reaches_the_shared_outcome() {
             None => case["body"].to_string(),
         };
         let found = match case["request"].as_str().expect("request") {
-            "lookup" => outcome(api::lookup(code, 1).decode(status, &body)),
-            "autocomplete" => outcome(api::autocomplete("E").decode(status, &body)),
-            "reverse" => outcome(api::reverse(HERE, None).decode(status, &body)),
-            "nearby" => outcome(api::nearby(HERE, None).decode(status, &body)),
+            "lookup" => outcome(api::lookup(code, 1).unwrap().decode(status, &body)),
+            "autocomplete" => outcome(api::autocomplete("E").unwrap().decode(status, &body)),
+            "reverse" => outcome(api::reverse(HERE, None).unwrap().decode(status, &body)),
+            "nearby" => outcome(api::nearby(HERE, None).unwrap().decode(status, &body)),
             other => panic!("{name}: unknown request {other}"),
         };
         let expected = (

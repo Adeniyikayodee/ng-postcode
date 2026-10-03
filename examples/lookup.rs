@@ -8,7 +8,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nth(1)
         .ok_or("usage: lookup <postcode>")?
         .parse()?;
-    let found = Client::new(key).send(&api::lookup(code, 1))?;
+    let found = Client::new(key).send(&api::lookup(code, 1)?)?;
     println!("{found:#?}");
     Ok(())
 }
