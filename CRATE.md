@@ -52,7 +52,7 @@ ng-postcode = { version = "0.3", features = ["client"] }
 use ng_postcode::{api, client::Client};
 
 let client = Client::new(std::env::var("NG_POSTCODE_API_KEY")?);
-let found = client.send(&api::lookup("EK-01-A03-FK-01".parse()?, 2)?)?;
+let found = client.send(&api::lookup("FC-03-B06-AG-12".parse()?, 2)?)?;
 println!("{:?}", found.administrative_address);
 ```
 

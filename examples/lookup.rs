@@ -1,4 +1,4 @@
-//! NG_POSTCODE_API_KEY=... cargo run --features client --example lookup -- EK-01-A03-FK-01
+//! NG_POSTCODE_API_KEY=... cargo run --features client --example lookup -- FC-03-B06-AG-12
 
 use ng_postcode::{api, client::Client, Postcode};
 
