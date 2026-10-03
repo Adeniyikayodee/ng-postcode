@@ -27,6 +27,21 @@ match parse("ek 01 a03 fk 01"):
 
 Validation is offline and needs no key. `parse_lenient` also fixes look-alike characters such as `O` for `0`, and `from_segments` builds a code from its parts.
 
+## Validate a postcode in JavaScript
+
+```ts
+import { Postcode, parse } from "ng-postcode-js";
+
+const code = parse("ek 01 a03 fk 01");
+if (code instanceof Postcode) {
+  console.log(String(code), code.compact); // EK-01-A03-FK-01 EK01A03FK01
+} else {
+  console.log(String(code)); // e.g. "invalid lga segment"
+}
+```
+
+`ng-postcode-js/api` and `ng-postcode-js/client` call the NIPOST API with `fetch`.
+
 ## Validate a postcode in Rust
 
 ```rust
@@ -75,7 +90,7 @@ The MCP server works with any MCP client, including Claude Code, Claude Desktop,
 }
 ```
 
-It offers `validate_postcode`, `lookup_postcode`, `autocomplete_postcode`, `find_postcode_at_location` and `resolve_address`. Validation works without a key. See the [MCP server README](https://github.com/Adeniyikayodee/ng-postcode/tree/main/mcp#install) for per-client steps and settings.
+With Node, use `npx -y ng-postcode-mcp` in place of `uvx ng-postcode-mcp`. It offers `validate_postcode`, `lookup_postcode`, `autocomplete_postcode`, `find_postcode_at_location` and `resolve_address`. Validation works without a key. See the [MCP server README](https://github.com/Adeniyikayodee/ng-postcode/tree/main/mcp#install) for per-client steps and settings.
 
 ## Pass a postcode between systems
 
