@@ -1,6 +1,6 @@
 [project]
 name = "ng-postcode-bundle"
-version = "0.4.3"
+version = "0.4.4"
 description = "MCPB bundle that runs the published ng-postcode-mcp server."
 requires-python = ">=3.10"
-dependencies = ["ng-postcode-mcp==0.4.3"]
+dependencies = ["ng-postcode-mcp==0.4.4"]
