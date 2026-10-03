@@ -72,6 +72,10 @@ assert_eq!(code.prefix(Segment::Area), "EK-01-A03-FK");
 
 Input may be hyphenated, spaced or compact, in either case. The compact form matches `^[A-Z]{2}(0[1-9]|[1-9][0-9])[A-Z0-9]{3}[A-Z]{2}(0[1-9]|[1-9][0-9])$`. A well-formed code is not necessarily assigned to a building; only the NIPOST API can confirm that.
 
+## Passing a postcode between systems
+
+[`docs/schemas/postcode-reference.schema.json`](docs/schemas/postcode-reference.schema.json) defines a small JSON object for handing a location from one system or AI agent to another: the code, its level (`state` to `building`), and optionally a confidence and whether NIPOST confirmed it. The `resolve_address` answer already fits it.
+
 ## Design
 
 - **One behaviour, two languages.** Rust and Python both run the cases in [`spec/vectors.json`](spec/vectors.json), so they cannot drift apart.

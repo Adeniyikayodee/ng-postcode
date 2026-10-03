@@ -36,7 +36,7 @@ Repository = "https://github.com/Adeniyikayodee/ng-postcode"
 Issues = "https://github.com/Adeniyikayodee/ng-postcode/issues"
 
 [dependency-groups]
-dev = ["jsonschema>=4.20", "mypy>=1.13", "pytest>=8", "ruff>=0.8"]
+dev = ["jsonschema>=4.20", "mypy>=1.13", "pytest>=8", "ruff>=0.8", "types-jsonschema>=4.20"]
 
 # Inside the repository, build against the local packages so they never drift.
 [tool.uv.sources]
