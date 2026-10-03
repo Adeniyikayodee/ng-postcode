@@ -10,10 +10,11 @@ header; without one it uses the server's key, if the server has one.
 
 from __future__ import annotations
 
+import inspect
 import logging
 import os
 import sys
-from collections.abc import AsyncIterator, Mapping
+from collections.abc import AsyncIterator, Callable, Mapping
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from importlib.metadata import version
@@ -39,6 +40,7 @@ from ng_postcode.client import TIMEOUT, AsyncClient, TransportError
 from pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar("T")
+F = TypeVar("F", bound=Callable[..., Any])
 
 KEY_URL = "https://dashboard.postcode.gov.ng"
 KEY_HEADER = "x-nipost-api-key"
@@ -251,6 +253,7 @@ def create_server(
         annotations=READ_ONLY_OFFLINE,
         structured_output=True,
     )
+    @tidy
     def validate_postcode(
         postcode: Annotated[str, Field(description="Code in any style, e.g. 'ek 01 a03 fk 01'.")],
     ) -> Validation:
@@ -266,6 +269,7 @@ def create_server(
         annotations=READ_ONLY_ONLINE,
         structured_output=True,
     )
+    @tidy
     async def lookup_postcode(
         postcode: Annotated[str, Field(description="Code in any style, e.g. EK-01-A03-FK-01.")],
         ctx: Context[State, Any],
@@ -293,6 +297,7 @@ def create_server(
         annotations=READ_ONLY_ONLINE,
         structured_output=True,
     )
+    @tidy
     async def autocomplete_postcode(
         partial: Annotated[
             str, Field(min_length=1, description="The start of a code, e.g. 'EK 01 A'.")
@@ -310,6 +315,7 @@ def create_server(
         annotations=READ_ONLY_ONLINE,
         structured_output=True,
     )
+    @tidy
     async def find_postcode_at_location(
         latitude: Annotated[
             float, Field(ge=-90, le=90, description="Latitude in decimal degrees, e.g. 7.6211.")
@@ -337,6 +343,7 @@ def create_server(
         annotations=READ_ONLY_ONLINE,
         structured_output=True,
     )
+    @tidy
     async def resolve_address(
         address: Annotated[str, Field(description="The address exactly as the user gave it.")],
         ctx: Context[State, Any],
@@ -386,6 +393,13 @@ def create_server(
         return await resolver.resolve(address, location, reading(landmarks, geocode_queries))
 
     return server
+
+
+def tidy(tool: F) -> F:
+    """Give the tool the same description on every Python: before 3.13 a docstring keeps
+    its indentation."""
+    tool.__doc__ = inspect.cleandoc(tool.__doc__ or "")
+    return tool
 
 
 def reading(landmarks: list[Landmark] | None, queries: list[str] | None) -> ParsedAddress | None:
