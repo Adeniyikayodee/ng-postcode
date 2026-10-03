@@ -90,7 +90,7 @@ docker build -t ng-postcode-mcp . && docker run --rm -i ng-postcode-mcp   # from
 
 Over HTTP a caller can send its own NIPOST key in the `X-NIPOST-API-Key` header, and that key is used for that caller's requests only. A caller that sends none uses the server's key, if `NG_POSTCODE_API_KEY` is set.
 
-To host the server for other people, leave `NG_POSTCODE_API_KEY` unset so every caller brings a key, and serve it over HTTPS so the header is encrypted. Validation still works without any key. If you do set a server key, anyone who can reach the server spends its credits, so keep it on loopback or behind your own authentication. `NG_POSTCODE_MAX_LEVEL` caps every caller either way.
+To host the server for other people, leave `NG_POSTCODE_API_KEY` unset so every caller brings a key, and serve it over HTTPS so the header is encrypted. Callers are trusting the host with their key, and all of them share the host's geocoder, which answers one search a second. Validation still works without any key. If you do set a server key, anyone who can reach the server spends its credits, so keep it on loopback or behind your own authentication. `NG_POSTCODE_MAX_LEVEL` caps every caller either way.
 
 ## Safety
 

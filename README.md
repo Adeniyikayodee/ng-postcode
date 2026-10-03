@@ -74,7 +74,7 @@ Input may be hyphenated, spaced or compact, in either case. The compact form mat
 
 ## Passing a postcode between systems
 
-[`docs/schemas/postcode-reference.schema.json`](docs/schemas/postcode-reference.schema.json) defines a small JSON object for handing a location from one system or AI agent to another: the code, its level (`state` to `building`), and optionally a confidence and whether NIPOST confirmed it. The `resolve_address` answer already fits it.
+[`docs/schemas/postcode-reference.schema.json`](docs/schemas/postcode-reference.schema.json) defines a small JSON object for handing a location from one system or AI agent to another: the code, its level (`state` to `building`), and optionally a confidence and whether NIPOST confirmed it. A resolved or partial `resolve_address` answer already fits it.
 
 ## Design
 
