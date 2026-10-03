@@ -1,0 +1,74 @@
+name: Release MCP server
+
+# Push a tag such as mcp-v0.1.0. PyPI and the MCP Registry both trust this
+# workflow through OIDC, so no token is stored anywhere.
+on:
+  push:
+    tags: ["mcp-v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+      - name: Tag, package and server.json versions agree
+        run: |
+          version="$(uv version --short)"
+          test "mcp-v$version" = "$GITHUB_REF_NAME"
+          test "$(jq -r .version server.json)" = "$version"
+          test "$(jq -r '.packages[0].version' server.json)" = "$version"
+      - run: uv run --group dev pytest
+      - run: uv build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mcp-dist
+          path: mcp/dist/
+
+  pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/ng-postcode-mcp/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: mcp-dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@v1.14.2
+
+  registry:
+    needs: pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: mcp
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install mcp-publisher
+        run: |
+          os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+          arch="$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_${os}_${arch}.tar.gz" | tar xz mcp-publisher
+      - run: ./mcp-publisher login github-oidc
+      # The registry reads the README from PyPI, which can lag a fresh upload.
+      - name: Publish to the MCP Registry
+        run: |
+          for attempt in 1 2 3 4 5; do
+            ./mcp-publisher publish && exit 0
+            echo "attempt $attempt failed; retrying in 30s"
+            sleep 30
+          done
+          exit 1
