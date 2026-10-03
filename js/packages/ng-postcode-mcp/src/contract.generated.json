@@ -4,7 +4,7 @@
     {
       "name": "validate_postcode",
       "title": "Validate a Nigerian postcode",
-      "description": "Check a postcode's structure offline and return its canonical forms and segments.\n\nFree and instant. Does not confirm the code is assigned to a building; use\nlookup_postcode for that.\n",
+      "description": "Check a postcode's structure offline and return its canonical forms and segments.\n\nFree and instant. Does not confirm the code is assigned to a building; use\nlookup_postcode for that.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -426,7 +426,7 @@
     {
       "name": "find_postcode_at_location",
       "title": "Find the postcode at a location",
-      "description": "Return the postcode of the nearest building to a coordinate in Nigeria.\n\nNames and the house address are withheld unless NG_POSTCODE_MAX_LEVEL is 2 or more.\n",
+      "description": "Return the postcode of the nearest building to a coordinate in Nigeria.\n\nNames and the house address are withheld unless NG_POSTCODE_MAX_LEVEL is 2 or more.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -672,7 +672,7 @@
     {
       "name": "resolve_address",
       "title": "Resolve a Nigerian address to a postcode",
-      "description": "Turn a described Nigerian address into a postcode, only as precisely as the\nevidence allows.\n\nA full building code comes only from a postcode written in the address, a location\npin, or a landmark that is the address itself. Otherwise the result is an area or\ndistrict prefix with a `question` for the user. Read the address yourself and fill\n`landmarks` and `geocode_queries`; the address text is sent to the configured\ngeocoder.\n",
+      "description": "Turn a described Nigerian address into a postcode, only as precisely as the\nevidence allows.\n\nA full building code comes only from a postcode written in the address, a location\npin, or a landmark that is the address itself. Otherwise the result is an area or\ndistrict prefix with a `question` for the user. Read the address yourself and fill\n`landmarks` and `geocode_queries`; the address text is sent to the configured\ngeocoder.",
       "inputSchema": {
         "type": "object",
         "$defs": {
