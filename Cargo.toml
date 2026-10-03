@@ -2,6 +2,7 @@
 name = "ng-postcode"
 version = "0.2.2"
 edition = "2021"
+rust-version = "1.85"
 description = "Parse, validate and format Nigeria's NIPOST digital postcode (NDAPS) offline, plus a client for the postcode.gov.ng API."
 license = "MIT"
 repository = "https://github.com/Adeniyikayodee/ng-postcode"

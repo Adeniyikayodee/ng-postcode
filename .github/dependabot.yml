@@ -1,7 +1,15 @@
-# Actions are pinned to commits; this keeps the pins current.
+# Actions are pinned to commits; this keeps the pins and the lockfiles current.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: uv
+    directories: [/python, /mcp, /agent]
     schedule:
       interval: weekly
