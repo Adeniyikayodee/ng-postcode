@@ -32,6 +32,15 @@ def test_versions_and_names_agree() -> None:
     assert package["identifier"] == "ng-postcode-mcp"
     assert server["version"] == package["version"] == version("ng-postcode-mcp")
 
+    manifest = ROOT.parent / "js/packages/ng-postcode-mcp/package.json"
+    if not manifest.exists():  # the Node package lives in the repository, not the sdist
+        return
+    node = json.loads(manifest.read_text(encoding="utf-8"))
+    listed = server["packages"][1]
+    assert (listed["registryType"], listed["identifier"]) == ("npm", node["name"])
+    assert listed["version"] == node["version"]
+    assert node["mcpName"] == server["name"]
+
 
 def test_readme_proves_registry_ownership() -> None:
     marker = f"<!-- mcp-name: {server_json()['name']} -->"

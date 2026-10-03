@@ -55,6 +55,35 @@
           ]
         }
       ]
+    },
+    {
+      "registryType": "npm",
+      "identifier": "ng-postcode-mcp",
+      "version": "0.1.0",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "NG_POSTCODE_API_KEY",
+          "description": "NIPOST Postcode API key from dashboard.postcode.gov.ng. Validation works without it.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "NG_POSTCODE_MAX_LEVEL",
+          "description": "Highest lookup level tools may request. Levels 2 and up consume NIPOST credits.",
+          "default": "1",
+          "choices": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5"
+          ]
+        }
+      ]
     }
   ]
 }
