@@ -38,7 +38,7 @@ Each package has its own README with full usage.
 }
 ```
 
-Per-client steps for Cursor, VS Code, Codex, Claude and others are in the [MCP server README](mcp#install). Validation works without a key. The server is listed in the MCP Registry as `io.github.Adeniyikayodee/ng-postcode`.
+With Node instead of Python, use `"command": "npx"` and `"args": ["-y", "ng-postcode-mcp"]`; that edition has every tool except address resolution. Per-client steps for Cursor, VS Code, Codex, Claude and others are in the [MCP server README](mcp#install). Validation works without a key. The server is listed in the MCP Registry as `io.github.Adeniyikayodee/ng-postcode`.
 
 **Python**
 
@@ -50,6 +50,19 @@ match parse("ek 01 a03 fk 01"):
         print(code, code.compact)  # EK-01-A03-FK-01 EK01A03FK01
     case error:
         print(error)               # e.g. "invalid lga segment"
+```
+
+**JavaScript and TypeScript**
+
+```ts
+import { Postcode, parse } from "ng-postcode-js";
+
+const code = parse("ek 01 a03 fk 01");
+if (code instanceof Postcode) {
+  console.log(String(code), code.compact); // EK-01-A03-FK-01 EK01A03FK01
+} else {
+  console.log(String(code));               // e.g. "invalid lga segment"
+}
 ```
 
 **Rust**
