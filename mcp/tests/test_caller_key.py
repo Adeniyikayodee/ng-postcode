@@ -52,8 +52,9 @@ def serving(server_key: str | None, keys_seen: list[str]) -> Iterator[str]:
         thread.join(timeout=10)
 
 
-async def lookup(url: str, caller_key: str | None) -> CallToolResult:
-    headers = {"X-NIPOST-API-Key": caller_key} if caller_key else {}
+async def lookup(url: str, caller_key: str | bytes | None) -> CallToolResult:
+    sent = caller_key.encode() if isinstance(caller_key, str) else caller_key
+    headers = {b"X-NIPOST-API-Key": sent} if sent else {}
     async with (
         httpx2.AsyncClient(headers=headers) as http,
         Client(streamable_http_client(url, http_client=http)) as client,
@@ -80,3 +81,14 @@ async def test_the_servers_key_is_the_fallback() -> None:
         await lookup(url, None)
         await lookup(url, "caller-key")
     assert seen == ["server-key", "caller-key"]
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("key", ["k\xe9y".encode("latin-1"), b"two words", b"k" * 300])
+async def test_an_unusable_key_is_refused_before_nipost(key: bytes) -> None:
+    seen: list[str] = []
+    with serving("server-key", seen) as url:
+        result = await lookup(url, key)
+    assert result.is_error
+    assert "does not hold a usable" in str(result.content)
+    assert seen == []

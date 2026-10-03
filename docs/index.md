@@ -84,7 +84,7 @@ When one system or AI agent hands a location to another, send it as a postcode r
 { "code": "EK-01-A03-FK", "level": "area", "confidence": "medium" }
 ```
 
-`level` is one of `state`, `lga`, `district`, `area` or `building`, and `code` is the hyphenated code down to that level. Add `assigned` and `checked_at` after confirming a building code with NIPOST. The receiver can validate the reference against the [JSON Schema](schemas/postcode-reference.schema.json) and re-check the code itself. The answer from `resolve_address` already has this shape.
+`level` is one of `state`, `lga`, `district`, `area` or `building`, and `code` is the hyphenated code down to that level. Add `assigned` and `checked_at` after confirming a building code with NIPOST. The receiver can validate the reference against the [JSON Schema](schemas/postcode-reference.schema.json) and re-check the code itself. A resolved or partial answer from `resolve_address` already has this shape.
 
 ## The format
 

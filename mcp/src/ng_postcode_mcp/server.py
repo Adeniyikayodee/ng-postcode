@@ -42,6 +42,7 @@ T = TypeVar("T")
 
 KEY_URL = "https://dashboard.postcode.gov.ng"
 KEY_HEADER = "x-nipost-api-key"
+MAX_KEY_LENGTH = 256
 
 INSTRUCTIONS = """\
 Tools for Nigeria's 11-character building postcode, e.g. EK-01-A03-FK-01 \
@@ -62,8 +63,8 @@ READ_ONLY_OFFLINE = ToolAnnotations(
 READ_ONLY_ONLINE = ToolAnnotations(read_only_hint=True, idempotent_hint=True, open_world_hint=True)
 
 HINTS = {
-    "auth_required": f"Set NG_POSTCODE_API_KEY to a key from {KEY_URL}.",
-    "invalid_api_key": f"NG_POSTCODE_API_KEY is invalid or revoked; create a new key at {KEY_URL}.",
+    "auth_required": f"Supply a NIPOST API key from {KEY_URL}.",
+    "invalid_api_key": f"The NIPOST API key is invalid or revoked; create a new key at {KEY_URL}.",
     "insufficient_credits": "The NIPOST account is out of credits; top up or use level 1.",
     "level_not_granted": "The key is not granted this lookup level; use a lower level or "
     f"request more access at {KEY_URL}.",
@@ -472,7 +473,11 @@ def nipost_for(ctx: Context[State, Any]) -> AsyncClient | None:
     state = ctx.request_context.lifespan_context
     sent = (v for k, v in (ctx.headers or {}).items() if k.lower() == KEY_HEADER)
     key = next(sent, "").strip()
-    return AsyncClient(key, base_url=state.base_url, http=state.http) if key else state.nipost
+    if not key:
+        return state.nipost
+    if not (key.isascii() and key.isprintable() and " " not in key and len(key) <= MAX_KEY_LENGTH):
+        raise ToolError("The X-NIPOST-API-Key header does not hold a usable NIPOST API key.")
+    return AsyncClient(key, base_url=state.base_url, http=state.http)
 
 
 def api(ctx: Context[State, Any]) -> AsyncClient:
