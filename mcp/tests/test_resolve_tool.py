@@ -62,6 +62,13 @@ async def call(
 
 
 @pytest.mark.anyio
+async def test_queries_without_landmarks_never_give_a_building() -> None:
+    queries = {k: v for k, v in BEHIND_FABIAN.items() if k != "landmarks"}
+    answer = (await call(queries)).structured_content
+    assert (answer["status"], answer["level"]) == ("partial", "area")
+
+
+@pytest.mark.anyio
 async def test_the_host_models_reading_drives_the_answer() -> None:
     searched: list[httpx.Request] = []
     result = await call(BEHIND_FABIAN, searched=searched)

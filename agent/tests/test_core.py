@@ -191,8 +191,9 @@ def test_a_building_is_the_place_only_on_positive_evidence() -> None:
     )
     assert is_the_place(at, parsed(("Fabian Hotel", "at")))
     assert not is_the_place(behind, parsed(("Fabian Hotel", "behind")))
-    # A reading with no landmarks says the address is the place searched for.
-    assert is_the_place(None, parsed())
+    # With no landmarks, only a house number says the address is the place searched for.
+    assert not is_the_place(None, parsed())
+    assert is_the_place(None, parsed().model_copy(update={"house_number": "12"}))
     # The query did not name the landmark, so it may still be what the map matched.
     assert not is_the_place(None, parsed(("Fabian Hotels", "behind")))
     # Raw text: "Fabian Hotel" and "back of Fabian Hotel" look the same.

@@ -65,10 +65,15 @@ def is_the_place(landmark: Landmark | None, parsed: ParsedAddress | None) -> boo
 
     Without a reading there is no telling "Fabian Hotel" from "back of Fabian
     Hotel", and a landmark the query did not name may still be the one matched.
+    A reading with no landmarks needs a house number to count.
     """
     if landmark is not None:
         return landmark.relation == "at"
-    return parsed is not None and all(lm.relation == "at" for lm in parsed.landmarks)
+    if parsed is None:
+        return False
+    if not parsed.landmarks:
+        return parsed.house_number is not None
+    return all(lm.relation == "at" for lm in parsed.landmarks)
 
 
 def code_at(postcode: str | None, level: Level) -> str | None:
