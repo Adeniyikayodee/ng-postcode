@@ -1,8 +1,6 @@
 //! Nigeria's National Digital Alphanumeric Postcode (NDAPS), the
 //! building-level postcode issued by NIPOST.
 //!
-//! Unofficial: not made or endorsed by NIPOST.
-//!
 //! The crate has a pure core and an optional shell:
 //!
 //! - [`Postcode`] parses, validates and formats codes offline.

@@ -1,5 +1,5 @@
 """Nigeria's National Digital Alphanumeric Postcode (NDAPS), the building-level
-postcode issued by NIPOST. Unofficial: not made or endorsed by NIPOST.
+postcode issued by NIPOST.
 
 Expected failures come back as values, never exceptions:
 
