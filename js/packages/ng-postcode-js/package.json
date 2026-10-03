@@ -1,6 +1,6 @@
 {
   "name": "ng-postcode-js",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Parse, validate and format Nigeria's NIPOST digital postcode (NDAPS) offline, plus a client for the postcode.gov.ng API.",
   "license": "MIT",
   "author": "Kayode Adeniyi",
