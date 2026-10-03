@@ -82,3 +82,8 @@ async def test_failures_are_values() -> None:
     failure = await nominatim(down)("q")
     assert isinstance(failure, GeocodeFailure)
     assert "refused" in failure.reason
+
+
+def test_first_place_rejects_coordinates_that_are_not_numbers() -> None:
+    assert first_place("q", [{"lat": "nan", "lon": "5.2", "place_rank": 30}]) is None
+    assert first_place("q", [{"lat": "7.6", "lon": "inf", "place_rank": 30}]) is None

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import html
+
 import anthropic
 import pydantic
 
@@ -40,7 +42,8 @@ class ClaudeParser:
                 model=self._model,
                 max_tokens=16000,
                 system=SYSTEM,
-                messages=[{"role": "user", "content": f"<address>{text}</address>"}],
+                # Escaped so the text cannot close the tag and pose as instructions.
+                messages=[{"role": "user", "content": f"<address>{_escaped(text)}</address>"}],
                 output_format=ParsedAddress,
                 # Extraction is light work; low effort keeps it fast and cheap.
                 output_config={"effort": "low"},
@@ -68,3 +71,7 @@ class ClaudeParser:
         if response.parsed_output is None:
             return ParseFailure(f"no structured answer (stop reason {response.stop_reason})")
         return response.parsed_output
+
+
+def _escaped(text: str) -> str:
+    return html.escape(text, quote=False)

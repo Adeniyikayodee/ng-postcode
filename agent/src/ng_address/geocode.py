@@ -8,6 +8,7 @@ results. A service whose main job is geocoding must run its own instance.
 from __future__ import annotations
 
 import asyncio
+import math
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -85,6 +86,8 @@ def first_place(query: str, data: Any) -> Geocoded | None:
     try:
         lat, lng, rank = float(hit["lat"]), float(hit["lon"]), int(hit.get("place_rank", 0))
     except (KeyError, TypeError, ValueError):
+        return None
+    if not (math.isfinite(lat) and math.isfinite(lng)):
         return None
     label = str(hit.get("display_name") or query)
     return Geocoded(query=query, lat=lat, lng=lng, precision=precision_of(rank), label=label)

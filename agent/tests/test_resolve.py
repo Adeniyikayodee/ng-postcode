@@ -190,3 +190,12 @@ async def test_an_unassigned_typed_code_falls_back_to_the_pin() -> None:
     result = await resolver.resolve("Deliver to ek01a03fk01", Coordinate(lat=7.62, lng=5.19))
     assert (result.status, result.level, result.method) == ("resolved", "building", "location")
     assert result.evidence[1] == "NIPOST says it is not assigned."
+
+
+@pytest.mark.parametrize("pin", [["--lat", "nan", "--lng", "5"], ["--lat", "7", "--lng", "500"]])
+def test_the_cli_rejects_a_pin_off_the_map(pin: list[str]) -> None:
+    from ng_address.cli import main
+
+    with pytest.raises(SystemExit) as stopped:
+        main(["somewhere", *pin])
+    assert stopped.value.code == 2

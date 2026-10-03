@@ -35,6 +35,8 @@ def main(argv: list[str] | None = None) -> None:
     args = cli.parse_args(argv)
     if (args.lat is None) != (args.lng is None):
         cli.error("give both --lat and --lng, or neither")
+    if args.lat is not None and not (abs(args.lat) <= 90 and abs(args.lng) <= 180):
+        cli.error("--lat must be within -90 to 90 and --lng within -180 to 180")
     location = None if args.lat is None else Coordinate(lat=args.lat, lng=args.lng)
     problem = config_problem(os.environ)
     if problem:
