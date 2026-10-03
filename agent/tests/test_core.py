@@ -132,6 +132,14 @@ def test_location_pins(
     )
 
 
+def test_a_missing_distance_is_not_reported_as_zero() -> None:
+    result = from_location(found(None))
+    assert (result.status, result.level) == ("partial", "area")
+    assert result.evidence == [
+        "Nearest building is EK-01-A03-FK-01, an unknown distance from the pin."
+    ]
+
+
 def test_location_with_no_building_asks_to_move_the_pin() -> None:
     result = from_location(NOTHING)
     assert (result.status, result.code) == ("unresolved", None)

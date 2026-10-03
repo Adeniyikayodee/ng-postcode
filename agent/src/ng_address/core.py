@@ -138,9 +138,7 @@ def from_location(found: Reverse) -> Resolution:
         confidence="medium",
         method="location",
         question="The pin is not on a building. Can you move it onto the building itself?",
-        evidence=[
-            f"Nearest building is {unit.postcode}, {unit.distance_m or 0:.0f} m from the pin."
-        ],
+        evidence=[f"Nearest building is {unit.postcode}, {_far(unit.distance_m)} from the pin."],
     )
 
 
@@ -154,9 +152,7 @@ def from_geocoded(
     unit = found.unit
     if not found.found or unit is None:
         return unresolved("geocoded", f"NIPOST found no building near {place.label}.")
-    near = (
-        f"Nearest building to {place.label} is {unit.postcode}, {unit.distance_m or 0:.0f} m away."
-    )
+    near = f"Nearest building to {place.label} is {unit.postcode}, {_far(unit.distance_m)} away."
     if place.precision == "street":
         return Resolution(
             status="partial",
@@ -189,6 +185,10 @@ def from_geocoded(
         question=f"Which building {where} is it? A location pin or house number would pin it down.",
         evidence=[near, f"The address is {where}, not the place the map found."],
     )
+
+
+def _far(distance_m: float | None) -> str:
+    return "an unknown distance" if distance_m is None else f"{distance_m:.0f} m"
 
 
 def unresolved(method: Method | None, reason: str, question: str = DEFAULT_QUESTION) -> Resolution:
