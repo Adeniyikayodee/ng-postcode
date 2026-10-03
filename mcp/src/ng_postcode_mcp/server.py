@@ -62,6 +62,8 @@ HINTS = {
     "auth_required": f"Set NG_POSTCODE_API_KEY to a key from {KEY_URL}.",
     "invalid_api_key": f"NG_POSTCODE_API_KEY is invalid or revoked; create a new key at {KEY_URL}.",
     "insufficient_credits": "The NIPOST account is out of credits; top up or use level 1.",
+    "level_not_granted": "The key is not granted this lookup level; use a lower level or "
+    f"request more access at {KEY_URL}.",
 }
 STATUS_HINTS = {
     403: "The key lacks the scope or access level for this request.",
@@ -136,6 +138,10 @@ class Address(FromLibrary):
 class PostcodeDetails(FromLibrary):
     postcode: str
     valid: bool = Field(description="Whether the code is assigned to a building.")
+    status: str | None = Field(
+        default=None, description="valid, not_found, or invalid for a malformed code."
+    )
+    verified: bool | None = None
     administrative_address: Address | None = Field(description="Level 2 and up.")
     recent_house_address: str | None = Field(description="Level 2 and up. Personal data.")
     building_use_status: str | None = Field(description="Level 3 and up, e.g. residential.")
@@ -144,8 +150,10 @@ class PostcodeDetails(FromLibrary):
 
 
 class Completion(FromLibrary):
-    code: str
-    label: str
+    code: str = Field(description="The value of the next segment, e.g. A03, not a full prefix.")
+    label: str | None = Field(
+        default=None, description="A name for the code, when NIPOST sends one."
+    )
 
 
 class Completions(BaseModel):
@@ -174,6 +182,7 @@ class Location(FromLibrary):
     state: str | None
     message: str | None
     radius_m: float | None = Field(description="The radius the API actually applied.")
+    depth: str | None = Field(default=None, description="How deep the match goes, e.g. unit.")
 
 
 @dataclass(frozen=True, slots=True)
@@ -264,10 +273,14 @@ def create_server(
         structured_output=True,
     )
     async def autocomplete_postcode(
-        partial: Annotated[str, Field(description="The start of a code, e.g. 'EK 01 A'.")],
+        partial: Annotated[
+            str, Field(min_length=1, description="The start of a code, e.g. 'EK 01 A'.")
+        ],
         ctx: Context[State, Any],
     ) -> Completions:
         """Suggest completions for the next segment of a partly typed postcode."""
+        if not partial.strip():
+            raise ToolError("Give at least the first characters of a postcode.")
         result = await api(ctx).send(autocomplete(partial))
         return completions(unwrap(result))
 

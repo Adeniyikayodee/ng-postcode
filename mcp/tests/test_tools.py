@@ -9,8 +9,10 @@ from typing import Any
 import httpx
 import pytest
 from mcp import Client
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import CallToolResult, TextContent
 from ng_postcode import api
+from ng_postcode.api import ApiError
 from pydantic import BaseModel
 
 from ng_postcode_mcp import Settings, create_server, settings_from_env
@@ -20,6 +22,7 @@ from ng_postcode_mcp.server import (
     Location,
     NearestBuilding,
     PostcodeDetails,
+    unwrap,
 )
 
 Handler = Callable[[httpx.Request], httpx.Response]
@@ -208,3 +211,17 @@ def test_settings_from_env() -> None:
     assert settings_from_env({"NG_POSTCODE_MAX_LEVEL": "9"}) == (
         "NG_POSTCODE_MAX_LEVEL must be 1 to 5, got '9'"
     )
+
+
+@pytest.mark.anyio
+async def test_a_blank_autocomplete_never_reaches_the_api() -> None:
+    seen: list[httpx.Request] = []
+    result = await call("autocomplete_postcode", {"partial": "  "}, seen=seen)
+    assert result.is_error
+    assert seen == []
+
+
+def test_a_level_the_key_lacks_gets_a_specific_hint() -> None:
+    error = ApiError(403, "level_not_granted", "this key is granted up to lookup level 1")
+    with pytest.raises(ToolError, match="request more access"):
+        unwrap(error)

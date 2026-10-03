@@ -30,7 +30,7 @@ The assistant reads the address and passes its landmarks and map searches to the
 | A street only | District code, low confidence |
 | A town only, or nothing found | No code, plus a question |
 
-Text alone rarely identifies a building, so ask users for a location pin when the exact building matters. This tool is pre-release: its NIPOST steps have not yet been run against the live API.
+Text alone rarely identifies a building, so ask users for a location pin when the exact building matters. This tool is pre-release: it works against the live API, but its accuracy on real addresses is unmeasured.
 
 ## Install
 
