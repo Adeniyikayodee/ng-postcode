@@ -44,6 +44,15 @@
         {
           "name": "NG_GEOCODER_CONTACT",
           "description": "URL or email identifying you to the geocoder. Required for the public Nominatim."
+        },
+        {
+          "name": "NG_POSTCODE_TRANSPORT",
+          "description": "stdio (default), or http to serve streamable HTTP at /mcp on NG_POSTCODE_HOST and NG_POSTCODE_PORT.",
+          "default": "stdio",
+          "choices": [
+            "stdio",
+            "http"
+          ]
         }
       ]
     }

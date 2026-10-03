@@ -224,6 +224,14 @@ def test_output_models_only_use_fields_the_library_has(
     assert set(model.model_fields) <= {field.name for field in dataclasses.fields(source)}
 
 
+def test_transport_settings() -> None:
+    served = settings_from_env({"NG_POSTCODE_TRANSPORT": "HTTP", "NG_POSTCODE_PORT": "9000"})
+    assert isinstance(served, Settings)
+    assert (served.transport, served.host, served.port) == ("http", "127.0.0.1", 9000)
+    assert isinstance(settings_from_env({"NG_POSTCODE_TRANSPORT": "sse"}), str)
+    assert isinstance(settings_from_env({"NG_POSTCODE_PORT": "0"}), str)
+
+
 def test_settings_from_env() -> None:
     assert settings_from_env({}) == Settings(api_key=None)
     assert settings_from_env({"NG_POSTCODE_API_KEY": " k ", "NG_POSTCODE_MAX_LEVEL": "3"}) == (

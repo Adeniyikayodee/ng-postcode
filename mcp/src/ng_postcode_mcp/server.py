@@ -3,7 +3,8 @@
 Validation runs offline. Lookup, autocomplete and reverse geocoding call the
 postcode.gov.ng API with the key in NG_POSTCODE_API_KEY, which never appears in
 tool arguments or results. Address resolution also searches the geocoder in
-NG_GEOCODER_URL. stdout carries the protocol, so nothing else may print to it.
+NG_GEOCODER_URL. Over stdio, stdout carries the protocol, so nothing else may
+print to it. Over HTTP, every caller shares the server's key.
 """
 
 from __future__ import annotations
@@ -79,6 +80,9 @@ class Settings:
     base_url: str = BASE_URL
     geocoder_url: str | None = None
     geocoder_contact: str | None = None
+    transport: Literal["stdio", "http"] = "stdio"
+    host: str = "127.0.0.1"
+    port: int = 8000
 
 
 def settings_from_env(env: Mapping[str, str]) -> Settings | str:
@@ -90,12 +94,21 @@ def settings_from_env(env: Mapping[str, str]) -> Settings | str:
     geocoder_contact = env.get("NG_GEOCODER_CONTACT", "").strip() or None
     if geocoder_url == PUBLIC_NOMINATIM and geocoder_contact is None:
         return "the public Nominatim requires NG_GEOCODER_CONTACT, a URL or email identifying you"
+    transport = env.get("NG_POSTCODE_TRANSPORT", "stdio").strip().lower()
+    if transport not in ("stdio", "http"):
+        return f"NG_POSTCODE_TRANSPORT must be stdio or http, got {transport!r}"
+    raw_port = env.get("NG_POSTCODE_PORT", "8000").strip()
+    if not (raw_port.isdecimal() and 0 < int(raw_port) < 65536):
+        return f"NG_POSTCODE_PORT must be 1 to 65535, got {raw_port!r}"
     return Settings(
         api_key=env.get("NG_POSTCODE_API_KEY", "").strip() or None,
         max_level=int(raw_level),
         base_url=env.get("NG_POSTCODE_BASE_URL", "").strip() or BASE_URL,
         geocoder_url=geocoder_url,
         geocoder_contact=geocoder_contact,
+        transport="http" if transport == "http" else "stdio",
+        host=env.get("NG_POSTCODE_HOST", "").strip() or "127.0.0.1",
+        port=int(raw_port),
     )
 
 
@@ -470,4 +483,8 @@ def main() -> None:
         sys.exit(f"ng-postcode-mcp: {settings}")
     # httpx logs every request URL at INFO, which would copy postcodes into client logs.
     logging.getLogger("httpx").setLevel(logging.WARNING)
-    create_server(settings).run()
+    server = create_server(settings)
+    if settings.transport == "http":
+        server.run("streamable-http", host=settings.host, port=settings.port)
+    else:
+        server.run()

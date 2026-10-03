@@ -76,8 +76,19 @@ Most clients take this entry in their MCP settings:
 | `NG_POSTCODE_BASE_URL` | `https://api.postcode.gov.ng` | Alternative API host, such as a staging stack. |
 | `NG_GEOCODER_URL` | none | A Nominatim server `resolve_address` uses to place described addresses. Without it, only typed postcodes and location pins resolve. |
 | `NG_GEOCODER_CONTACT` | none | A URL or email sent in the User-Agent. Required for the public Nominatim. |
+| `NG_POSTCODE_TRANSPORT` | `stdio` | `http` serves streamable HTTP at `/mcp` instead. |
+| `NG_POSTCODE_HOST`, `NG_POSTCODE_PORT` | `127.0.0.1`, `8000` | Where the HTTP transport listens. |
 
 The public Nominatim at `https://nominatim.openstreetmap.org` allows light personal use only; a service whose main job is geocoding must run its own instance. Map data © OpenStreetMap contributors.
+
+## HTTP and Docker
+
+```sh
+NG_POSTCODE_TRANSPORT=http uvx ng-postcode-mcp        # http://127.0.0.1:8000/mcp
+docker build -t ng-postcode-mcp . && docker run --rm -i ng-postcode-mcp   # from the repository root
+```
+
+Over HTTP every caller uses the server's own NIPOST key and credits, and the server adds no authentication. It listens on loopback by default; put it behind your own authentication before setting `NG_POSTCODE_HOST` to a public address.
 
 ## Safety
 
