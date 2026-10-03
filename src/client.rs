@@ -27,6 +27,8 @@ impl Client {
         let config = ureq::Agent::config_builder()
             // Error statuses carry a JSON body that `Request::decode` reads.
             .http_status_as_error(false)
+            // A redirect would carry the key to another host, so none is followed.
+            .max_redirects(0)
             .timeout_global(Some(TIMEOUT))
             .build();
         Self {
