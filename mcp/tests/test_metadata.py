@@ -29,3 +29,13 @@ def test_readme_proves_registry_ownership() -> None:
 
 def test_registry_description_fits() -> None:
     assert len(server_json()["description"]) <= 100
+
+
+def test_the_bundle_pins_this_version() -> None:
+    bundle = ROOT / "bundle"
+    if not bundle.exists():  # the bundle lives in the repository, not the sdist
+        return
+    released = version("ng-postcode-mcp")
+    manifest: dict[str, Any] = json.loads((bundle / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["version"] == released
+    assert f'"ng-postcode-mcp=={released}"' in (bundle / "pyproject.toml").read_text()

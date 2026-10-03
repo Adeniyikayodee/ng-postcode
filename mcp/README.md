@@ -67,6 +67,10 @@ Most clients take this entry in their MCP settings:
 | VS Code | The same server object in `.vscode/mcp.json`, under a top-level `"servers"` key instead of `"mcpServers"` |
 | Others | Any client that launches stdio servers: use the command, arguments and environment above |
 
+### As a bundle
+
+[`bundle/`](bundle) holds an MCPB manifest for clients that install `.mcpb` files, such as Claude Desktop. It runs the published package with uv and asks for the API key in the client's own settings. Build it with `npx @anthropic-ai/mcpb pack mcp/bundle ng-postcode.mcpb` from the repository root.
+
 ## Configuration
 
 | Variable | Default | Purpose |
