@@ -1,0 +1,8 @@
+*
+!python
+!agent
+!mcp
+**/.venv
+**/dist
+**/__pycache__
+**/.*_cache
