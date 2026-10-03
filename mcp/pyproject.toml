@@ -1,0 +1,60 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ng-postcode-mcp"
+version = "0.1.0"
+description = "MCP server for Nigeria's NIPOST digital postcode (NDAPS): validate, look up and reverse-geocode postcodes."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Kayode Adeniyi" }]
+keywords = ["mcp", "mcp-server", "model-context-protocol", "ai-agents", "nigeria", "postcode", "nipost", "ndaps", "geocoding"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Typing :: Typed",
+]
+dependencies = ["mcp>=2.3,<3", "ng-postcode[client]>=0.1,<0.2"]
+
+[project.scripts]
+ng-postcode-mcp = "ng_postcode_mcp.server:main"
+
+[project.urls]
+Repository = "https://github.com/Adeniyikayodee/ng-postcode"
+Issues = "https://github.com/Adeniyikayodee/ng-postcode/issues"
+
+[dependency-groups]
+dev = ["jsonschema>=4.20", "mypy>=1.13", "pytest>=8", "ruff>=0.8"]
+
+# Inside the repository, build against the local library so the two never drift.
+[tool.uv.sources]
+ng-postcode = { path = "../python", editable = true }
+
+[tool.hatch.build.targets.sdist]
+only-include = ["src", "tests", "README.md", "LICENSE", "server.json"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF", "PT"]
+
+[tool.mypy]
+strict = true
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
