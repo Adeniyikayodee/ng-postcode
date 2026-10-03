@@ -34,15 +34,17 @@ Text alone rarely identifies a building, so ask users for a location pin when th
 
 ## Install
 
-Requires [uv](https://docs.astral.sh/uv/). Get an API key from the [NIPOST developer dashboard](https://dashboard.postcode.gov.ng); `validate_postcode` works without one.
+Works with any MCP client. The server runs over stdio:
 
-**Claude Code**
+| Setting | Value |
+| --- | --- |
+| Command | `uvx` |
+| Arguments | `ng-postcode-mcp` |
+| Environment | `NG_POSTCODE_API_KEY` (optional for `validate_postcode`) |
 
-```sh
-claude mcp add ng-postcode -e NG_POSTCODE_API_KEY=nipost_live_... -- uvx ng-postcode-mcp
-```
+It needs [uv](https://docs.astral.sh/uv/) installed. Get an API key from the [NIPOST developer dashboard](https://dashboard.postcode.gov.ng).
 
-**Claude Desktop, Cursor and other clients** that use an `mcpServers` config:
+Most clients take this entry in their MCP settings:
 
 ```json
 {
@@ -55,6 +57,15 @@ claude mcp add ng-postcode -e NG_POSTCODE_API_KEY=nipost_live_... -- uvx ng-post
   }
 }
 ```
+
+| Client | How to add it |
+| --- | --- |
+| Claude Code | `claude mcp add ng-postcode -e NG_POSTCODE_API_KEY=nipost_live_... -- uvx ng-postcode-mcp` |
+| Claude Desktop | The entry above, in its MCP server settings |
+| Codex | `codex mcp add ng-postcode --env NG_POSTCODE_API_KEY=nipost_live_... -- uvx ng-postcode-mcp` |
+| Cursor | The entry above, in `.cursor/mcp.json` (project) or `~/.cursor/mcp.json` (global) |
+| VS Code | The same server object in `.vscode/mcp.json`, under a top-level `"servers"` key instead of `"mcpServers"` |
+| Others | Any client that launches stdio servers: use the command, arguments and environment above |
 
 ## Configuration
 

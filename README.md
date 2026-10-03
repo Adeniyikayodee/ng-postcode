@@ -22,13 +22,21 @@ Each package has its own README with full usage.
 
 ## Quick start
 
-**AI assistants.** Add the MCP server to Claude Code, or use the same command and arguments in any client with an `mcpServers` config:
+**AI assistants.** The MCP server works with any MCP client. It runs over stdio as `uvx ng-postcode-mcp`, with the API key in the environment. Most clients take this entry in their MCP settings:
 
-```sh
-claude mcp add ng-postcode -e NG_POSTCODE_API_KEY=nipost_live_... -- uvx ng-postcode-mcp
+```json
+{
+  "mcpServers": {
+    "ng-postcode": {
+      "command": "uvx",
+      "args": ["ng-postcode-mcp"],
+      "env": { "NG_POSTCODE_API_KEY": "nipost_live_..." }
+    }
+  }
+}
 ```
 
-Validation works without a key. It is listed in the MCP Registry as `io.github.Adeniyikayodee/ng-postcode`.
+Per-client steps for Cursor, VS Code, Codex, Claude and others are in the [MCP server README](mcp#install). Validation works without a key. The server is listed in the MCP Registry as `io.github.Adeniyikayodee/ng-postcode`.
 
 **Python**
 
