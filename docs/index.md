@@ -76,6 +76,16 @@ The MCP server works with any MCP client, including Claude Code, Claude Desktop,
 
 It offers `validate_postcode`, `lookup_postcode`, `autocomplete_postcode`, `find_postcode_at_location` and `resolve_address`. Validation works without a key. See the [MCP server README](https://github.com/Adeniyikayodee/ng-postcode/tree/main/mcp#install) for per-client steps and settings.
 
+## Pass a postcode between systems
+
+When one system or AI agent hands a location to another, send it as a postcode reference: the code, how precise it is, and optionally how far to trust it.
+
+```json
+{ "code": "EK-01-A03-FK", "level": "area", "confidence": "medium" }
+```
+
+`level` is one of `state`, `lga`, `district`, `area` or `building`, and `code` is the hyphenated code down to that level. Add `assigned` and `checked_at` after confirming a building code with NIPOST. The receiver can validate the reference against the [JSON Schema](schemas/postcode-reference.schema.json) and re-check the code itself. The answer from `resolve_address` already has this shape.
+
 ## The format
 
 | Segment | Example | Shape |

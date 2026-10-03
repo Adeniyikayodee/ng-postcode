@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adeniyikayodee.github.io/ng-postcode/schemas/postcode-reference.schema.json",
+  "title": "Nigerian postcode reference",
+  "description": "A Nigerian NDAPS postcode, or the prefix of one, as passed between systems. It says how precise the code is and, optionally, how far to trust it. Receivers ignore fields they do not know.",
+  "type": "object",
+  "required": ["code", "level"],
+  "properties": {
+    "code": {
+      "description": "The hyphenated upper-case code down to `level`, such as EK-01-A03-FK-01 for a building or EK-01-A03-FK for an area.",
+      "type": "string"
+    },
+    "level": {
+      "description": "The narrowest segment `code` reaches.",
+      "enum": ["state", "lga", "district", "area", "building"]
+    },
+    "confidence": {
+      "description": "How strongly the sender's evidence supports the code.",
+      "enum": ["high", "medium", "low"]
+    },
+    "assigned": {
+      "description": "Whether NIPOST reported a building code as assigned. Absent when it was not checked.",
+      "type": "boolean"
+    },
+    "checked_at": {
+      "description": "When `assigned` was read from NIPOST.",
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "level": { "const": "state" } } },
+      "then": { "properties": { "code": { "pattern": "^[A-Z]{2}$" } } }
+    },
+    {
+      "if": { "properties": { "level": { "const": "lga" } } },
+      "then": { "properties": { "code": { "pattern": "^[A-Z]{2}-(0[1-9]|[1-9][0-9])$" } } }
+    },
+    {
+      "if": { "properties": { "level": { "const": "district" } } },
+      "then": { "properties": { "code": { "pattern": "^[A-Z]{2}-(0[1-9]|[1-9][0-9])-[A-Z0-9]{3}$" } } }
+    },
+    {
+      "if": { "properties": { "level": { "const": "area" } } },
+      "then": { "properties": { "code": { "pattern": "^[A-Z]{2}-(0[1-9]|[1-9][0-9])-[A-Z0-9]{3}-[A-Z]{2}$" } } }
+    },
+    {
+      "if": { "properties": { "level": { "const": "building" } } },
+      "then": { "properties": { "code": { "pattern": "^[A-Z]{2}-(0[1-9]|[1-9][0-9])-[A-Z0-9]{3}-[A-Z]{2}-(0[1-9]|[1-9][0-9])$" } } }
+    }
+  ],
+  "examples": [
+    { "code": "EK-01-A03-FK-01", "level": "building", "confidence": "high", "assigned": true, "checked_at": "2026-10-03T12:00:00Z" },
+    { "code": "EK-01-A03-FK", "level": "area", "confidence": "medium" }
+  ]
+}

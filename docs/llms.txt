@@ -9,6 +9,8 @@ Use these when a task involves validating, parsing, formatting or looking up a N
 - Validation is offline and needs no key. Lookup, autocomplete and reverse geocoding call api.postcode.gov.ng and need a key from https://dashboard.postcode.gov.ng.
 - A well-formed code is not necessarily assigned to a building; only the API confirms that.
 
+- To pass a postcode between systems or agents, use a postcode reference: `{"code": "EK-01-A03-FK", "level": "area", "confidence": "medium"}`. Schema: https://adeniyikayodee.github.io/ng-postcode/schemas/postcode-reference.schema.json
+
 ## Packages
 
 - [ng-postcode for Python](https://pypi.org/project/ng-postcode/): `pip install ng-postcode`. `parse`, `parse_lenient`, `from_segments`, `is_valid`; add the `client` extra for sync and async API clients.
