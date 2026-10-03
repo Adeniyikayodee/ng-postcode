@@ -101,3 +101,15 @@ def test_error_envelopes_and_bad_bodies_become_values() -> None:
         error = decode(request, status, text)
         assert isinstance(error, ApiError)
         assert (error.status, error.code) == (status, "malformed_response")
+
+
+def test_rejects_requests_the_api_cannot_answer() -> None:
+    code = Postcode("EK01A03FK01")
+    for level in (0, 6):
+        with pytest.raises(ValueError, match="level must be 1 to 5"):
+            lookup(code, level)
+    for bad in (float("nan"), float("inf")):
+        with pytest.raises(ValueError, match="finite"):
+            reverse(Coordinate(lat=bad, lng=5.2))
+        with pytest.raises(ValueError, match="finite"):
+            nearby(Coordinate(lat=7.6, lng=5.2), bad)

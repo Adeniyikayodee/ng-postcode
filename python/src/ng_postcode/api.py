@@ -8,6 +8,7 @@ offline.
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any, Generic, TypeVar
@@ -135,7 +136,12 @@ class NearbyUnit:
 
 def lookup(code: Postcode, level: int = 1) -> Request[Lookup]:
     """Resolve a postcode. Levels are cumulative from 1 (validity only) to 5, and
-    the API caps the answer at the level granted to the key."""
+    the API caps the answer at the level granted to the key.
+
+    Raises `ValueError` for a level outside 1 to 5.
+    """
+    if level not in range(1, 6):
+        raise ValueError(f"level must be 1 to 5, got {level!r}")
     return Request("/v1/lookup", (("code", str(code)), ("level", str(level))), _lookup)
 
 
@@ -151,13 +157,19 @@ def autocomplete(partial: str) -> Request[Autocomplete]:
 
 def reverse(at: Coordinate, max_distance_m: float | None = None) -> Request[Reverse]:
     """Find the postcode of the nearest building, within 25 m unless `max_distance_m`
-    says otherwise. The API clamps it to 250 m."""
+    says otherwise. The API clamps it to 250 m.
+
+    Raises `ValueError` for a coordinate or distance that is not a finite number.
+    """
     return Request("/v1/search/reverse", _around(at, "max_distance_m", max_distance_m), _reverse)
 
 
 def nearby(at: Coordinate, radius_m: float | None = None) -> Request[tuple[NearbyUnit, ...]]:
     """List buildings around a point, nearest first, within 300 m unless `radius_m`
-    says otherwise. Empty when nothing is in range."""
+    says otherwise. Empty when nothing is in range.
+
+    Raises `ValueError` for a coordinate or radius that is not a finite number.
+    """
     return Request("/v1/search/nearby", _around(at, "radius", radius_m), _nearby)
 
 
@@ -169,10 +181,14 @@ def decode(request: Request[T], status: int, body: str) -> T | ApiError:
         return _malformed(status, f"not JSON: {error}")
     if not isinstance(envelope, dict):
         return _malformed(status, "expected a JSON object")
-    failure = _object(envelope, "error")
-    if failure is not None:
+    failure = envelope.get("error")
+    if isinstance(failure, dict):
         code = _text(failure, "code") or "unknown_error"
         return ApiError(status, code, _text(failure, "message") or "")
+    if isinstance(failure, str):
+        return ApiError(status, "unknown_error", failure)
+    if not 200 <= status < 300:
+        return _malformed(status, "an error status without an error")
     data = request.read(envelope.get("data"))
     return data if data is not None else _malformed(status, "unexpected data")
 
@@ -184,6 +200,8 @@ def _around(at: Coordinate, key: str, metres: float | None) -> Params:
 
 def _number_text(value: float) -> str:
     number = float(value)
+    if not math.isfinite(number):
+        raise ValueError(f"expected a finite number, got {value!r}")
     return str(int(number)) if number.is_integer() else repr(number)
 
 
