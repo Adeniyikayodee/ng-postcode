@@ -2,8 +2,9 @@
 
     cd mcp && uv run --group dev python ../scripts/smithery_bundle.py ng-postcode-smithery.mcpb
 
-Smithery needs `inputSchema` on every tool, which the MCPB manifest schema does not
-allow, so the schemas are read from the running server and added only to this copy.
+Smithery reads full tool definitions (input and output schemas, titles, annotations),
+which the MCPB manifest schema does not allow, so they are read from the running
+server and added only to this copy.
 """
 
 from __future__ import annotations
@@ -21,18 +22,16 @@ from ng_postcode_mcp import Settings, create_server
 BUNDLE = Path(__file__).resolve().parents[1] / "mcp" / "bundle-python"
 
 
-async def input_schemas() -> dict[str, object]:
+async def tool_definitions() -> list[dict[str, object]]:
     async with Client(create_server(Settings(api_key=None))) as client:
-        return {tool.name: tool.input_schema for tool in (await client.list_tools()).tools}
+        tools = (await client.list_tools()).tools
+    return [tool.model_dump(mode="json", by_alias=True, exclude_none=True) for tool in tools]
 
 
 def main() -> None:
     target = Path(sys.argv[1])
-    schemas = asyncio.run(input_schemas())
     manifest = json.loads((BUNDLE / "manifest.json").read_text(encoding="utf-8"))
-    manifest["tools"] = [
-        tool | {"inputSchema": schemas[tool["name"]]} for tool in manifest["tools"]
-    ]
+    manifest["tools"] = asyncio.run(tool_definitions())
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("manifest.json", json.dumps(manifest, indent=2))
         archive.write(BUNDLE / "server" / "main.py", "server/main.py")
