@@ -1,0 +1,56 @@
+{
+  "name": "ng-postcode-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Nigeria's NIPOST digital postcode (NDAPS): validate, look up, autocomplete and find postcodes by location.",
+  "mcpName": "io.github.Adeniyikayodee/ng-postcode",
+  "license": "MIT",
+  "author": "Kayode Adeniyi",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adeniyikayodee/ng-postcode.git",
+    "directory": "js/packages/ng-postcode-mcp"
+  },
+  "homepage": "https://adeniyikayodee.github.io/ng-postcode/",
+  "bugs": "https://github.com/Adeniyikayodee/ng-postcode/issues",
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "ai-agents",
+    "nigeria",
+    "postcode",
+    "nipost",
+    "ndaps",
+    "geocoding"
+  ],
+  "type": "module",
+  "bin": {
+    "ng-postcode-mcp": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.3.0",
+    "ng-postcode-js": "^0.1.0"
+  },
+  "engines": {
+    "node": ">=20.10"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "^2.3.0"
+  }
+}
