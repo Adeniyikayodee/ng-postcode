@@ -208,9 +208,10 @@ impl std::error::Error for InvalidRequest {}
 
 /// Fields above the level granted to the key are `None`.
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
-#[serde(default)]
 pub struct Lookup {
+    #[serde(default)]
     pub postcode: String,
+    /// Required: a body without it is malformed, not an unassigned code.
     pub valid: bool,
     /// Level 2.
     pub administrative_address: Option<AdministrativeAddress>,
@@ -263,8 +264,8 @@ pub struct Suggestion {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
-#[serde(default)]
 pub struct Reverse {
+    /// Required: a body without it is malformed, not an empty search.
     pub found: bool,
     /// The queried point, echoed back as `[lng, lat]`.
     pub coordinate: Option<[f64; 2]>,

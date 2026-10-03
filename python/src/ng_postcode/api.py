@@ -243,13 +243,13 @@ def _nearby(data: Any) -> tuple[NearbyUnit, ...] | None:
 
 
 def _lookup(data: Any) -> Lookup | None:
-    if not isinstance(data, dict):
+    if not isinstance(data, dict) or not isinstance(data.get("valid"), bool):
         return None
     admin = _object(data, "administrative_address")
     recent = _object(data, "recent_house_address")
     return Lookup(
         postcode=_text(data, "postcode") or "",
-        valid=data.get("valid") is True,
+        valid=data["valid"],
         administrative_address=None
         if admin is None
         else AdministrativeAddress(
@@ -281,11 +281,11 @@ def _autocomplete(data: Any) -> Autocomplete | None:
 
 
 def _reverse(data: Any) -> Reverse | None:
-    if not isinstance(data, dict):
+    if not isinstance(data, dict) or not isinstance(data.get("found"), bool):
         return None
     unit = _object(data, "unit")
     return Reverse(
-        found=data.get("found") is True,
+        found=data["found"],
         coordinate=_coordinate(data.get("coordinate")),
         unit=None
         if unit is None
