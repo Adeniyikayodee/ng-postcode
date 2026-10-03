@@ -58,6 +58,16 @@ jobs:
       - run: uv run --group dev mypy
       - run: uv run --group dev pytest
 
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: docker build -t ng-postcode-mcp .
+      - name: Answers an initialize request over stdio
+        run: |
+          request='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"0"}}}'
+          echo "$request" | docker run --rm -i ng-postcode-mcp | grep -q '"ng-postcode"'
+
   agent:
     runs-on: ubuntu-latest
     strategy:
