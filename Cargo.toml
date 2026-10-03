@@ -9,6 +9,8 @@ documentation = "https://docs.rs/ng-postcode"
 keywords = ["nigeria", "postcode", "nipost", "address", "geocoding"]
 categories = ["parser-implementations", "api-bindings", "science::geo", "value-formatting"]
 readme = "README.md"
+# The repository also holds the Python package and the shared spec.
+include = ["/src", "/examples", "/README.md", "/LICENSE"]
 
 [features]
 serde = ["dep:serde"]

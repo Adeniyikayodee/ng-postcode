@@ -1,0 +1,70 @@
+{
+  "about": "Conformance cases every ng-postcode implementation must pass. Errors: length {found}, invalid_character {char, index}, segment {segment}.",
+  "parse": {
+    "valid": [
+      { "input": "EK-01-A03-FK-01", "canonical": "EK-01-A03-FK-01", "compact": "EK01A03FK01", "spaced": "EK 01 A03 FK 01" },
+      { "input": "EK 01 A03 FK 01", "canonical": "EK-01-A03-FK-01", "compact": "EK01A03FK01", "spaced": "EK 01 A03 FK 01" },
+      { "input": "ek01a03fk01", "canonical": "EK-01-A03-FK-01", "compact": "EK01A03FK01", "spaced": "EK 01 A03 FK 01" },
+      { "input": " ek-01 a03fk 01 ", "canonical": "EK-01-A03-FK-01", "compact": "EK01A03FK01", "spaced": "EK 01 A03 FK 01" },
+      { "input": "AK-11-I61-ZF-12", "canonical": "AK-11-I61-ZF-12", "compact": "AK11I61ZF12", "spaced": "AK 11 I61 ZF 12" },
+      { "input": "AK-11-H40-WD-11", "canonical": "AK-11-H40-WD-11", "compact": "AK11H40WD11", "spaced": "AK 11 H40 WD 11" },
+      { "input": "BA-02-M67-BL-69", "canonical": "BA-02-M67-BL-69", "compact": "BA02M67BL69", "spaced": "BA 02 M67 BL 69" },
+      { "input": "BA-02-E99-NE-30", "canonical": "BA-02-E99-NE-30", "compact": "BA02E99NE30", "spaced": "BA 02 E99 NE 30" },
+      { "input": "EB-13-G95-FR-90", "canonical": "EB-13-G95-FR-90", "compact": "EB13G95FR90", "spaced": "EB 13 G95 FR 90" },
+      { "input": "EB-13-I97-AB-30", "canonical": "EB-13-I97-AB-30", "compact": "EB13I97AB30", "spaced": "EB 13 I97 AB 30" },
+      { "input": "EN-05-V19-CD-22", "canonical": "EN-05-V19-CD-22", "compact": "EN05V19CD22", "spaced": "EN 05 V19 CD 22" },
+      { "input": "EN-05-V19-FT-20", "canonical": "EN-05-V19-FT-20", "compact": "EN05V19FT20", "spaced": "EN 05 V19 FT 20" },
+      { "input": "FC-03-B06-AG-12", "canonical": "FC-03-B06-AG-12", "compact": "FC03B06AG12", "spaced": "FC 03 B06 AG 12" },
+      { "input": "FC-02-B19-RT-30", "canonical": "FC-02-B19-RT-30", "compact": "FC02B19RT30", "spaced": "FC 02 B19 RT 30" },
+      { "input": "JI-24-O18-JP-23", "canonical": "JI-24-O18-JP-23", "compact": "JI24O18JP23", "spaced": "JI 24 O18 JP 23" },
+      { "input": "JI-24-N11-VM-58", "canonical": "JI-24-N11-VM-58", "compact": "JI24N11VM58", "spaced": "JI 24 N11 VM 58" },
+      { "input": "KN-31-F82-WJ-80", "canonical": "KN-31-F82-WJ-80", "compact": "KN31F82WJ80", "spaced": "KN 31 F82 WJ 80" },
+      { "input": "KN-31-D78-IQ-38", "canonical": "KN-31-D78-IQ-38", "compact": "KN31D78IQ38", "spaced": "KN 31 D78 IQ 38" },
+      { "input": "LA-11-W06-TC-10", "canonical": "LA-11-W06-TC-10", "compact": "LA11W06TC10", "spaced": "LA 11 W06 TC 10" },
+      { "input": "LA-11-U34-ZR-63", "canonical": "LA-11-U34-ZR-63", "compact": "LA11U34ZR63", "spaced": "LA 11 U34 ZR 63" },
+      { "input": "NI-09-J67-QC-65", "canonical": "NI-09-J67-QC-65", "compact": "NI09J67QC65", "spaced": "NI 09 J67 QC 65" },
+      { "input": "NI-09-A75-DA-10", "canonical": "NI-09-A75-DA-10", "compact": "NI09A75DA10", "spaced": "NI 09 A75 DA 10" },
+      { "input": "OG-14-T18-BN-16", "canonical": "OG-14-T18-BN-16", "compact": "OG14T18BN16", "spaced": "OG 14 T18 BN 16" },
+      { "input": "OG-14-M82-QA-09", "canonical": "OG-14-M82-QA-09", "compact": "OG14M82QA09", "spaced": "OG 14 M82 QA 09" }
+    ],
+    "invalid": [
+      { "input": "", "error": { "kind": "length", "found": 0 } },
+      { "input": "EK-01-A03-FK", "error": { "kind": "length", "found": 9 } },
+      { "input": "EK-01-A03-FK-011", "error": { "kind": "length", "found": 12 } },
+      { "input": "EK_01-A03-FK-01", "error": { "kind": "invalid_character", "char": "_", "index": 2 } },
+      { "input": "ÉK-01-A03-FK-01", "error": { "kind": "invalid_character", "char": "É", "index": 0 } },
+      { "input": "EK-01-A03-FK-0١", "error": { "kind": "invalid_character", "char": "١", "index": 14 } },
+      { "input": "E1-01-A03-FK-01", "error": { "kind": "segment", "segment": "state" } },
+      { "input": "EK-0A-A03-FK-01", "error": { "kind": "segment", "segment": "lga" } },
+      { "input": "EK-00-A03-FK-01", "error": { "kind": "segment", "segment": "lga" } },
+      { "input": "EK-01-A03-F7-01", "error": { "kind": "segment", "segment": "area" } },
+      { "input": "EK-01-A03-FK-00", "error": { "kind": "segment", "segment": "unit" } }
+    ]
+  },
+  "parse_lenient": [
+    { "input": "EK-O1-A03-FK-0I", "canonical": "EK-01-A03-FK-01", "corrections": 2 },
+    { "input": "0G-14-T18-8N-l6", "canonical": "OG-14-T18-BN-16", "corrections": 3 },
+    { "input": "5E-1S-A03-FK-01", "canonical": "SE-15-A03-FK-01", "corrections": 2 },
+    { "input": "JI-24-O18-JP-23", "canonical": "JI-24-O18-JP-23", "corrections": 0 },
+    { "input": "EK-0X-A03-FK-01", "error": { "kind": "segment", "segment": "lga" } },
+    { "input": "EK-OO-A03-FK-01", "error": { "kind": "segment", "segment": "lga" } },
+    { "input": "EK-01-A03", "error": { "kind": "length", "found": 7 } }
+  ],
+  "from_segments": [
+    { "segments": ["ek", " 1", "a03", "fk", "1"], "canonical": "EK-01-A03-FK-01" },
+    { "segments": ["LA", "11", "W06", "TC", "10"], "canonical": "LA-11-W06-TC-10" },
+    { "segments": ["E", "1", "A03", "FK", "1"], "error": { "kind": "segment", "segment": "state" } },
+    { "segments": ["EK", "001", "A03", "FK", "1"], "error": { "kind": "segment", "segment": "lga" } },
+    { "segments": ["EK", "1", "A3", "FK", "1"], "error": { "kind": "segment", "segment": "district" } },
+    { "segments": ["EK", "1", "A03", "F-", "1"], "error": { "kind": "segment", "segment": "area" } },
+    { "segments": ["EK", "1", "A03", "FK", ""], "error": { "kind": "segment", "segment": "unit" } },
+    { "segments": ["EK", "1", "A03", "FK", "00"], "error": { "kind": "segment", "segment": "unit" } }
+  ],
+  "prefix": [
+    { "input": "LA-11-W06-TC-10", "through": "state", "prefix": "LA" },
+    { "input": "LA-11-W06-TC-10", "through": "lga", "prefix": "LA-11" },
+    { "input": "LA-11-W06-TC-10", "through": "district", "prefix": "LA-11-W06" },
+    { "input": "LA-11-W06-TC-10", "through": "area", "prefix": "LA-11-W06-TC" },
+    { "input": "LA-11-W06-TC-10", "through": "unit", "prefix": "LA-11-W06-TC-10" }
+  ]
+}
