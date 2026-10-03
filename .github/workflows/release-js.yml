@@ -33,4 +33,7 @@ jobs:
       - run: npm run build
       - run: npm run check
       - run: npm test
-      - run: npm publish --workspace ng-postcode-js --provenance --access public
+      - name: Publish, unless npm already has this version
+        run: |
+          version="$(node -p "require('./packages/ng-postcode-js/package.json').version")"
+          npm view "ng-postcode-js@$version" version || npm publish --workspace ng-postcode-js --provenance --access public
