@@ -1,0 +1,53 @@
+{
+  "name": "ng-postcode-js",
+  "version": "0.1.0",
+  "description": "Parse, validate and format Nigeria's NIPOST digital postcode (NDAPS) offline, plus a client for the postcode.gov.ng API.",
+  "license": "MIT",
+  "author": "Kayode Adeniyi",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adeniyikayodee/ng-postcode.git",
+    "directory": "js/packages/ng-postcode-js"
+  },
+  "homepage": "https://adeniyikayodee.github.io/ng-postcode/",
+  "bugs": "https://github.com/Adeniyikayodee/ng-postcode/issues",
+  "keywords": [
+    "nigeria",
+    "postcode",
+    "nipost",
+    "ndaps",
+    "address",
+    "address-validation",
+    "geocoding",
+    "postal-code"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./api": {
+      "types": "./dist/api.d.ts",
+      "default": "./dist/api.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepack": "npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
