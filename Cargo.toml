@@ -1,12 +1,13 @@
 [package]
 name = "ng-postcode"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
-description = "Nigeria's National Digital Alphanumeric Postcode: offline parsing and validation, plus an API client. Unofficial."
+description = "Nigeria's NIPOST digital postcode (NDAPS): parse, validate and format codes offline, plus a client for the postcode.gov.ng API. Unofficial."
 license = "MIT"
 repository = "https://github.com/Adeniyikayodee/ng-postcode"
-keywords = ["nigeria", "postcode", "address", "validation"]
-categories = ["parser-implementations", "api-bindings"]
+documentation = "https://docs.rs/ng-postcode"
+keywords = ["nigeria", "postcode", "nipost", "address", "geocoding"]
+categories = ["parser-implementations", "api-bindings", "science::geo", "value-formatting"]
 readme = "README.md"
 
 [features]

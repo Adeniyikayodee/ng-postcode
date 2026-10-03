@@ -1,8 +1,23 @@
 # ng-postcode
 
-Nigeria's National Digital Alphanumeric Postcode in Rust: offline parsing and validation, plus a client for the NIPOST API.
+[![crates.io](https://img.shields.io/crates/v/ng-postcode.svg)](https://crates.io/crates/ng-postcode)
+[![docs.rs](https://docs.rs/ng-postcode/badge.svg)](https://docs.rs/ng-postcode)
+
+Rust library for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026. Parse, validate and format postcodes offline, and call the [postcode.gov.ng](https://docs.postcode.gov.ng) API for lookup, autocomplete and reverse geocoding.
 
 **Unofficial.** Not made or endorsed by NIPOST.
+
+## Format
+
+An 11-character code in five segments: state, LGA, district, area, building unit.
+
+| Style | Example |
+| --- | --- |
+| Canonical | `EK-01-A03-FK-01` |
+| Display | `EK 01 A03 FK 01` |
+| Compact | `EK01A03FK01` |
+
+Compact form as a regular expression: `^[A-Z]{2}(0[1-9]|[1-9][0-9])[A-Z0-9]{3}[A-Z]{2}(0[1-9]|[1-9][0-9])$`
 
 ## Offline
 

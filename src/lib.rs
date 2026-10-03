@@ -1,4 +1,5 @@
-//! Nigeria's National Digital Alphanumeric Postcode.
+//! Nigeria's National Digital Alphanumeric Postcode (NDAPS), the
+//! building-level postcode issued by NIPOST.
 //!
 //! Unofficial: not made or endorsed by NIPOST.
 //!
