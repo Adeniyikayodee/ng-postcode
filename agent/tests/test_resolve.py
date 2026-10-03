@@ -192,6 +192,24 @@ async def test_an_unassigned_typed_code_falls_back_to_the_pin() -> None:
     assert result.evidence[1] == "NIPOST says it is not assigned."
 
 
+@pytest.mark.anyio
+async def test_a_spaced_code_counts_only_when_nipost_confirms_it() -> None:
+    text = "No 12 Oba St 45, Ikeja"
+    for client in (nipost(valid=False), None):
+        geocode = FakeGeocoder({text: "street"})
+        result = await Resolver(nipost=client, geocoder=geocode).resolve(text)
+        assert geocode.searched == [text]
+        assert result.method == "geocoded"
+        assert result.evidence[0] == "'NO 12 OBA ST 45' in the address may be a postcode."
+
+    confirmed = await Resolver(nipost=nipost()).resolve("my code is ek 01 a03 fk 01")
+    assert (confirmed.status, confirmed.method, confirmed.confidence) == (
+        "resolved",
+        "typed",
+        "high",
+    )
+
+
 @pytest.mark.parametrize("pin", [["--lat", "nan", "--lng", "5"], ["--lat", "7", "--lng", "500"]])
 def test_the_cli_rejects_a_pin_off_the_map(pin: list[str]) -> None:
     from ng_address.cli import main
