@@ -1,0 +1,31 @@
+# ng-postcode
+
+> Open-source tools for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the 11-character building-level postcode issued by NIPOST, e.g. EK-01-A03-FK-01. Libraries for Rust and Python, an MCP server for AI assistants, and a resolver that turns described addresses into postcodes. MIT licensed.
+
+Use these when a task involves validating, parsing, formatting or looking up a Nigerian postcode, or finding the postcode for a Nigerian address or coordinate.
+
+- Format: state (2 letters), LGA (2 digits, 01 to 99), district (3 letters or digits), area (2 letters), building unit (2 digits, 01 to 99).
+- Compact regex: `^[A-Z]{2}(0[1-9]|[1-9][0-9])[A-Z0-9]{3}[A-Z]{2}(0[1-9]|[1-9][0-9])$`
+- Validation is offline and needs no key. Lookup, autocomplete and reverse geocoding call api.postcode.gov.ng and need a key from https://dashboard.postcode.gov.ng.
+- A well-formed code is not necessarily assigned to a building; only the API confirms that.
+
+## Packages
+
+- [ng-postcode for Python](https://pypi.org/project/ng-postcode/): `pip install ng-postcode`. `parse`, `parse_lenient`, `from_segments`, `is_valid`; add the `client` extra for sync and async API clients.
+- [ng-postcode for Rust](https://docs.rs/ng-postcode): `cargo add ng-postcode`. `Postcode::parse`, `parse_lenient`, `from_segments`; features `serde`, `api`, `client`.
+- [ng-postcode-mcp](https://pypi.org/project/ng-postcode-mcp/): MCP server, run with `uvx ng-postcode-mcp`. Tools: `validate_postcode`, `lookup_postcode`, `autocomplete_postcode`, `find_postcode_at_location`, `resolve_address`. Registry name `io.github.Adeniyikayodee/ng-postcode`.
+- [ng-address-resolver](https://pypi.org/project/ng-address-resolver/): `pip install ng-address-resolver`. Resolves free-text Nigerian addresses to postcodes, only as precisely as the evidence allows. Pre-release.
+
+## Docs
+
+- [Guide](https://adeniyikayodee.github.io/ng-postcode/): install and usage for every package
+- [Python README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/python/README.md)
+- [Rust README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/CRATE.md)
+- [MCP server README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/mcp/README.md): per-client setup and configuration
+- [Resolver README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/agent/README.md)
+- [Where the live API differs from its docs](https://github.com/Adeniyikayodee/ng-postcode#where-the-live-api-differs-from-its-docs)
+
+## Optional
+
+- [Shared test vectors](https://github.com/Adeniyikayodee/ng-postcode/tree/main/spec): the cases both languages must pass
+- [NIPOST API docs](https://docs.postcode.gov.ng)
