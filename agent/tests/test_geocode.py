@@ -63,6 +63,21 @@ async def test_identifies_itself_limits_to_nigeria_and_caches() -> None:
 
 
 @pytest.mark.anyio
+async def test_the_cache_is_bounded(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("ng_address.geocode.CACHE_SIZE", 1)
+    seen: list[httpx.Request] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, json=NTA_ROAD)
+
+    geocoder = nominatim(handle)
+    for query in ("a", "b", "b", "a"):
+        await geocoder(query)
+    assert [r.url.params["q"] for r in seen] == ["a", "b", "a"]
+
+
+@pytest.mark.anyio
 async def test_spaces_requests_apart() -> None:
     geocoder = nominatim(lambda request: httpx.Response(200, json=[]), interval=0.2)
     start = time.monotonic()

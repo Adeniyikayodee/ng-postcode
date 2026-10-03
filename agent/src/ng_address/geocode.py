@@ -19,6 +19,7 @@ from .core import precision_of
 from .models import Geocoded
 
 PUBLIC_NOMINATIM = "https://nominatim.openstreetmap.org"
+CACHE_SIZE = 1024
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,7 +28,7 @@ class GeocodeFailure:
 
 
 class Nominatim:
-    """Caches every answer and spaces requests at least `min_interval_s` apart."""
+    """Caches the last `CACHE_SIZE` answers and spaces requests at least `min_interval_s` apart."""
 
     def __init__(
         self,
@@ -66,6 +67,8 @@ class Nominatim:
             place = first_place(query, response.json())
         except ValueError:
             return GeocodeFailure("geocoder answered with something other than JSON")
+        if len(self._cache) >= CACHE_SIZE:
+            del self._cache[next(iter(self._cache))]
         self._cache[key] = place
         return place
 
