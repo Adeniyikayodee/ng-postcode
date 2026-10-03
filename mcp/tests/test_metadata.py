@@ -39,3 +39,13 @@ def test_the_bundle_pins_this_version() -> None:
     manifest: dict[str, Any] = json.loads((bundle / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["version"] == released
     assert f'"ng-postcode-mcp=={released}"' in (bundle / "pyproject.toml").read_text()
+
+
+def test_the_python_bundle_pins_this_version() -> None:
+    bundle = ROOT / "bundle-python"
+    if not bundle.exists():  # the bundle lives in the repository, not the sdist
+        return
+    released = version("ng-postcode-mcp")
+    manifest: dict[str, Any] = json.loads((bundle / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["version"] == released
+    assert f'"ng-postcode-mcp=={released}"' in (bundle / "server" / "main.py").read_text()
