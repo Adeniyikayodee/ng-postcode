@@ -2,7 +2,7 @@
 
 MCP server for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026. It lets AI assistants validate postcodes offline, look them up, autocomplete them and find them by location through the [postcode.gov.ng](https://docs.postcode.gov.ng) API, and resolve described addresses to postcodes.
 
-Built on the [`ng-postcode`](https://pypi.org/project/ng-postcode/) and [`ng-address-resolver`](https://pypi.org/project/ng-address-resolver/) libraries.
+Built on the [`ng-postcode`](https://pypi.org/project/ng-postcode/) and [`ng-address-resolver`](https://pypi.org/project/ng-address-resolver/) libraries. A Node edition with the same tools, apart from `resolve_address`, is on npm as [`ng-postcode-mcp`](https://www.npmjs.com/package/ng-postcode-mcp) and runs with `npx`.
 
 <!-- mcp-name: io.github.Adeniyikayodee/ng-postcode -->
 
