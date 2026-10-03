@@ -30,7 +30,9 @@ def main() -> None:
     target = Path(sys.argv[1])
     schemas = asyncio.run(input_schemas())
     manifest = json.loads((BUNDLE / "manifest.json").read_text(encoding="utf-8"))
-    manifest["tools"] = [tool | {"inputSchema": schemas[tool["name"]]} for tool in manifest["tools"]]
+    manifest["tools"] = [
+        tool | {"inputSchema": schemas[tool["name"]]} for tool in manifest["tools"]
+    ]
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("manifest.json", json.dumps(manifest, indent=2))
         archive.write(BUNDLE / "server" / "main.py", "server/main.py")
