@@ -1,6 +1,6 @@
 [package]
 name = "ng-postcode"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 description = "Parse, validate and format Nigeria's NIPOST digital postcode (NDAPS) offline, plus a client for the postcode.gov.ng API."
 license = "MIT"
