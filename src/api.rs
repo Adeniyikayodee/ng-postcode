@@ -8,7 +8,7 @@ use std::fmt;
 use std::marker::PhantomData;
 
 use serde::de::DeserializeOwned;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 
 use crate::{Postcode, Segment};
 
@@ -69,17 +69,21 @@ impl<T> Request<T> {
 impl<T: DeserializeOwned> Request<T> {
     /// Decodes the response to this request from its status and body.
     pub fn decode(&self, status: u16, body: &str) -> Result<T, ApiError> {
+        let malformed = |reason| ApiError::Malformed { status, reason };
         match serde_json::from_str(body) {
-            Ok(Envelope::Data(data)) => Ok(data),
-            Ok(Envelope::Error(Failure { code, message })) => Err(ApiError::Rejected {
+            Ok(Envelope {
+                error: Some(Failure { code, message }),
+                ..
+            }) => Err(ApiError::Rejected {
                 status,
-                code,
-                message,
+                code: code.unwrap_or_else(|| "unknown_error".to_owned()),
+                message: message.unwrap_or_default(),
             }),
-            Err(error) => Err(ApiError::Malformed {
-                status,
-                reason: error.to_string(),
-            }),
+            Ok(Envelope {
+                data: Some(data), ..
+            }) => Ok(data),
+            Ok(_) => Err(malformed("neither data nor error".to_owned())),
+            Err(error) => Err(malformed(error.to_string())),
         }
     }
 }
@@ -90,17 +94,30 @@ impl Coordinate {
     }
 }
 
+/// Keys beside `data` and `error` are ignored, so the API can add to the envelope.
 #[derive(Deserialize)]
-#[serde(rename_all = "lowercase")]
-enum Envelope<T> {
-    Data(T),
-    Error(Failure),
+struct Envelope<T> {
+    data: Option<T>,
+    error: Option<Failure>,
 }
 
 #[derive(Deserialize)]
 struct Failure {
-    code: String,
-    message: String,
+    code: Option<String>,
+    message: Option<String>,
+}
+
+/// Reads `null` like a missing key.
+fn or_default<'de, D: Deserializer<'de>, T: Deserialize<'de> + Default>(
+    deserializer: D,
+) -> Result<T, D::Error> {
+    Option::deserialize(deserializer).map(Option::unwrap_or_default)
+}
+
+/// A segment name this version does not know is `None`, not a failed response.
+fn known_segment<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<Segment>, D::Error> {
+    let name = Option::<String>::deserialize(deserializer)?;
+    Ok(name.and_then(|name| Segment::deserialize(serde_json::Value::String(name)).ok()))
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -173,7 +190,9 @@ pub struct RecentHouseAddress {
 #[serde(default)]
 pub struct Autocomplete {
     /// The segment the suggestions complete.
+    #[serde(deserialize_with = "known_segment")]
     pub segment: Option<Segment>,
+    #[serde(deserialize_with = "or_default")]
     pub suggestions: Vec<Suggestion>,
 }
 
@@ -181,6 +200,7 @@ pub struct Autocomplete {
 #[serde(default)]
 pub struct Suggestion {
     /// The value of the segment being completed, such as `A03`, not a full prefix.
+    #[serde(deserialize_with = "or_default")]
     pub code: String,
     /// Documented by NIPOST but not sent by the live API as of October 2026.
     pub label: Option<String>,
@@ -208,7 +228,9 @@ pub struct Reverse {
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 #[serde(default)]
 pub struct NearbyUnit {
+    #[serde(deserialize_with = "or_default")]
     pub postcode: String,
+    #[serde(deserialize_with = "or_default")]
     pub display: String,
     pub distance_m: f64,
 }
@@ -216,7 +238,9 @@ pub struct NearbyUnit {
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 #[serde(default)]
 pub struct NearestUnit {
+    #[serde(deserialize_with = "or_default")]
     pub postcode: String,
+    #[serde(deserialize_with = "or_default")]
     pub display: String,
     pub distance_m: f64,
     /// `high`, `medium` or `low`, graded by distance.
@@ -331,5 +355,31 @@ mod tests {
             malformed,
             Err(ApiError::Malformed { status: 502, .. })
         ));
+        let empty = request.decode(200, r#"{"data":null}"#);
+        assert!(matches!(empty, Err(ApiError::Malformed { .. })));
+    }
+
+    #[test]
+    fn tolerates_what_the_api_may_add_or_leave_out() {
+        let request = lookup("EK-01-A03-FK-01".parse().unwrap(), 1);
+        let body =
+            r#"{"data":{"postcode":"EK-01-A03-FK-01","valid":true},"meta":{"request_id":"r1"}}"#;
+        assert!(request.decode(200, body).unwrap().valid);
+
+        let body = r#"{"error":{"code":"rate_limited"},"request_id":"r1"}"#;
+        let expected = ApiError::Rejected {
+            status: 429,
+            code: "rate_limited".to_owned(),
+            message: String::new(),
+        };
+        assert_eq!(request.decode(429, body), Err(expected));
+
+        let body = r#"{"data":{"segment":"street","suggestions":null}}"#;
+        let found = autocomplete("EK").decode(200, body).unwrap();
+        assert_eq!((found.segment, found.suggestions.len()), (None, 0));
+
+        let body = r#"{"data":[{"postcode":null,"distance_m":3}]}"#;
+        let units = nearby(HERE, None).decode(200, body).unwrap();
+        assert_eq!((units[0].postcode.as_str(), units[0].distance_m), ("", 3.0));
     }
 }
