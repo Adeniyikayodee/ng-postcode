@@ -28,6 +28,7 @@ from ng_postcode.api import (
     Autocomplete,
     Coordinate,
     Lookup,
+    NearbyUnit,
     NearestUnit,
     Request,
     Reverse,
@@ -114,7 +115,7 @@ def main() -> None:
             check(http, "autocomplete 'EK'", autocomplete("EK"), Autocomplete),
             check(http, "autocomplete 'EK 01 A'", autocomplete("EK 01 A"), Autocomplete),
             check(http, "reverse, central Ado Ekiti, 250 m", reverse(ADO_EKITI, 250), Reverse),
-            check(http, "nearby, central Ado Ekiti (response undocumented)", nearby(ADO_EKITI, 300), None),
+            check(http, "nearby, central Ado Ekiti", nearby(ADO_EKITI, 300), NearbyUnit),
         ]
         if "--paid" in sys.argv:
             results.append(

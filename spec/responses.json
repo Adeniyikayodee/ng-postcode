@@ -1,0 +1,51 @@
+{
+  "about": "Response bodies captured from api.postcode.gov.ng on 3 October 2026 with a level 1 test key. Every implementation must decode them.",
+  "lookup_valid": {
+    "status": 200,
+    "body": {"data": {"postcode": "FC-03-B06-AG-12", "valid": true, "status": "valid", "verified": false}}
+  },
+  "lookup_not_found": {
+    "status": 200,
+    "body": {"data": {"postcode": "EK-01-A03-FK-01", "valid": false, "status": "not_found", "verified": false}}
+  },
+  "lookup_invalid": {
+    "status": 200,
+    "body": {"data": {"postcode": "XYZ", "valid": false, "status": "invalid", "verified": false}}
+  },
+  "lookup_level_not_granted": {
+    "status": 403,
+    "body": {"error": {"code": "level_not_granted", "message": "this key is granted up to lookup level 1"}}
+  },
+  "autocomplete_state": {
+    "status": 200,
+    "body": {"data": {"segment": "state", "suggestions": [{"code": "EB"}, {"code": "ED"}, {"code": "EK"}, {"code": "EN"}]}}
+  },
+  "autocomplete_unit_empty": {
+    "status": 200,
+    "body": {"data": {"segment": "unit", "suggestions": []}}
+  },
+  "reverse_found": {
+    "status": 200,
+    "body": {"data": {"found": true, "coordinate": [5.2214, 7.6211], "unit": {"postcode": "EK-01-A29-KR-36", "display": "EK 01 A29 KR 36", "distance_m": 15.7, "confidence": "high"}, "area": "EK-01-A29-KR", "district": "EK-01-A29", "state": "EK", "depth": "unit", "radius_m": 25}}
+  },
+  "reverse_not_found": {
+    "status": 200,
+    "body": {"data": {"found": false, "coordinate": [3, 3], "message": "no postcode within range of this location", "radius_m": 250}}
+  },
+  "reverse_bad_request": {
+    "status": 400,
+    "body": {"error": {"code": "bad_request", "message": "lng and lat are required floats"}}
+  },
+  "nearby_found": {
+    "status": 200,
+    "body": {"data": [{"postcode": "EK-01-A29-KR-36", "display": "EK 01 A29 KR 36", "distance_m": 15.7}, {"postcode": "EK-01-A29-KP-18", "display": "EK 01 A29 KP 18", "distance_m": 18.3}, {"postcode": "EK-01-A29-KP-17", "display": "EK 01 A29 KP 17", "distance_m": 31}]}
+  },
+  "nearby_empty": {
+    "status": 200,
+    "body": {"data": []}
+  },
+  "invalid_api_key": {
+    "status": 401,
+    "body": {"error": {"code": "invalid_api_key", "message": "the provided API key is invalid or revoked"}}
+  }
+}
