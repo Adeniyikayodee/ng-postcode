@@ -1,0 +1,17 @@
+{
+  "about": "What each request sends, or null when it must be refused before anything is sent. Every implementation must agree. Numbers that JSON cannot hold are written as text.",
+  "cases": [
+    { "name": "lookup", "request": "lookup", "args": {"code": "EK01A03FK01", "level": 3}, "sends": {"path": "/v1/lookup", "query": [["code", "EK-01-A03-FK-01"], ["level", "3"]]} },
+    { "name": "lookup_level_too_low", "request": "lookup", "args": {"code": "EK01A03FK01", "level": 0}, "sends": null },
+    { "name": "lookup_level_too_high", "request": "lookup", "args": {"code": "EK01A03FK01", "level": 6}, "sends": null },
+    { "name": "autocomplete", "request": "autocomplete", "args": {"q": "EK 01 A"}, "sends": {"path": "/v1/search/autocomplete", "query": [["q", "EK 01 A"]]} },
+    { "name": "autocomplete_empty", "request": "autocomplete", "args": {"q": ""}, "sends": null },
+    { "name": "autocomplete_blank", "request": "autocomplete", "args": {"q": "  "}, "sends": null },
+    { "name": "reverse", "request": "reverse", "args": {"lat": 7.6211, "lng": 5.2214}, "sends": {"path": "/v1/search/reverse", "query": [["lat", "7.6211"], ["lng", "5.2214"]]} },
+    { "name": "reverse_within", "request": "reverse", "args": {"lat": 7.6211, "lng": 5.2214, "metres": 100}, "sends": {"path": "/v1/search/reverse", "query": [["lat", "7.6211"], ["lng", "5.2214"], ["max_distance_m", "100"]]} },
+    { "name": "nearby_within", "request": "nearby", "args": {"lat": 7.6211, "lng": 5.2214, "metres": 62.5}, "sends": {"path": "/v1/search/nearby", "query": [["lat", "7.6211"], ["lng", "5.2214"], ["radius", "62.5"]]} },
+    { "name": "reverse_nan_latitude", "request": "reverse", "args": {"lat": "nan", "lng": 5.2214}, "sends": null },
+    { "name": "nearby_infinite_longitude", "request": "nearby", "args": {"lat": 7.6211, "lng": "inf"}, "sends": null },
+    { "name": "reverse_infinite_distance", "request": "reverse", "args": {"lat": 7.6211, "lng": 5.2214, "metres": "-inf"}, "sends": null }
+  ]
+}

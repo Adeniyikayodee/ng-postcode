@@ -6,6 +6,8 @@
     { "name": "null_suggestions", "request": "autocomplete", "status": 200, "body": {"data": {"segment": "state", "suggestions": null}}, "outcome": "ok" },
     { "name": "unknown_segment", "request": "autocomplete", "status": 200, "body": {"data": {"segment": "street", "suggestions": []}}, "outcome": "ok" },
     { "name": "null_unit_text", "request": "nearby", "status": 200, "body": {"data": [{"postcode": null, "display": null, "distance_m": 3}]}, "outcome": "ok" },
+    { "name": "nearby_unit_without_distance", "request": "nearby", "status": 200, "body": {"data": [{"postcode": "FC-03-B06-AG-12"}, {"postcode": "FC-03-B06-AG-13", "distance_m": null}]}, "outcome": "ok" },
+    { "name": "reverse_unit_without_distance", "request": "reverse", "status": 200, "body": {"data": {"found": true, "unit": {"postcode": "FC-03-B06-AG-12"}}}, "outcome": "ok" },
     { "name": "null_optional_reverse_fields", "request": "reverse", "status": 200, "body": {"data": {"found": false, "coordinate": null, "unit": null, "message": null, "radius_m": null}}, "outcome": "ok" },
     { "name": "error_with_extra_key_and_no_message", "request": "lookup", "status": 429, "body": {"error": {"code": "rate_limited"}, "request_id": "r1"}, "outcome": "rejected", "code": "rate_limited" },
     { "name": "error_without_code", "request": "lookup", "status": 500, "body": {"error": {"message": "boom"}}, "outcome": "rejected", "code": "unknown_error" },
