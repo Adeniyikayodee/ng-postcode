@@ -4,7 +4,8 @@ Validation runs offline. Lookup, autocomplete and reverse geocoding call the
 postcode.gov.ng API with the key in NG_POSTCODE_API_KEY, which never appears in
 tool arguments or results. Address resolution also searches the geocoder in
 NG_GEOCODER_URL. Over stdio, stdout carries the protocol, so nothing else may
-print to it. Over HTTP, every caller shares the server's key.
+print to it. Over HTTP, a caller may send its own key in the X-NIPOST-API-Key
+header; without one it uses the server's key, if the server has one.
 """
 
 from __future__ import annotations
@@ -34,12 +35,13 @@ from ng_postcode.api import (
     lookup,
     reverse,
 )
-from ng_postcode.client import AsyncClient, TransportError
+from ng_postcode.client import TIMEOUT, AsyncClient, TransportError
 from pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar("T")
 
 KEY_URL = "https://dashboard.postcode.gov.ng"
+KEY_HEADER = "x-nipost-api-key"
 
 INSTRUCTIONS = """\
 Tools for Nigeria's 11-character building postcode, e.g. EK-01-A03-FK-01 \
@@ -201,8 +203,11 @@ class Location(FromLibrary):
 
 @dataclass(frozen=True, slots=True)
 class State:
-    """What the tools share for the life of the server. Either part may be unconfigured."""
+    """What the tools share for the life of the server. `nipost` and `geocoder` may be
+    unconfigured."""
 
+    http: httpx.AsyncClient
+    base_url: str
     nipost: AsyncClient | None
     geocoder: Nominatim | None
 
@@ -217,17 +222,18 @@ def create_server(
 
     @asynccontextmanager
     async def lifespan(_: MCPServer[State]) -> AsyncIterator[State]:
+        shared = http if http is not None else httpx.AsyncClient(timeout=TIMEOUT)
         nipost = (
-            AsyncClient(settings.api_key, base_url=settings.base_url, http=http)
+            AsyncClient(settings.api_key, base_url=settings.base_url, http=shared)
             if settings.api_key
             else None
         )
         geocoder = geocoder_for(settings, geocoder_http)
         try:
-            yield State(nipost, geocoder)
+            yield State(shared, settings.base_url, nipost, geocoder)
         finally:
-            if nipost:
-                await nipost.aclose()
+            if http is None:
+                await shared.aclose()
             if geocoder:
                 await geocoder.aclose()
 
@@ -366,8 +372,8 @@ def create_server(
             if latitude is not None and longitude is not None
             else None
         )
-        state = ctx.request_context.lifespan_context
-        resolver = Resolver(nipost=state.nipost, geocoder=state.geocoder)
+        geocoder = ctx.request_context.lifespan_context.geocoder
+        resolver = Resolver(nipost=nipost_for(ctx), geocoder=geocoder)
         return await resolver.resolve(address, location, reading(landmarks, geocode_queries))
 
     return server
@@ -461,10 +467,21 @@ def checked(text: str) -> Postcode:
             raise ToolError(f"{text!r} is not a valid postcode: {error}.{maybe}")
 
 
+def nipost_for(ctx: Context[State, Any]) -> AsyncClient | None:
+    """The caller's own client when an HTTP request carries a key, else the server's."""
+    state = ctx.request_context.lifespan_context
+    sent = (v for k, v in (ctx.headers or {}).items() if k.lower() == KEY_HEADER)
+    key = next(sent, "").strip()
+    return AsyncClient(key, base_url=state.base_url, http=state.http) if key else state.nipost
+
+
 def api(ctx: Context[State, Any]) -> AsyncClient:
-    client = ctx.request_context.lifespan_context.nipost
+    client = nipost_for(ctx)
     if client is None:
-        raise ToolError(f"This tool needs NG_POSTCODE_API_KEY. {HINTS['auth_required']}")
+        raise ToolError(
+            "This tool needs a NIPOST API key: set NG_POSTCODE_API_KEY on the server, or over "
+            f"HTTP send your own in the X-NIPOST-API-Key header. Get one at {KEY_URL}."
+        )
     return client
 
 
