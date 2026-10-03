@@ -1,2 +1,8 @@
 target/
 Cargo.lock
+.venv/
+__pycache__/
+dist/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/

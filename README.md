@@ -7,6 +7,8 @@ Rust library for Nigeria's National Digital Alphanumeric Postcode System (NDAPS)
 
 **Unofficial.** Not made or endorsed by NIPOST.
 
+A Python package with the same behaviour lives in [`python/`](python). Both pass the shared cases in [`spec/vectors.json`](spec/vectors.json).
+
 ## Format
 
 An 11-character code in five segments: state, LGA, district, area, building unit.
