@@ -174,3 +174,19 @@ async def test_a_reading_from_the_caller_replaces_the_parser() -> None:
 def test_the_core_imports_without_the_anthropic_sdk() -> None:
     check = "import sys, ng_address, ng_address.cli; sys.exit('anthropic' in sys.modules)"
     assert subprocess.run([sys.executable, "-c", check], check=False).returncode == 0
+
+
+@pytest.mark.anyio
+async def test_raw_text_matching_a_building_gives_only_the_area() -> None:
+    text = "back of Fabian Hotel, NTA Road, Ado Ekiti"
+    resolver = Resolver(nipost=nipost(), geocoder=FakeGeocoder({text: "building"}))
+    result = await resolver.resolve(text)
+    assert (result.status, result.level, result.code) == ("partial", "area", "EK-01-A03-FK")
+
+
+@pytest.mark.anyio
+async def test_an_unassigned_typed_code_falls_back_to_the_pin() -> None:
+    resolver = Resolver(nipost=nipost(4.0, valid=False))
+    result = await resolver.resolve("Deliver to ek01a03fk01", Coordinate(lat=7.62, lng=5.19))
+    assert (result.status, result.level, result.method) == ("resolved", "building", "location")
+    assert result.evidence[1] == "NIPOST says it is not assigned."

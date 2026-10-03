@@ -44,8 +44,8 @@ def main(argv: list[str] | None = None) -> None:
 
 
 def config_problem(env: Mapping[str, str]) -> str | None:
-    url = env.get("NG_GEOCODER_URL", "").rstrip("/")
-    if url == PUBLIC_NOMINATIM and not env.get("NG_GEOCODER_CONTACT"):
+    url = env.get("NG_GEOCODER_URL", "").strip().rstrip("/")
+    if url == PUBLIC_NOMINATIM and not env.get("NG_GEOCODER_CONTACT", "").strip():
         return "the public Nominatim requires NG_GEOCODER_CONTACT, a URL or email identifying you"
     return None
 
@@ -70,10 +70,10 @@ async def run(text: str, location: Coordinate | None, env: Mapping[str, str]) ->
 
 
 def geocoder_from(env: Mapping[str, str]) -> Nominatim | None:
-    url = env.get("NG_GEOCODER_URL", "").rstrip("/")
+    url = env.get("NG_GEOCODER_URL", "").strip().rstrip("/")
     if not url:
         return None
-    contact = env.get("NG_GEOCODER_CONTACT", "unknown")
+    contact = env.get("NG_GEOCODER_CONTACT", "").strip() or "unknown"
     if url == PUBLIC_NOMINATIM:
         print(
             "ng-address: using the public Nominatim, for light personal use only. "

@@ -16,6 +16,7 @@ from .core import (
     from_geocoded,
     from_location,
     from_typed,
+    is_the_place,
     landmark_for,
     unresolved,
 )
@@ -46,7 +47,12 @@ class Resolver:
         model, passes its reading as `parsed`, which replaces the parser."""
         typed = find_typed_postcode(text)
         if typed is not None:
-            return from_typed(typed, *await self._assigned(typed))
+            assigned, note = await self._assigned(typed)
+            if assigned is not False or location is None:
+                return from_typed(typed, assigned, note)
+            # An unassigned code is a typo; the pin is still good evidence.
+            written = [f"Postcode {typed} is written in the address.", note]
+            return with_evidence(written, await self._by_location(location), None)
         if location is not None:
             return await self._by_location(location)
         return await self._by_text(text, parsed)
@@ -85,14 +91,15 @@ class Resolver:
         evidence.append(f"Map match for '{place.query}': {place.label} ({place.precision}).")
         radius = SEARCH_RADIUS_M[place.precision]
         if radius is None:
-            return with_evidence(evidence, from_geocoded(None, place, None), question)
+            return with_evidence(evidence, from_geocoded(None, place, None, False), question)
         if self.nipost is None:
             return with_evidence(evidence, unresolved("geocoded", NO_NIPOST), question)
         found = await self.nipost.send(reverse(Coordinate(lat=place.lat, lng=place.lng), radius))
         if isinstance(found, ApiError | TransportError):
             failure = unresolved("geocoded", f"NIPOST reverse geocoding failed: {found}.")
             return with_evidence(evidence, failure, question)
-        decision = from_geocoded(found, place, landmark_for(place.query, parsed))
+        landmark = landmark_for(place.query, parsed)
+        decision = from_geocoded(found, place, landmark, is_the_place(landmark, parsed))
         return with_evidence(evidence, decision, None)
 
     async def _parse(self, text: str) -> tuple[ParsedAddress | None, list[str]]:

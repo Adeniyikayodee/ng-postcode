@@ -56,7 +56,7 @@ class Nominatim:
                     self._url, params=_params(query), headers=self._headers
                 )
             except httpx.HTTPError as error:
-                return GeocodeFailure(f"geocoder unreachable: {error or type(error).__name__}")
+                return GeocodeFailure(f"geocoder unreachable: {str(error) or type(error).__name__}")
             finally:
                 self._last = time.monotonic()
         if response.status_code != 200:

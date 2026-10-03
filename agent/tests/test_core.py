@@ -14,6 +14,7 @@ from ng_address.core import (
     from_geocoded,
     from_location,
     from_typed,
+    is_the_place,
     landmark_for,
     precision_of,
 )
@@ -140,7 +141,7 @@ def test_location_with_no_building_asks_to_move_the_pin() -> None:
 
 def test_the_landmark_itself_resolves_to_its_building() -> None:
     result = from_geocoded(
-        found(8.0), place("building"), Landmark(name="Fabian Hotel", relation="at")
+        found(8.0), place("building"), Landmark(name="Fabian Hotel", relation="at"), True
     )
     assert (result.status, result.level, result.code) == ("resolved", "building", "EK-01-A03-FK-01")
 
@@ -148,14 +149,14 @@ def test_the_landmark_itself_resolves_to_its_building() -> None:
 @pytest.mark.parametrize("relation", ["behind", "opposite", "near", "beside"])
 def test_a_building_near_a_landmark_only_gets_the_area(relation: Relation) -> None:
     landmark = Landmark(name="Fabian Hotel", relation=relation)
-    result = from_geocoded(found(8.0), place("building"), landmark)
+    result = from_geocoded(found(8.0), place("building"), landmark, False)
     assert (result.status, result.level, result.code) == ("partial", "area", "EK-01-A03-FK")
     assert result.question is not None
     assert f"{relation} Fabian Hotel" in result.question
 
 
 def test_a_street_only_gets_the_district_at_low_confidence() -> None:
-    result = from_geocoded(found(120.0), place("street"), None)
+    result = from_geocoded(found(120.0), place("street"), None, True)
     assert (result.status, result.level, result.code, result.confidence) == (
         "partial",
         "district",
@@ -165,12 +166,12 @@ def test_a_street_only_gets_the_district_at_low_confidence() -> None:
 
 
 def test_a_town_is_too_broad_for_any_code() -> None:
-    result = from_geocoded(None, place("locality"), None)
+    result = from_geocoded(None, place("locality"), None, False)
     assert (result.status, result.code) == ("unresolved", None)
 
 
 def test_a_far_building_is_not_the_place() -> None:
-    result = from_geocoded(found(45.0), place("building"), None)
+    result = from_geocoded(found(45.0), place("building"), None, True)
     assert (result.status, result.level) == ("partial", "area")
 
 
@@ -181,3 +182,18 @@ def test_landmark_for_matches_the_successful_query() -> None:
     )
     assert landmark_for("NTA Road, Ado Ekiti", address) is None
     assert landmark_for("anything", None) is None
+
+
+def test_a_building_is_the_place_only_on_positive_evidence() -> None:
+    at, behind = (
+        Landmark(name="Fabian Hotel", relation="at"),
+        Landmark(name="Fabian Hotel", relation="behind"),
+    )
+    assert is_the_place(at, parsed(("Fabian Hotel", "at")))
+    assert not is_the_place(behind, parsed(("Fabian Hotel", "behind")))
+    # A reading with no landmarks says the address is the place searched for.
+    assert is_the_place(None, parsed())
+    # The query did not name the landmark, so it may still be what the map matched.
+    assert not is_the_place(None, parsed(("Fabian Hotels", "behind")))
+    # Raw text: "Fabian Hotel" and "back of Fabian Hotel" look the same.
+    assert not is_the_place(None, None)

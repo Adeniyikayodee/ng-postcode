@@ -60,6 +60,17 @@ def landmark_for(query: str, parsed: ParsedAddress | None) -> Landmark | None:
     return next((lm for lm in parsed.landmarks if lm.name.casefold() in text), None)
 
 
+def is_the_place(landmark: Landmark | None, parsed: ParsedAddress | None) -> bool:
+    """Whether the map match is the address itself rather than something near it.
+
+    Without a reading there is no telling "Fabian Hotel" from "back of Fabian
+    Hotel", and a landmark the query did not name may still be the one matched.
+    """
+    if landmark is not None:
+        return landmark.relation == "at"
+    return parsed is not None and all(lm.relation == "at" for lm in parsed.landmarks)
+
+
 def code_at(postcode: str | None, level: Level) -> str | None:
     """The code of the enclosing `level` for a full postcode."""
     code = parse(postcode or "")
@@ -121,7 +132,9 @@ def from_location(found: Reverse) -> Resolution:
     )
 
 
-def from_geocoded(found: Reverse | None, place: Geocoded, landmark: Landmark | None) -> Resolution:
+def from_geocoded(
+    found: Reverse | None, place: Geocoded, landmark: Landmark | None, exact: bool
+) -> Resolution:
     if place.precision == "locality" or found is None:
         return unresolved(
             "geocoded", f"Only placed as far as {place.label}, too broad for a postcode."
@@ -143,9 +156,8 @@ def from_geocoded(found: Reverse | None, place: Geocoded, landmark: Landmark | N
             "most reliable.",
             evidence=["The map only placed the street, not a building.", near],
         )
-    is_the_place = landmark is None or landmark.relation == "at"
     close = unit.distance_m is not None and unit.distance_m <= BUILDING_RADIUS_M
-    if is_the_place and close:
+    if exact and close:
         return Resolution(
             status="resolved",
             code=unit.postcode,
