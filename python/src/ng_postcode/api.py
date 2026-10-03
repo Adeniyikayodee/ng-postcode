@@ -74,12 +74,17 @@ class Lookup:
     """Level 4. Undocumented, so left as raw JSON."""
     point_geometry: Any
     """Level 5. Undocumented, so left as raw JSON."""
+    status: str | None = None
+    """`valid`, `not_found`, or `invalid` for a malformed code. Sent at every level."""
+    verified: bool | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class Suggestion:
     code: str
-    label: str
+    """The value of the segment being completed, such as `A03`, not a full prefix."""
+    label: str | None
+    """Documented by NIPOST but not sent by the live API as of October 2026."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -117,6 +122,15 @@ class Reverse:
     """Set when nothing is in range."""
     radius_m: float | None
     """The radius the API actually applied."""
+    depth: str | None = None
+    """How deep the match goes, such as `unit`."""
+
+
+@dataclass(frozen=True, slots=True)
+class NearbyUnit:
+    postcode: str
+    display: str
+    distance_m: float | None
 
 
 def lookup(code: Postcode, level: int = 1) -> Request[Lookup]:
@@ -126,7 +140,12 @@ def lookup(code: Postcode, level: int = 1) -> Request[Lookup]:
 
 
 def autocomplete(partial: str) -> Request[Autocomplete]:
-    """Suggest completions for a partial postcode such as `EK 01 A`."""
+    """Suggest completions for a partial postcode such as `EK 01 A`.
+
+    Raises `ValueError` for an empty `partial`: the live API never answers one.
+    """
+    if not partial.strip():
+        raise ValueError("partial must not be empty")
     return Request("/v1/search/autocomplete", (("q", partial),), _autocomplete)
 
 
@@ -136,10 +155,10 @@ def reverse(at: Coordinate, max_distance_m: float | None = None) -> Request[Reve
     return Request("/v1/search/reverse", _around(at, "max_distance_m", max_distance_m), _reverse)
 
 
-def nearby(at: Coordinate, radius_m: float | None = None) -> Request[Any]:
-    """List buildings around a point, within 300 m unless `radius_m` says otherwise.
-    The API does not document the response, so it stays raw JSON."""
-    return Request("/v1/search/nearby", _around(at, "radius", radius_m), _raw)
+def nearby(at: Coordinate, radius_m: float | None = None) -> Request[tuple[NearbyUnit, ...]]:
+    """List buildings around a point, nearest first, within 300 m unless `radius_m`
+    says otherwise. Empty when nothing is in range."""
+    return Request("/v1/search/nearby", _around(at, "radius", radius_m), _nearby)
 
 
 def decode(request: Request[T], status: int, body: str) -> T | ApiError:
@@ -191,8 +210,18 @@ def _float(value: Any) -> float | None:
     return float(value) if is_number else None
 
 
-def _raw(data: Any) -> Any:
-    return data
+def _nearby(data: Any) -> tuple[NearbyUnit, ...] | None:
+    if not isinstance(data, list):
+        return None
+    return tuple(
+        NearbyUnit(
+            postcode=_text(item, "postcode") or "",
+            display=_text(item, "display") or "",
+            distance_m=_number(item, "distance_m"),
+        )
+        for item in data
+        if isinstance(item, dict)
+    )
 
 
 def _lookup(data: Any) -> Lookup | None:
@@ -215,6 +244,8 @@ def _lookup(data: Any) -> Lookup | None:
         building_use_status=_text(data, "building_use_status"),
         other_building_info=data.get("other_building_info"),
         point_geometry=data.get("point_geometry"),
+        status=_text(data, "status"),
+        verified=data["verified"] if isinstance(data.get("verified"), bool) else None,
     )
 
 
@@ -223,7 +254,7 @@ def _autocomplete(data: Any) -> Autocomplete | None:
         return None
     items = data.get("suggestions")
     suggestions = tuple(
-        Suggestion(code=_text(item, "code") or "", label=_text(item, "label") or "")
+        Suggestion(code=_text(item, "code") or "", label=_text(item, "label"))
         for item in (items if isinstance(items, list) else [])
         if isinstance(item, dict)
     )
@@ -255,6 +286,7 @@ def _reverse(data: Any) -> Reverse | None:
         state=_text(data, "state"),
         message=_text(data, "message"),
         radius_m=_number(data, "radius_m"),
+        depth=_text(data, "depth"),
     )
 
 

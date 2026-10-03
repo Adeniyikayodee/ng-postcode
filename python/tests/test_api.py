@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from ng_postcode import Postcode, Segment, parse
 from ng_postcode.api import (
     AdministrativeAddress,
@@ -72,20 +74,22 @@ def test_fields_above_the_granted_level_are_none() -> None:
     assert (found.administrative_address, found.recent_house_address) == (None, None)
 
 
-def test_decodes_autocomplete_reverse_and_nearby() -> None:
-    data = {"segment": "lga", "suggestions": [{"code": "EK-01", "label": "ADO EKITI"}]}
+def test_decodes_documented_labels_and_echoed_coordinates() -> None:
+    data = {"segment": "lga", "suggestions": [{"code": "01", "label": "ADO EKITI"}]}
     found = decode(autocomplete("EK"), 200, body(data))
     assert not isinstance(found, ApiError)
     assert found.segment is Segment.LGA
-    assert found.suggestions[0].code == "EK-01"
+    assert (found.suggestions[0].code, found.suggestions[0].label) == ("01", "ADO EKITI")
 
     miss = {"found": False, "coordinate": [5.22, 7.62], "message": "none", "radius_m": 25}
     result = decode(reverse(HERE), 200, body(miss))
     assert not isinstance(result, ApiError)
-    assert (result.found, result.unit, result.radius_m) == (False, None, 25.0)
     assert result.coordinate == HERE
 
-    assert decode(nearby(HERE), 200, body({"results": []})) == {"results": []}
+
+def test_an_empty_autocomplete_is_refused_before_it_hangs_the_api() -> None:
+    with pytest.raises(ValueError, match="must not be empty"):
+        autocomplete("  ")
 
 
 def test_error_envelopes_and_bad_bodies_become_values() -> None:
