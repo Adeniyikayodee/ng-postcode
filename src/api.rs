@@ -36,6 +36,8 @@ pub fn lookup(code: Postcode, level: u8) -> Request<Lookup> {
 }
 
 /// Suggests completions for a partial postcode such as `EK 01 A`.
+///
+/// Do not send an empty `partial`: the live API never answers one.
 pub fn autocomplete(partial: &str) -> Request<Autocomplete> {
     Request::get("/v1/search/autocomplete", [("q", partial.to_owned())])
 }
@@ -47,9 +49,9 @@ pub fn reverse(at: Coordinate, max_distance_m: Option<f64>) -> Request<Reverse> 
     Request::get("/v1/search/reverse", at.query().into_iter().chain(distance))
 }
 
-/// Lists buildings around a point, within 300 m unless `radius_m` says
-/// otherwise. The API does not document the response, so it stays untyped.
-pub fn nearby(at: Coordinate, radius_m: Option<f64>) -> Request<serde_json::Value> {
+/// Lists buildings around a point, nearest first, within 300 m unless
+/// `radius_m` says otherwise. Empty when nothing is in range.
+pub fn nearby(at: Coordinate, radius_m: Option<f64>) -> Request<Vec<NearbyUnit>> {
     let radius = radius_m.map(|metres| ("radius", metres.to_string()));
     Request::get("/v1/search/nearby", at.query().into_iter().chain(radius))
 }
@@ -147,6 +149,9 @@ pub struct Lookup {
     pub other_building_info: Option<serde_json::Value>,
     /// Level 5. Undocumented, so left untyped.
     pub point_geometry: Option<serde_json::Value>,
+    /// `valid`, `not_found`, or `invalid` for a malformed code. Sent at every level.
+    pub status: Option<String>,
+    pub verified: Option<bool>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
@@ -175,8 +180,10 @@ pub struct Autocomplete {
 #[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
 #[serde(default)]
 pub struct Suggestion {
+    /// The value of the segment being completed, such as `A03`, not a full prefix.
     pub code: String,
-    pub label: String,
+    /// Documented by NIPOST but not sent by the live API as of October 2026.
+    pub label: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
@@ -194,6 +201,16 @@ pub struct Reverse {
     pub message: Option<String>,
     /// The radius the API actually applied.
     pub radius_m: Option<f64>,
+    /// How deep the match goes, such as `unit`.
+    pub depth: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+#[serde(default)]
+pub struct NearbyUnit {
+    pub postcode: String,
+    pub display: String,
+    pub distance_m: f64,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
