@@ -2,7 +2,7 @@
 
 Resolve free-text Nigerian addresses, such as "back of Fabian Hotel, off NTA Road, Ado Ekiti", to NIPOST digital postcodes (NDAPS). It answers only as precisely as the evidence allows, and asks a question when it cannot.
 
-**Status: pre-release.** The workflow is tested against mocked Claude, NIPOST and geocoder APIs. It has not yet been run end to end with live NIPOST and Claude credentials, and its accuracy on real addresses is unmeasured.
+**Status: pre-release.** The typed-postcode, location-pin and geocoded paths have run against the live NIPOST API and a live geocoder. The Claude reading step is tested only against a mocked API, and accuracy on real addresses is unmeasured.
 
 ## How it decides
 

@@ -579,7 +579,7 @@ wheels = [
 
 [[package]]
 name = "ng-address-resolver"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
@@ -619,7 +619,7 @@ dev = [
 
 [[package]]
 name = "ng-postcode"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "../python" }
 
 [package.optional-dependencies]
