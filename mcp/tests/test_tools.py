@@ -161,7 +161,7 @@ async def test_lookup_never_autocorrects_before_spending() -> None:
 async def test_online_tools_explain_a_missing_or_rejected_key() -> None:
     missing = await call("lookup_postcode", {"postcode": "EK-01-A03-FK-01"}, key=None)
     assert missing.is_error
-    assert "needs NG_POSTCODE_API_KEY" in text(missing)
+    assert "needs a NIPOST API key" in text(missing)
 
     secret = "nipost_test_never_echo_me"
     rejected = await call("lookup_postcode", {"postcode": "EK-01-A03-FK-01"}, key=secret)
