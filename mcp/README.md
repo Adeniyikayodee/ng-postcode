@@ -1,8 +1,8 @@
 # ng-postcode-mcp
 
-MCP server for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026. It lets AI assistants validate postcodes offline and look them up, autocomplete them and find them by location through the [postcode.gov.ng](https://docs.postcode.gov.ng) API.
+MCP server for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026. It lets AI assistants validate postcodes offline, look them up, autocomplete them and find them by location through the [postcode.gov.ng](https://docs.postcode.gov.ng) API, and resolve described addresses to postcodes.
 
-Built on the [`ng-postcode`](https://pypi.org/project/ng-postcode/) library.
+Built on the [`ng-postcode`](https://pypi.org/project/ng-postcode/) and [`ng-address-resolver`](https://pypi.org/project/ng-address-resolver/) libraries.
 
 <!-- mcp-name: io.github.Adeniyikayodee/ng-postcode -->
 
@@ -14,8 +14,23 @@ Built on the [`ng-postcode`](https://pypi.org/project/ng-postcode/) library.
 | `lookup_postcode` | Confirms a code is assigned; level 2 adds the address, level 3 building use | Yes | Level 1 free, 2+ uses credits |
 | `autocomplete_postcode` | Suggests the next segment of a partly typed code | Yes | Free tier |
 | `find_postcode_at_location` | Returns the postcode of the nearest building to a coordinate | Yes | Free tier |
+| `resolve_address` | Turns a described address ("back of Fabian Hotel, off NTA Road") or a location pin into a postcode, only as precisely as the evidence allows | Yes, plus a geocoder for text | Free tier |
 
 All tools are read-only. Errors come back as messages the model can act on, such as a missing key or an exhausted credit balance.
+
+### How `resolve_address` answers
+
+The assistant reads the address and passes its landmarks and map searches to the tool; the server makes no model calls of its own. The answer is never more precise than its evidence:
+
+| Evidence | Answer |
+| --- | --- |
+| A postcode written in the address, or a location pin on a building | Building code |
+| A landmark the address *is* | Building code, medium confidence |
+| A building near a landmark ("behind", "opposite") | Area code, plus a question for the user |
+| A street only | District code, low confidence |
+| A town only, or nothing found | No code, plus a question |
+
+Text alone rarely identifies a building, so ask users for a location pin when the exact building matters. This tool is pre-release: its NIPOST steps have not yet been run against the live API.
 
 ## Install
 
@@ -48,12 +63,17 @@ claude mcp add ng-postcode -e NG_POSTCODE_API_KEY=nipost_live_... -- uvx ng-post
 | `NG_POSTCODE_API_KEY` | none | NIPOST API key. Read from the environment only; never passed through tools. |
 | `NG_POSTCODE_MAX_LEVEL` | `1` | Highest lookup level tools may request. Levels 2+ consume credits, so raise it deliberately. |
 | `NG_POSTCODE_BASE_URL` | `https://api.postcode.gov.ng` | Alternative API host, such as a staging stack. |
+| `NG_GEOCODER_URL` | none | A Nominatim server `resolve_address` uses to place described addresses. Without it, only typed postcodes and location pins resolve. |
+| `NG_GEOCODER_CONTACT` | none | A URL or email sent in the User-Agent. Required for the public Nominatim. |
+
+The public Nominatim at `https://nominatim.openstreetmap.org` allows light personal use only; a service whose main job is geocoding must run its own instance. Map data © OpenStreetMap contributors.
 
 ## Safety
 
 - Lookups default to level 1, which is free. A model cannot spend credits unless you raise `NG_POSTCODE_MAX_LEVEL`.
 - A mistyped code is never corrected and sent to the API silently. The server returns the suggestion and asks the model to confirm it with the user.
 - Levels 2 and up return house addresses. Treat them as personal data under the Nigeria Data Protection Act.
+- `resolve_address` sends the search strings to the geocoder you configure. With a third-party geocoder, that shares address text with it.
 
 ## License
 

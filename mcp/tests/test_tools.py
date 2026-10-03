@@ -86,7 +86,7 @@ def text(result: CallToolResult) -> str:
 
 
 @pytest.mark.anyio
-async def test_lists_four_read_only_tools_with_schemas() -> None:
+async def test_lists_five_read_only_tools_with_schemas() -> None:
     async with Client(create_server(Settings(api_key=None))) as client:
         tools = {tool.name: tool for tool in (await client.list_tools()).tools}
     assert set(tools) == {
@@ -94,6 +94,7 @@ async def test_lists_four_read_only_tools_with_schemas() -> None:
         "lookup_postcode",
         "autocomplete_postcode",
         "find_postcode_at_location",
+        "resolve_address",
     }
     for tool in tools.values():
         assert tool.annotations is not None

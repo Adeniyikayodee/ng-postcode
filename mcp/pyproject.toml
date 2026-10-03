@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ng-postcode-mcp"
-version = "0.1.0"
-description = "MCP server for Nigeria's NIPOST digital postcode (NDAPS): validate, look up and reverse-geocode postcodes."
+version = "0.2.0"
+description = "MCP server for Nigeria's NIPOST digital postcode (NDAPS): validate, look up, reverse-geocode and resolve addresses to postcodes."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -26,7 +26,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: GIS",
     "Typing :: Typed",
 ]
-dependencies = ["mcp>=2.3,<3", "ng-postcode[client]>=0.1,<0.2"]
+dependencies = ["mcp>=2.3,<3", "ng-address-resolver>=0.1,<0.2", "ng-postcode[client]>=0.1,<0.2"]
 
 [project.scripts]
 ng-postcode-mcp = "ng_postcode_mcp.server:main"
@@ -38,8 +38,9 @@ Issues = "https://github.com/Adeniyikayodee/ng-postcode/issues"
 [dependency-groups]
 dev = ["jsonschema>=4.20", "mypy>=1.13", "pytest>=8", "ruff>=0.8"]
 
-# Inside the repository, build against the local library so the two never drift.
+# Inside the repository, build against the local packages so they never drift.
 [tool.uv.sources]
+ng-address-resolver = { path = "../agent", editable = true }
 ng-postcode = { path = "../python", editable = true }
 
 [tool.hatch.build.targets.sdist]

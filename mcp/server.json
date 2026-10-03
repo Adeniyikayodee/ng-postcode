@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.Adeniyikayodee/ng-postcode",
   "title": "Nigeria Postcode",
-  "description": "Validate, look up and reverse-geocode Nigeria's NIPOST digital postcodes (NDAPS).",
-  "version": "0.1.0",
+  "description": "Validate, look up and resolve addresses to Nigeria's NIPOST digital postcodes (NDAPS).",
+  "version": "0.2.0",
   "repository": {
     "url": "https://github.com/Adeniyikayodee/ng-postcode",
     "source": "github",
@@ -13,7 +13,7 @@
     {
       "registryType": "pypi",
       "identifier": "ng-postcode-mcp",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
@@ -29,7 +29,21 @@
           "name": "NG_POSTCODE_MAX_LEVEL",
           "description": "Highest lookup level tools may request. Levels 2 and up consume NIPOST credits.",
           "default": "1",
-          "choices": ["1", "2", "3", "4", "5"]
+          "choices": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5"
+          ]
+        },
+        {
+          "name": "NG_GEOCODER_URL",
+          "description": "Nominatim server used by resolve_address to place described addresses. Ideally your own instance."
+        },
+        {
+          "name": "NG_GEOCODER_CONTACT",
+          "description": "URL or email identifying you to the geocoder. Required for the public Nominatim."
         }
       ]
     }

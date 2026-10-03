@@ -2,8 +2,8 @@
 
 Validation runs offline. Lookup, autocomplete and reverse geocoding call the
 postcode.gov.ng API with the key in NG_POSTCODE_API_KEY, which never appears in
-tool arguments or results. stdout carries the protocol, so nothing else may
-print to it.
+tool arguments or results. Address resolution also searches the geocoder in
+NG_GEOCODER_URL. stdout carries the protocol, so nothing else may print to it.
 """
 
 from __future__ import annotations
@@ -21,6 +21,8 @@ import httpx
 from mcp.server.mcpserver import Context, MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
+from ng_address import Landmark, Nominatim, ParsedAddress, Resolution, Resolver
+from ng_address.geocode import PUBLIC_NOMINATIM
 from ng_postcode import Corrected, Postcode, parse, parse_lenient
 from ng_postcode.api import (
     BASE_URL,
@@ -45,6 +47,9 @@ Tools for Nigeria's 11-character building postcode, e.g. EK-01-A03-FK-01 \
 - lookup_postcode level 1 only confirms a code exists. Levels 2 and up add the \
 address and building details, consume NIPOST credits, and are capped by the \
 server's NG_POSTCODE_MAX_LEVEL.
+- resolve_address turns a described address into a code. It answers only as \
+precisely as its evidence allows: pass on its level and confidence, and ask the \
+user its question instead of guessing. A location pin is the most reliable input.
 - Never substitute a suggested correction without confirming it with the user.
 - Addresses returned are personal data: use them only for the user's request."""
 
@@ -69,6 +74,8 @@ class Settings:
     api_key: str | None
     max_level: int = 1
     base_url: str = BASE_URL
+    geocoder_url: str | None = None
+    geocoder_contact: str | None = None
 
 
 def settings_from_env(env: Mapping[str, str]) -> Settings | str:
@@ -76,10 +83,16 @@ def settings_from_env(env: Mapping[str, str]) -> Settings | str:
     raw_level = env.get("NG_POSTCODE_MAX_LEVEL", "1").strip()
     if raw_level not in {"1", "2", "3", "4", "5"}:
         return f"NG_POSTCODE_MAX_LEVEL must be 1 to 5, got {raw_level!r}"
+    geocoder_url = env.get("NG_GEOCODER_URL", "").strip().rstrip("/") or None
+    geocoder_contact = env.get("NG_GEOCODER_CONTACT", "").strip() or None
+    if geocoder_url == PUBLIC_NOMINATIM and geocoder_contact is None:
+        return "the public Nominatim requires NG_GEOCODER_CONTACT, a URL or email identifying you"
     return Settings(
         api_key=env.get("NG_POSTCODE_API_KEY", "").strip() or None,
         max_level=int(raw_level),
         base_url=env.get("NG_POSTCODE_BASE_URL", "").strip() or BASE_URL,
+        geocoder_url=geocoder_url,
+        geocoder_contact=geocoder_contact,
     )
 
 
@@ -163,24 +176,39 @@ class Location(FromLibrary):
     radius_m: float | None = Field(description="The radius the API actually applied.")
 
 
-Api = AsyncClient | None
+@dataclass(frozen=True, slots=True)
+class State:
+    """What the tools share for the life of the server. Either part may be unconfigured."""
+
+    nipost: AsyncClient | None
+    geocoder: Nominatim | None
 
 
-def create_server(settings: Settings, http: httpx.AsyncClient | None = None) -> MCPServer[Api]:
-    """Build the server. Pass `http` to route API calls through your own client, as tests do."""
+def create_server(
+    settings: Settings,
+    http: httpx.AsyncClient | None = None,
+    geocoder_http: httpx.AsyncClient | None = None,
+) -> MCPServer[State]:
+    """Build the server. Pass `http` and `geocoder_http` to route calls through your own
+    clients, as tests do."""
 
     @asynccontextmanager
-    async def lifespan(_: MCPServer[Api]) -> AsyncIterator[Api]:
-        if settings.api_key is None:
-            yield None
-            return
-        client = AsyncClient(settings.api_key, base_url=settings.base_url, http=http)
+    async def lifespan(_: MCPServer[State]) -> AsyncIterator[State]:
+        nipost = (
+            AsyncClient(settings.api_key, base_url=settings.base_url, http=http)
+            if settings.api_key
+            else None
+        )
+        geocoder = geocoder_for(settings, geocoder_http)
         try:
-            yield client
+            yield State(nipost, geocoder)
         finally:
-            await client.aclose()
+            if nipost:
+                await nipost.aclose()
+            if geocoder:
+                await geocoder.aclose()
 
-    server: MCPServer[Api] = MCPServer(
+    server: MCPServer[State] = MCPServer(
         name="ng-postcode",
         title="Nigeria Postcode",
         instructions=INSTRUCTIONS,
@@ -210,7 +238,7 @@ def create_server(settings: Settings, http: httpx.AsyncClient | None = None) -> 
     )
     async def lookup_postcode(
         postcode: Annotated[str, Field(description="Code in any style, e.g. EK-01-A03-FK-01.")],
-        ctx: Context[Api, Any],
+        ctx: Context[State, Any],
         level: Annotated[
             int,
             Field(
@@ -237,7 +265,7 @@ def create_server(settings: Settings, http: httpx.AsyncClient | None = None) -> 
     )
     async def autocomplete_postcode(
         partial: Annotated[str, Field(description="The start of a code, e.g. 'EK 01 A'.")],
-        ctx: Context[Api, Any],
+        ctx: Context[State, Any],
     ) -> Completions:
         """Suggest completions for the next segment of a partly typed postcode."""
         result = await api(ctx).send(autocomplete(partial))
@@ -251,7 +279,7 @@ def create_server(settings: Settings, http: httpx.AsyncClient | None = None) -> 
     async def find_postcode_at_location(
         latitude: Annotated[float, Field(ge=-90, le=90)],
         longitude: Annotated[float, Field(ge=-180, le=180)],
-        ctx: Context[Api, Any],
+        ctx: Context[State, Any],
         max_distance_m: Annotated[
             float | None,
             Field(ge=0, le=250, description="Search radius in metres. Defaults to 25."),
@@ -263,7 +291,83 @@ def create_server(settings: Settings, http: httpx.AsyncClient | None = None) -> 
         )
         return Location.model_validate(unwrap(result))
 
+    @server.tool(
+        title="Resolve a Nigerian address to a postcode",
+        annotations=READ_ONLY_ONLINE,
+        structured_output=True,
+    )
+    async def resolve_address(
+        address: Annotated[str, Field(description="The address exactly as the user gave it.")],
+        ctx: Context[State, Any],
+        landmarks: Annotated[
+            list[Landmark] | None,
+            Field(
+                description="Landmarks named in the address, each with how the address relates "
+                "to it. Use 'at' only when the address is the landmark itself."
+            ),
+        ] = None,
+        geocode_queries: Annotated[
+            list[str] | None,
+            Field(
+                max_length=3,
+                description="Up to three map search strings you derive from the address: named "
+                "places and streets with the town and state, most specific first, without "
+                "directional words like 'back of'.",
+            ),
+        ] = None,
+        latitude: Annotated[
+            float | None, Field(ge=-90, le=90, description="A location pin the user shared.")
+        ] = None,
+        longitude: Annotated[float | None, Field(ge=-180, le=180)] = None,
+    ) -> Resolution:
+        """Turn a described Nigerian address into a postcode, only as precisely as the
+        evidence allows.
+
+        A full building code comes only from a postcode written in the address, a location
+        pin, or a landmark that is the address itself. Otherwise the result is an area or
+        district prefix with a `question` for the user. Read the address yourself and fill
+        `landmarks` and `geocode_queries`; the address text is sent to the configured
+        geocoder.
+        """
+        if (latitude is None) != (longitude is None):
+            raise ToolError("Give both latitude and longitude, or neither.")
+        location = (
+            Coordinate(lat=latitude, lng=longitude)
+            if latitude is not None and longitude is not None
+            else None
+        )
+        state = ctx.request_context.lifespan_context
+        resolver = Resolver(nipost=state.nipost, geocoder=state.geocoder)
+        return await resolver.resolve(address, location, reading(landmarks, geocode_queries))
+
     return server
+
+
+def reading(landmarks: list[Landmark] | None, queries: list[str] | None) -> ParsedAddress | None:
+    """The host model's reading of the address, in the resolver's terms."""
+    if not landmarks and not queries:
+        return None
+    return ParsedAddress(
+        house_number=None,
+        street=None,
+        landmarks=landmarks or [],
+        locality=None,
+        lga=None,
+        state=None,
+        geocode_queries=queries or [],
+        question=None,
+    )
+
+
+def geocoder_for(settings: Settings, http: httpx.AsyncClient | None) -> Nominatim | None:
+    if settings.geocoder_url is None:
+        return None
+    contact = settings.geocoder_contact or "unknown"
+    return Nominatim(
+        settings.geocoder_url,
+        f"ng-postcode-mcp/{version('ng-postcode-mcp')} ({contact})",
+        http=http,
+    )
 
 
 def completions(found: Autocomplete) -> Completions:
@@ -319,8 +423,8 @@ def checked(text: str) -> Postcode:
             raise ToolError(f"{text!r} is not a valid postcode: {error}.{maybe}")
 
 
-def api(ctx: Context[Api, Any]) -> AsyncClient:
-    client = ctx.request_context.lifespan_context
+def api(ctx: Context[State, Any]) -> AsyncClient:
+    client = ctx.request_context.lifespan_context.nipost
     if client is None:
         raise ToolError(f"This tool needs NG_POSTCODE_API_KEY. {HINTS['auth_required']}")
     return client
