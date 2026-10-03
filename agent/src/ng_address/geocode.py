@@ -28,7 +28,7 @@ class GeocodeFailure:
 
 
 class Nominatim:
-    """Caches the last `CACHE_SIZE` answers and spaces requests at least `min_interval_s` apart."""
+    """Caches the last `CACHE_SIZE` answers and starts requests at least `min_interval_s` apart."""
 
     def __init__(
         self,
@@ -43,24 +43,20 @@ class Nominatim:
         self._url = base_url.rstrip("/") + "/search"
         self._headers = {"User-Agent": user_agent}
         self._interval = min_interval_s
-        self._lock = asyncio.Lock()
         self._last = float("-inf")
         self._cache: dict[str, Geocoded | None] = {}
 
     async def __call__(self, query: str) -> Geocoded | GeocodeFailure | None:
         key = " ".join(query.casefold().split())
-        async with self._lock:
-            if key in self._cache:
-                return self._cache[key]
-            await asyncio.sleep(max(0.0, self._last + self._interval - time.monotonic()))
-            try:
-                response = await self._http.get(
-                    self._url, params=_params(query), headers=self._headers
-                )
-            except httpx.HTTPError as error:
-                return GeocodeFailure(f"geocoder unreachable: {str(error) or type(error).__name__}")
-            finally:
-                self._last = time.monotonic()
+        if key in self._cache:
+            return self._cache[key]
+        # The slot is taken before any await, so a slow answer holds up nobody else.
+        slot = self._last = max(time.monotonic(), self._last + self._interval)
+        await asyncio.sleep(max(0.0, slot - time.monotonic()))
+        try:
+            response = await self._http.get(self._url, params=_params(query), headers=self._headers)
+        except httpx.HTTPError as error:
+            return GeocodeFailure(f"geocoder unreachable: {str(error) or type(error).__name__}")
         if response.status_code != 200:
             return GeocodeFailure(f"geocoder answered HTTP {response.status_code}")
         try:

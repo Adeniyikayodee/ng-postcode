@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import subprocess
 import sys
 from typing import Any
@@ -208,6 +209,17 @@ async def test_a_spaced_code_counts_only_when_nipost_confirms_it() -> None:
         "typed",
         "high",
     )
+
+
+@pytest.mark.anyio
+async def test_map_searches_stop_at_the_budget() -> None:
+    async def stuck(query: str) -> Geocoded | GeocodeFailure | None:
+        await asyncio.sleep(5)
+        return None
+
+    result = await Resolver(geocoder=stuck, geocode_budget_s=0.05).resolve("NTA Road")
+    assert result.status == "unresolved"
+    assert "Geocoding took longer than 0.05 s." in result.evidence
 
 
 @pytest.mark.parametrize("pin", [["--lat", "nan", "--lng", "5"], ["--lat", "7", "--lng", "500"]])

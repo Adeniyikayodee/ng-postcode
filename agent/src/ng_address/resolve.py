@@ -3,6 +3,7 @@ and a missing one lowers precision instead of failing."""
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
@@ -37,6 +38,8 @@ class Resolver:
     nipost: AsyncClient | None = None
     parser: Parser | None = None
     geocoder: Geocoder | None = None
+    geocode_budget_s: float = 15.0
+    """The longest one address may spend on map searches."""
 
     async def resolve(
         self,
@@ -121,6 +124,15 @@ class Resolver:
         if self.geocoder is None:
             return None, ["No geocoder configured (NG_GEOCODER_URL)."]
         notes: list[str] = []
+        try:
+            return await asyncio.wait_for(self._search(queries, notes), self.geocode_budget_s)
+        except asyncio.TimeoutError:
+            return None, [*notes, f"Geocoding took longer than {self.geocode_budget_s:g} s."]
+
+    async def _search(
+        self, queries: list[str], notes: list[str]
+    ) -> tuple[Geocoded | None, list[str]]:
+        assert self.geocoder is not None
         for query in queries[:MAX_QUERIES]:
             hit = await self.geocoder(query)
             if isinstance(hit, GeocodeFailure):

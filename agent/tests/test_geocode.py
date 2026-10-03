@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import time
 from collections.abc import Callable
 
@@ -84,6 +85,22 @@ async def test_spaces_requests_apart() -> None:
     for query in ("a", "b", "c"):
         assert await geocoder(query) is None
     assert time.monotonic() - start >= 0.4
+
+
+@pytest.mark.anyio
+async def test_a_slow_answer_does_not_hold_up_other_searches() -> None:
+    async def handle(request: httpx.Request) -> httpx.Response:
+        await asyncio.sleep(0.3 if request.url.params["q"] == "slow" else 0)
+        return httpx.Response(200, json=[])
+
+    http = httpx.AsyncClient(transport=httpx.MockTransport(handle))
+    geocoder = Nominatim("https://geo.example", "test-agent", http=http, min_interval_s=0.0)
+    slow = asyncio.create_task(geocoder("slow"))
+    await asyncio.sleep(0)
+    start = time.monotonic()
+    assert await geocoder("fast") is None
+    assert time.monotonic() - start < 0.2
+    assert await slow is None
 
 
 @pytest.mark.anyio
