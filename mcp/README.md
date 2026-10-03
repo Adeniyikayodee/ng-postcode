@@ -69,7 +69,7 @@ Most clients take this entry in their MCP settings:
 
 ### As a bundle
 
-[`bundle/`](bundle) holds an MCPB manifest for clients that install `.mcpb` files, such as Claude Desktop. It runs the published package with uv and asks for the API key in the client's own settings. Build it with `npx @anthropic-ai/mcpb pack mcp/bundle ng-postcode.mcpb` from the repository root.
+[`bundle/`](bundle) holds an MCPB manifest for clients that install `.mcpb` files, such as Claude Desktop. It runs the published package with uv and asks for the API key in the client's own settings. Build it with `npx @anthropic-ai/mcpb pack mcp/bundle ng-postcode.mcpb` from the repository root. [`bundle-python/`](bundle-python) is the same bundle for hosts that only run Python bundles, such as Smithery; it starts the server with `uvx`, so uv must be installed. `scripts/smithery_bundle.py` builds the copy Smithery accepts, which also carries each tool's input schema.
 
 ## Configuration
 
