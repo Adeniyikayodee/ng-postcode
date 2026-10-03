@@ -1,0 +1,22 @@
+{
+  "about": "Synthetic bodies the live API has not sent but may. Every implementation must reach the same outcome: ok, rejected (with the given code) or malformed.",
+  "cases": [
+    { "name": "extra_envelope_key", "request": "lookup", "status": 200, "body": {"data": {"postcode": "FC-03-B06-AG-12", "valid": true}, "meta": {"request_id": "r1"}}, "outcome": "ok" },
+    { "name": "unknown_data_field", "request": "lookup", "status": 200, "body": {"data": {"postcode": "FC-03-B06-AG-12", "valid": true, "tier": "gold"}}, "outcome": "ok" },
+    { "name": "null_suggestions", "request": "autocomplete", "status": 200, "body": {"data": {"segment": "state", "suggestions": null}}, "outcome": "ok" },
+    { "name": "unknown_segment", "request": "autocomplete", "status": 200, "body": {"data": {"segment": "street", "suggestions": []}}, "outcome": "ok" },
+    { "name": "null_unit_text", "request": "nearby", "status": 200, "body": {"data": [{"postcode": null, "display": null, "distance_m": 3}]}, "outcome": "ok" },
+    { "name": "null_optional_reverse_fields", "request": "reverse", "status": 200, "body": {"data": {"found": false, "coordinate": null, "unit": null, "message": null, "radius_m": null}}, "outcome": "ok" },
+    { "name": "error_with_extra_key_and_no_message", "request": "lookup", "status": 429, "body": {"error": {"code": "rate_limited"}, "request_id": "r1"}, "outcome": "rejected", "code": "rate_limited" },
+    { "name": "error_without_code", "request": "lookup", "status": 500, "body": {"error": {"message": "boom"}}, "outcome": "rejected", "code": "unknown_error" },
+    { "name": "error_as_text", "request": "lookup", "status": 500, "body": {"error": "boom"}, "outcome": "rejected", "code": "unknown_error" },
+    { "name": "error_wins_over_data", "request": "lookup", "status": 200, "body": {"data": {"postcode": "X", "valid": true}, "error": {"code": "bad_request", "message": "no"}}, "outcome": "rejected", "code": "bad_request" },
+    { "name": "error_status_with_data", "request": "lookup", "status": 500, "body": {"data": {}}, "outcome": "malformed" },
+    { "name": "error_status_without_envelope", "request": "lookup", "status": 503, "body": {"message": "unavailable"}, "outcome": "malformed" },
+    { "name": "null_data", "request": "lookup", "status": 200, "body": {"data": null}, "outcome": "malformed" },
+    { "name": "empty_object", "request": "nearby", "status": 200, "body": {}, "outcome": "malformed" },
+    { "name": "data_of_the_wrong_type", "request": "nearby", "status": 200, "body": {"data": {"results": []}}, "outcome": "malformed" },
+    { "name": "not_an_object", "request": "lookup", "status": 200, "body": [1, 2], "outcome": "malformed" },
+    { "name": "not_json", "request": "lookup", "status": 502, "text": "<html>Bad Gateway</html>", "outcome": "malformed" }
+  ]
+}
