@@ -1,0 +1,43 @@
+name: Release address resolver
+
+# Push a tag such as agent-v0.1.0. PyPI trusts this workflow directly, so no
+# token is stored anywhere.
+on:
+  push:
+    tags: ["agent-v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+      - name: Tag matches package version
+        run: test "agent-v$(uv version --short)" = "$GITHUB_REF_NAME"
+      - run: uv run --group dev pytest
+      - run: uv build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: agent-dist
+          path: agent/dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/ng-address-resolver/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: agent-dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@v1.14.2
