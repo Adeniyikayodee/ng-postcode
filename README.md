@@ -1,70 +1,92 @@
 # ng-postcode
 
+[![CI](https://github.com/Adeniyikayodee/ng-postcode/actions/workflows/ci.yml/badge.svg)](https://github.com/Adeniyikayodee/ng-postcode/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/ng-postcode.svg)](https://crates.io/crates/ng-postcode)
-[![docs.rs](https://docs.rs/ng-postcode/badge.svg)](https://docs.rs/ng-postcode)
+[![PyPI](https://img.shields.io/pypi/v/ng-postcode.svg?label=pypi%20ng-postcode)](https://pypi.org/project/ng-postcode/)
+[![MCP server](https://img.shields.io/pypi/v/ng-postcode-mcp.svg?label=pypi%20ng-postcode-mcp)](https://pypi.org/project/ng-postcode-mcp/)
 
-Rust library for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026. Parse, validate and format postcodes offline, and call the [postcode.gov.ng](https://docs.postcode.gov.ng) API for lookup, autocomplete and reverse geocoding.
+Developer tools for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026: libraries for Rust and Python, an MCP server for AI assistants, and a resolver that turns described addresses into postcodes.
 
-A Python package with the same behaviour lives in [`python/`](python). Both pass the shared cases in [`spec/vectors.json`](spec/vectors.json). An MCP server for AI assistants, built on the Python package, lives in [`mcp/`](mcp). A pre-release resolver for free-text addresses lives in [`agent/`](agent).
+A postcode has 11 characters in five segments, written `EK-01-A03-FK-01`: state, LGA, district, area and building unit.
 
-## Format
+## Packages
 
-An 11-character code in five segments: state, LGA, district, area, building unit.
+| Package | What it does | Install | Source |
+| --- | --- | --- | --- |
+| `ng-postcode` (Rust) | Parse, validate and format codes offline; client for the postcode.gov.ng API | `cargo add ng-postcode` | [`src/`](src), [docs](https://docs.rs/ng-postcode) |
+| `ng-postcode` (Python) | The same behaviour, with sync and async clients | `pip install ng-postcode` | [`python/`](python) |
+| `ng-postcode-mcp` | MCP server: validate, look up, autocomplete, find by location, resolve addresses | `uvx ng-postcode-mcp` | [`mcp/`](mcp) |
+| `ng-address-resolver` | Resolve free-text addresses to postcodes, only as precisely as the evidence allows (pre-alpha) | `pip install ng-address-resolver` | [`agent/`](agent) |
 
-| Style | Example |
-| --- | --- |
-| Canonical | `EK-01-A03-FK-01` |
-| Display | `EK 01 A03 FK 01` |
-| Compact | `EK01A03FK01` |
+Each package has its own README with full usage.
 
-Compact form as a regular expression: `^[A-Z]{2}(0[1-9]|[1-9][0-9])[A-Z0-9]{3}[A-Z]{2}(0[1-9]|[1-9][0-9])$`
+## Quick start
 
-## Offline
+**AI assistants.** Add the MCP server to Claude Code, or use the same command and arguments in any client with an `mcpServers` config:
+
+```sh
+claude mcp add ng-postcode -e NG_POSTCODE_API_KEY=nipost_live_... -- uvx ng-postcode-mcp
+```
+
+Validation works without a key. It is listed in the MCP Registry as `io.github.Adeniyikayodee/ng-postcode`.
+
+**Python**
+
+```python
+from ng_postcode import Postcode, parse
+
+match parse("ek 01 a03 fk 01"):
+    case Postcode() as code:
+        print(code, code.compact)  # EK-01-A03-FK-01 EK01A03FK01
+    case error:
+        print(error)               # e.g. "invalid lga segment"
+```
+
+**Rust**
 
 ```rust
 use ng_postcode::{Postcode, Segment};
 
-// Hyphens, spaces and case are all accepted.
 let code: Postcode = "ek 01 a03 fk 01".parse()?;
-
-assert_eq!(code.to_string(), "EK-01-A03-FK-01"); // canonical
-assert_eq!(code.as_str(), "EK01A03FK01");        // compact, for storage
-assert_eq!(code.to_spaced(), "EK 01 A03 FK 01"); // for display
-
-assert_eq!(code.state(), "EK");
+assert_eq!(code.to_string(), "EK-01-A03-FK-01");
 assert_eq!(code.prefix(Segment::Area), "EK-01-A03-FK");
 ```
 
-- `Postcode::parse` checks the structure: 2 letters, 2 digits, 3 letters or digits, 2 letters, 2 digits, with numeric segments from 01 to 99.
-- `Postcode::parse_lenient` first swaps look-alike characters that cannot occur where they stand (`O`/`0`, `I`/`1`, `S`/`5`, `B`/`8`) and reports how many it changed.
-- `Postcode::from_segments` assembles a code from its parts and zero-fills the LGA and unit.
-- `Postcode` is `Copy`, 11 bytes, and sorts by state, LGA, district, area, unit.
+## The format
 
-A well-formed code is not necessarily assigned to a building, and the state is not checked against a list of state codes. Only the API can confirm that a postcode exists.
+| Segment | Example | Shape |
+| --- | --- | --- |
+| State | `EK` | 2 letters |
+| LGA | `01` | 2 digits, 01 to 99 |
+| District | `A03` | 3 letters or digits |
+| Area | `FK` | 2 letters |
+| Building unit | `01` | 2 digits, 01 to 99 |
 
-## API
+Input may be hyphenated, spaced or compact, in either case. The compact form matches `^[A-Z]{2}(0[1-9]|[1-9][0-9])[A-Z0-9]{3}[A-Z]{2}(0[1-9]|[1-9][0-9])$`. A well-formed code is not necessarily assigned to a building; only the NIPOST API can confirm that.
 
-```toml
-ng-postcode = { version = "0.1", features = ["client"] }
+## Design
+
+- **One behaviour, two languages.** Rust and Python both run the cases in [`spec/vectors.json`](spec/vectors.json), so they cannot drift apart.
+- **Offline first.** Parsing and validation never touch the network. API access is a separate, optional layer.
+- **Errors are values.** Expected failures, such as a malformed code or a rejected API key, are returned, not raised.
+- **Careful with money and guesses.** The MCP server caps lookups at the free level unless told otherwise, and never corrects a mistyped code into a paid call. The resolver gives an area or district code when that is all the evidence supports.
+
+## Status
+
+- The NIPOST API needs a key for every endpoint, from the [developer dashboard](https://dashboard.postcode.gov.ng). Offline validation needs nothing.
+- API responses are tested against NIPOST's documented examples and error responses from the live API. Successful live lookups have not yet been exercised.
+- The resolver and the `resolve_address` tool are pre-release. Described addresses need a geocoder you run or pay for; text alone rarely identifies a building, so ask users for a location pin when the exact building matters.
+
+## Development
+
+```sh
+cargo test --all-features                              # Rust
+cd python && uv run --group dev pytest                 # Python library
+cd mcp && uv run --group dev pytest                    # MCP server
+cd agent && uv run --group dev pytest                  # resolver
 ```
 
-```rust
-use ng_postcode::{api, client::Client};
-
-let client = Client::new(std::env::var("NG_POSTCODE_API_KEY")?);
-let found = client.send(&api::lookup("EK-01-A03-FK-01".parse()?, 2))?;
-println!("{:?}", found.administrative_address);
-```
-
-`api` covers lookup, autocomplete, reverse geocoding and nearby search. Each function returns a `Request` value and `Request::decode` turns a status and body into a typed result, so the `api` feature alone works with any HTTP client, sync or async. The `client` feature adds a small blocking one.
-
-## Features
-
-| Feature | Adds |
-| --- | --- |
-| `serde` | `Serialize` and `Deserialize` for `Postcode` |
-| `api` | Request and response types, no I/O |
-| `client` | Blocking HTTP client |
+CI runs formatting, linting, type checks and tests for every package. Releases publish from tags (`v*` is tagged after a crates.io release; `py-v*`, `mcp-v*` and `agent-v*` publish to PyPI and the MCP Registry) through trusted publishing, so no tokens are stored.
 
 ## License
 
