@@ -37,8 +37,10 @@ export class Client {
   async send<T>(request: Request<T>): Promise<T | ApiError | TransportError> {
     const url = new URL(this.#baseUrl + request.path);
     for (const [key, value] of request.params) url.searchParams.append(key, value);
+    // Called bare: browsers and Workers reject `fetch` with a receiver.
+    const send = this.#fetch;
     try {
-      const response = await this.#fetch(url, {
+      const response = await send(url, {
         headers: { "X-API-Key": this.#apiKey },
         // A redirect would carry the key to another host, so it is refused.
         redirect: "error",

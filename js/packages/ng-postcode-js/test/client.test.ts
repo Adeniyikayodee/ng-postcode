@@ -43,3 +43,13 @@ test("failures are values, and never carry the key", async () => {
   expect(slow).toBeInstanceOf(TransportError);
   expect(String(refused) + String(unreachable) + String(slow)).not.toContain("secret");
 });
+
+test("calls fetch without a receiver, as browsers and Workers require", async () => {
+  let receiver: unknown = "unset";
+  const fake = function (this: unknown) {
+    receiver = this;
+    return Promise.resolve(Response.json({ data: { postcode: "FC-03-B06-AG-12", valid: true } }));
+  } as typeof fetch;
+  await new Client("secret", { fetch: fake }).send(lookup(CODE));
+  expect(receiver).toBeUndefined();
+});
