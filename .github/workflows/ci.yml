@@ -56,3 +56,21 @@ jobs:
       - run: uv run --group dev ruff check .
       - run: uv run --group dev mypy
       - run: uv run --group dev pytest
+
+  agent:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.10", "3.14"]
+    defaults:
+      run:
+        working-directory: agent
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv run --group dev ruff format --check .
+      - run: uv run --group dev ruff check .
+      - run: uv run --group dev mypy
+      - run: uv run --group dev pytest
