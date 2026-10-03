@@ -311,8 +311,12 @@ def create_server(
         structured_output=True,
     )
     async def find_postcode_at_location(
-        latitude: Annotated[float, Field(ge=-90, le=90)],
-        longitude: Annotated[float, Field(ge=-180, le=180)],
+        latitude: Annotated[
+            float, Field(ge=-90, le=90, description="Latitude in decimal degrees, e.g. 7.6211.")
+        ],
+        longitude: Annotated[
+            float, Field(ge=-180, le=180, description="Longitude in decimal degrees, e.g. 5.2214.")
+        ],
         ctx: Context[State, Any],
         max_distance_m: Annotated[
             float | None,
@@ -353,9 +357,13 @@ def create_server(
             ),
         ] = None,
         latitude: Annotated[
-            float | None, Field(ge=-90, le=90, description="A location pin the user shared.")
+            float | None,
+            Field(ge=-90, le=90, description="Latitude of a location pin the user shared."),
         ] = None,
-        longitude: Annotated[float | None, Field(ge=-180, le=180)] = None,
+        longitude: Annotated[
+            float | None,
+            Field(ge=-180, le=180, description="Longitude of that pin. Give it with latitude."),
+        ] = None,
     ) -> Resolution:
         """Turn a described Nigerian address into a postcode, only as precisely as the
         evidence allows.
