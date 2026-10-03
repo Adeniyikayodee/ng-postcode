@@ -1,0 +1,60 @@
+{
+  "manifest_version": "0.4",
+  "name": "ng-postcode",
+  "display_name": "Nigeria Postcode",
+  "version": "0.4.0",
+  "description": "Validate, look up and resolve addresses to Nigeria's NIPOST digital postcodes (NDAPS).",
+  "long_description": "Tools for Nigeria's 11-character building postcode, such as EK-01-A03-FK-01. Validation runs offline and needs no key. Lookup, autocomplete, reverse geocoding and address resolution call the postcode.gov.ng API with your own NIPOST key.",
+  "author": {
+    "name": "Kayode Adeniyi",
+    "url": "https://github.com/Adeniyikayodee"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Adeniyikayodee/ng-postcode"
+  },
+  "homepage": "https://adeniyikayodee.github.io/ng-postcode/",
+  "documentation": "https://github.com/Adeniyikayodee/ng-postcode/tree/main/mcp",
+  "support": "https://github.com/Adeniyikayodee/ng-postcode/issues",
+  "license": "MIT",
+  "keywords": ["nigeria", "postcode", "nipost", "ndaps", "address", "geocoding"],
+  "server": {
+    "type": "uv",
+    "entry_point": "src/server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run", "--directory", "${__dirname}", "src/server.py"],
+      "env": {
+        "NG_POSTCODE_API_KEY": "${user_config.api_key}",
+        "NG_POSTCODE_MAX_LEVEL": "${user_config.max_level}"
+      }
+    }
+  },
+  "tools": [
+    { "name": "validate_postcode", "description": "Check a postcode's structure offline and return its canonical forms and segments." },
+    { "name": "lookup_postcode", "description": "Confirm a postcode is assigned and, at higher levels, return its address details." },
+    { "name": "autocomplete_postcode", "description": "Suggest completions for the next segment of a partly typed postcode." },
+    { "name": "find_postcode_at_location", "description": "Return the postcode of the nearest building to a coordinate in Nigeria." },
+    { "name": "resolve_address", "description": "Turn a described Nigerian address into a postcode, only as precisely as the evidence allows." }
+  ],
+  "user_config": {
+    "api_key": {
+      "type": "string",
+      "title": "NIPOST API key",
+      "description": "A key from dashboard.postcode.gov.ng. Validation works without one.",
+      "sensitive": true,
+      "required": false
+    },
+    "max_level": {
+      "type": "string",
+      "title": "Highest lookup level",
+      "description": "1 to 5. Levels 2 and up consume NIPOST credits.",
+      "default": "1",
+      "required": false
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": { "python": ">=3.10" }
+  }
+}
