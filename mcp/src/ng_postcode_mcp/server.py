@@ -65,6 +65,7 @@ HINTS = {
     "level_not_granted": "The key is not granted this lookup level; use a lower level or "
     f"request more access at {KEY_URL}.",
 }
+LEVEL_2_FIELDS = ("state_name", "lga_name", "locality_name", "address")
 STATUS_HINTS = {
     403: "The key lacks the scope or access level for this request.",
     429: "NIPOST rate limit reached; wait before retrying.",
@@ -298,11 +299,14 @@ def create_server(
             Field(ge=0, le=250, description="Search radius in metres. Defaults to 25."),
         ] = None,
     ) -> Location:
-        """Return the postcode of the nearest building to a coordinate in Nigeria."""
+        """Return the postcode of the nearest building to a coordinate in Nigeria.
+
+        Names and the house address are withheld unless NG_POSTCODE_MAX_LEVEL is 2 or more.
+        """
         result = await api(ctx).send(
             reverse(Coordinate(lat=latitude, lng=longitude), max_distance_m)
         )
-        return Location.model_validate(unwrap(result))
+        return capped(Location.model_validate(unwrap(result)), settings.max_level)
 
     @server.tool(
         title="Resolve a Nigerian address to a postcode",
@@ -381,6 +385,14 @@ def geocoder_for(settings: Settings, http: httpx.AsyncClient | None) -> Nominati
         f"ng-postcode-mcp/{version('ng-postcode-mcp')} ({contact})",
         http=http,
     )
+
+
+def capped(location: Location, max_level: int) -> Location:
+    """The location without the fields a level 2 key adds, unless the cap allows them."""
+    if max_level >= 2 or location.unit is None:
+        return location
+    unit = location.unit.model_copy(update=dict.fromkeys(LEVEL_2_FIELDS))
+    return location.model_copy(update={"unit": unit})
 
 
 def completions(found: Autocomplete) -> Completions:

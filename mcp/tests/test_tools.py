@@ -22,6 +22,7 @@ from ng_postcode_mcp.server import (
     Location,
     NearestBuilding,
     PostcodeDetails,
+    capped,
     unwrap,
 )
 
@@ -179,6 +180,26 @@ async def test_autocomplete_and_reverse() -> None:
     near = await call("find_postcode_at_location", {"latitude": 7.62, "longitude": 5.22})
     assert not near.is_error
     assert (near.structured_content["found"], near.structured_content["radius_m"]) == (False, 25.0)
+
+
+def test_the_level_cap_withholds_names_and_addresses() -> None:
+    unit = NearestBuilding(
+        postcode="EK-01-A03-FK-01",
+        display="EK 01 A03 FK 01",
+        distance_m=8.0,
+        confidence="high",
+        state_name="EKITI",
+        lga_name="ADO EKITI",
+        locality_name="ADO EKITI",
+        address="NTA ROAD",
+    )
+    found = Location(
+        found=True, unit=unit, area=None, district=None, state=None, message=None, radius_m=25.0
+    )
+    assert capped(found, 2) == found
+    held = capped(found, 1).unit
+    assert held is not None
+    assert (held.postcode, held.address, held.state_name) == ("EK-01-A03-FK-01", None, None)
 
 
 @pytest.mark.anyio
