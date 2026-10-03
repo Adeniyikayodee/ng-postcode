@@ -29,8 +29,10 @@ pub struct Coordinate {
 }
 
 /// Resolves a postcode. Levels are cumulative from 1 (validity only) to 5,
-/// and the API caps the answer at the level granted to the key.
+/// and the API caps the answer at the level granted to the key. A level
+/// outside that range is sent as the nearest one inside it.
 pub fn lookup(code: Postcode, level: u8) -> Request<Lookup> {
+    let level = level.clamp(1, 5);
     let query = [("code", code.to_string()), ("level", level.to_string())];
     Request::get("/v1/lookup", query)
 }
@@ -43,7 +45,8 @@ pub fn autocomplete(partial: &str) -> Request<Autocomplete> {
 }
 
 /// Finds the postcode of the nearest building, within 25 m unless
-/// `max_distance_m` says otherwise. The API clamps it to 250 m.
+/// `max_distance_m` says otherwise. The API clamps it to 250 m, and rejects a
+/// coordinate or distance that is not a finite number as `bad_request`.
 pub fn reverse(at: Coordinate, max_distance_m: Option<f64>) -> Request<Reverse> {
     let distance = max_distance_m.map(|metres| ("max_distance_m", metres.to_string()));
     Request::get("/v1/search/reverse", at.query().into_iter().chain(distance))
@@ -72,13 +75,22 @@ impl<T: DeserializeOwned> Request<T> {
         let malformed = |reason| ApiError::Malformed { status, reason };
         match serde_json::from_str(body) {
             Ok(Envelope {
-                error: Some(Failure { code, message }),
+                error: Some(failure),
                 ..
-            }) => Err(ApiError::Rejected {
-                status,
-                code: code.unwrap_or_else(|| "unknown_error".to_owned()),
-                message: message.unwrap_or_default(),
-            }),
+            }) => {
+                let (code, message) = match failure {
+                    Failure::Detail { code, message } => (code, message),
+                    Failure::Text(message) => (None, Some(message)),
+                };
+                Err(ApiError::Rejected {
+                    status,
+                    code: code.unwrap_or_else(|| "unknown_error".to_owned()),
+                    message: message.unwrap_or_default(),
+                })
+            }
+            Ok(_) if !(200..300).contains(&status) => {
+                Err(malformed("an error status without an error".to_owned()))
+            }
             Ok(Envelope {
                 data: Some(data), ..
             }) => Ok(data),
@@ -102,9 +114,13 @@ struct Envelope<T> {
 }
 
 #[derive(Deserialize)]
-struct Failure {
-    code: Option<String>,
-    message: Option<String>,
+#[serde(untagged)]
+enum Failure {
+    Detail {
+        code: Option<String>,
+        message: Option<String>,
+    },
+    Text(String),
 }
 
 /// Reads `null` like a missing key.
@@ -232,6 +248,7 @@ pub struct NearbyUnit {
     pub postcode: String,
     #[serde(deserialize_with = "or_default")]
     pub display: String,
+    /// Required: a unit without a distance fails the decode rather than read as 0 m.
     pub distance_m: f64,
 }
 
@@ -270,13 +287,16 @@ mod tests {
 
     #[test]
     fn builds_requests() {
-        let code = "ek01a03fk01".parse().unwrap();
+        let code: Postcode = "ek01a03fk01".parse().unwrap();
         let request = lookup(code, 3);
         assert_eq!(request.path, "/v1/lookup");
         assert_eq!(
             request.query,
             pairs([("code", "EK-01-A03-FK-01"), ("level", "3")])
         );
+
+        assert_eq!(lookup(code, 0).query[1].1, "1");
+        assert_eq!(lookup(code, 9).query[1].1, "5");
 
         let request = autocomplete("EK 01 A");
         assert_eq!(request.path, "/v1/search/autocomplete");
