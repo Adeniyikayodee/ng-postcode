@@ -45,7 +45,7 @@ A well-formed code is not necessarily assigned to a building, and the state is n
 ## API
 
 ```toml
-ng-postcode = { version = "0.1", features = ["client"] }
+ng-postcode = { version = "0.3", features = ["client"] }
 ```
 
 ```rust
