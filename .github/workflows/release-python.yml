@@ -17,7 +17,7 @@ jobs:
         working-directory: python
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.2.0
       - name: Tag matches package version
         run: test "py-v$(uv version --short)" = "$GITHUB_REF_NAME"
       - run: uv run --group dev pytest
