@@ -15,7 +15,9 @@ A postcode has 11 characters in five segments, written `EK-01-A03-FK-01`: state,
 | --- | --- | --- | --- |
 | `ng-postcode` (Rust) | Parse, validate and format codes offline; client for the postcode.gov.ng API | `cargo add ng-postcode` | [`src/`](src), [docs](https://docs.rs/ng-postcode) |
 | `ng-postcode` (Python) | The same behaviour, with sync and async clients | `pip install ng-postcode` | [`python/`](python) |
+| `ng-postcode-js` | The same behaviour for JavaScript and TypeScript, with a `fetch` client | `npm install ng-postcode-js` | [`js/packages/ng-postcode-js`](js/packages/ng-postcode-js) |
 | `ng-postcode-mcp` | MCP server: validate, look up, autocomplete, find by location, resolve addresses | `uvx ng-postcode-mcp` | [`mcp/`](mcp) |
+| `ng-postcode-mcp` (npm) | The same server for Node, without address resolution | `npx ng-postcode-mcp` | [`js/packages/ng-postcode-mcp`](js/packages/ng-postcode-mcp) |
 | `ng-address-resolver` | Resolve free-text addresses to postcodes, only as precisely as the evidence allows (pre-alpha) | `pip install ng-address-resolver` | [`agent/`](agent) |
 
 Each package has its own README with full usage.
@@ -78,7 +80,7 @@ Input may be hyphenated, spaced or compact, in either case. The compact form mat
 
 ## Design
 
-- **One behaviour, two languages.** Rust and Python both run the cases in [`spec/vectors.json`](spec/vectors.json), so they cannot drift apart.
+- **One behaviour, three languages.** Rust, Python and JavaScript all run the cases in [`spec/`](spec), so they cannot drift apart. The Node MCP server registers its tools from [`spec/mcp.json`](spec/mcp.json), which the Python server generates.
 - **Offline first.** Parsing and validation never touch the network. API access is a separate, optional layer.
 - **Errors are values.** Expected failures, such as a malformed code or a rejected API key, are returned, not raised.
 - **Careful with money and guesses.** The MCP server caps lookups at the free level unless told otherwise, and never corrects a mistyped code into a paid call. The resolver gives an area or district code when that is all the evidence supports.
@@ -109,9 +111,10 @@ cargo test --all-features                              # Rust
 cd python && uv run --group dev pytest                 # Python library
 cd mcp && uv run --group dev pytest                    # MCP server
 cd agent && uv run --group dev pytest                  # resolver
+cd js && npm ci && npm test                            # JavaScript library and Node MCP server
 ```
 
-CI runs formatting, linting, type checks and tests for every package. Releases publish from tags (`v*` is tagged after a crates.io release; `py-v*`, `mcp-v*` and `agent-v*` publish to PyPI and the MCP Registry) through trusted publishing, so no tokens are stored.
+CI runs formatting, linting, type checks and tests for every package. Releases publish from tags (`v*` is tagged after a crates.io release; `py-v*`, `mcp-v*` and `agent-v*` publish to PyPI and the MCP Registry; `js-v*` and `js-mcp-v*` publish to npm) through trusted publishing, so no tokens are stored.
 
 ## License
 
