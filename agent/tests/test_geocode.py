@@ -1,0 +1,84 @@
+from __future__ import annotations
+
+import time
+from collections.abc import Callable
+
+import httpx
+import pytest
+
+from ng_address.geocode import GeocodeFailure, Nominatim, first_place
+
+# Shape of a real answer for "NTA Road, Ado Ekiti" on 3 October 2026, trimmed.
+NTA_ROAD = [
+    {
+        "lat": "7.6272088",
+        "lon": "5.1933175",
+        "category": "highway",
+        "type": "tertiary",
+        "place_rank": 26,
+        "display_name": "NTA - Ilawe Byepass Road, Adó-Èkìtì, Ekiti, Nigeria",
+    }
+]
+
+
+@pytest.fixture
+def anyio_backend() -> str:
+    return "asyncio"
+
+
+def nominatim(
+    handler: Callable[[httpx.Request], httpx.Response], interval: float = 0.0
+) -> Nominatim:
+    http = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    return Nominatim(
+        "https://geo.example", "test-agent (ops@example.com)", http=http, min_interval_s=interval
+    )
+
+
+def test_first_place_reads_real_responses_and_rejects_junk() -> None:
+    place = first_place("NTA Road, Ado Ekiti", NTA_ROAD)
+    assert place is not None
+    assert (place.lat, place.lng, place.precision) == (7.6272088, 5.1933175, "street")
+    junk: list[object] = [[], {}, None, [{"lat": "x", "lon": "1"}], [{"lon": "1"}]]
+    for data in junk:
+        assert first_place("q", data) is None
+
+
+@pytest.mark.anyio
+async def test_identifies_itself_limits_to_nigeria_and_caches() -> None:
+    seen: list[httpx.Request] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, json=NTA_ROAD)
+
+    geocoder = nominatim(handle)
+    first = await geocoder("NTA Road, Ado Ekiti")
+    again = await geocoder("  nta road,   ado ekiti ")
+    assert first == again
+    assert len(seen) == 1
+    assert seen[0].headers["User-Agent"] == "test-agent (ops@example.com)"
+    assert seen[0].url.path == "/search"
+    assert seen[0].url.params["countrycodes"] == "ng"
+
+
+@pytest.mark.anyio
+async def test_spaces_requests_apart() -> None:
+    geocoder = nominatim(lambda request: httpx.Response(200, json=[]), interval=0.2)
+    start = time.monotonic()
+    for query in ("a", "b", "c"):
+        assert await geocoder(query) is None
+    assert time.monotonic() - start >= 0.4
+
+
+@pytest.mark.anyio
+async def test_failures_are_values() -> None:
+    def down(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("refused", request=request)
+
+    assert await nominatim(lambda r: httpx.Response(503))("q") == GeocodeFailure(
+        "geocoder answered HTTP 503"
+    )
+    failure = await nominatim(down)("q")
+    assert isinstance(failure, GeocodeFailure)
+    assert "refused" in failure.reason

@@ -1,0 +1,147 @@
+"""The whole workflow with fake parser and geocoder, and a mocked NIPOST API."""
+
+from __future__ import annotations
+
+from typing import Any
+
+import httpx
+import pytest
+from ng_postcode.api import Coordinate
+from ng_postcode.client import AsyncClient
+
+from ng_address.geocode import GeocodeFailure
+from ng_address.models import Geocoded, Landmark, ParsedAddress, Precision, Relation
+from ng_address.parse import ParseFailure
+from ng_address.resolve import Resolver
+
+
+@pytest.fixture
+def anyio_backend() -> str:
+    return "asyncio"
+
+
+def nipost(distance_m: float = 6.0, *, valid: bool = True, found: bool = True) -> AsyncClient:
+    def handle(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/lookup":
+            return httpx.Response(
+                200, json={"data": {"postcode": "EK-01-A03-FK-01", "valid": valid}}
+            )
+        data: dict[str, Any] = {
+            "found": found,
+            "radius_m": float(request.url.params.get("max_distance_m", 25)),
+        }
+        if found:
+            unit = {
+                "postcode": "EK-01-A03-FK-01",
+                "display": "EK 01 A03 FK 01",
+                "distance_m": distance_m,
+            }
+            data |= {"unit": unit, "area": "EK-01-A03-FK", "district": "EK-01-A03", "state": "EK"}
+        return httpx.Response(200, json={"data": data})
+
+    return AsyncClient("key", http=httpx.AsyncClient(transport=httpx.MockTransport(handle)))
+
+
+def reading(relation: Relation | None, question: str | None = None) -> ParsedAddress:
+    landmarks = [Landmark(name="Fabian Hotel", relation=relation)] if relation else []
+    return ParsedAddress(
+        house_number=None,
+        street="NTA Road",
+        landmarks=landmarks,
+        locality=None,
+        lga="Ado Ekiti",
+        state="Ekiti",
+        geocode_queries=["Fabian Hotel, Ado Ekiti", "NTA Road, Ado Ekiti"],
+        question=question,
+    )
+
+
+def parser_returning(result: ParsedAddress | ParseFailure) -> Any:
+    async def parse(text: str) -> ParsedAddress | ParseFailure:
+        return result
+
+    return parse
+
+
+class FakeGeocoder:
+    def __init__(self, places: dict[str, Precision]) -> None:
+        self.places = places
+        self.searched: list[str] = []
+
+    async def __call__(self, query: str) -> Geocoded | GeocodeFailure | None:
+        self.searched.append(query)
+        precision = self.places.get(query)
+        if precision is None:
+            return None
+        return Geocoded(query=query, lat=7.62, lng=5.19, precision=precision, label=query)
+
+
+@pytest.mark.anyio
+async def test_a_typed_postcode_short_circuits_and_is_confirmed() -> None:
+    result = await Resolver(nipost=nipost()).resolve("Deliver to ek01a03fk01")
+    assert (result.status, result.code, result.confidence) == (
+        "resolved",
+        "EK-01-A03-FK-01",
+        "high",
+    )
+
+    unassigned = await Resolver(nipost=nipost(valid=False)).resolve("Deliver to ek01a03fk01")
+    assert (unassigned.status, unassigned.code) == ("unresolved", None)
+
+    unchecked = await Resolver().resolve("Deliver to ek01a03fk01")
+    assert (unchecked.confidence, unchecked.evidence[-1]) == (
+        "medium",
+        "Not confirmed with NIPOST: no API key.",
+    )
+
+
+@pytest.mark.anyio
+async def test_a_location_pin_gives_the_building() -> None:
+    result = await Resolver(nipost=nipost(4.0)).resolve("anything", Coordinate(lat=7.62, lng=5.19))
+    assert (result.status, result.level, result.method) == ("resolved", "building", "location")
+
+
+@pytest.mark.anyio
+async def test_behind_a_landmark_gives_only_the_area() -> None:
+    resolver = Resolver(
+        nipost=nipost(),
+        parser=parser_returning(reading("behind")),
+        geocoder=FakeGeocoder({"Fabian Hotel, Ado Ekiti": "building"}),
+    )
+    result = await resolver.resolve("back of Fabian Hotel, NTA Road, Ado Ekiti")
+    assert (result.status, result.level, result.code) == ("partial", "area", "EK-01-A03-FK")
+    assert result.evidence[0].startswith("Read the address as:")
+
+
+@pytest.mark.anyio
+async def test_falls_through_queries_to_the_street() -> None:
+    geocode = FakeGeocoder({"NTA Road, Ado Ekiti": "street"})
+    resolver = Resolver(
+        nipost=nipost(140.0), parser=parser_returning(reading("behind")), geocoder=geocode
+    )
+    result = await resolver.resolve("back of Fabian Hotel, NTA Road, Ado Ekiti")
+    assert (result.level, result.code, result.confidence) == ("district", "EK-01-A03", "low")
+    assert geocode.searched == ["Fabian Hotel, Ado Ekiti", "NTA Road, Ado Ekiti"]
+    assert "No map match for 'Fabian Hotel, Ado Ekiti'." in result.evidence
+
+
+@pytest.mark.anyio
+async def test_nothing_found_uses_claudes_question() -> None:
+    resolver = Resolver(
+        nipost=nipost(),
+        parser=parser_returning(reading(None, question="Which street is the house on?")),
+        geocoder=FakeGeocoder({}),
+    )
+    result = await resolver.resolve("my house")
+    assert (result.status, result.question) == ("unresolved", "Which street is the house on?")
+
+
+@pytest.mark.anyio
+async def test_degrades_without_claude_or_nipost() -> None:
+    geocode = FakeGeocoder({"NTA Road, Ado Ekiti": "street"})
+    failing = parser_returning(ParseFailure("Claude credentials are missing or invalid"))
+    result = await Resolver(parser=failing, geocoder=geocode).resolve("NTA Road, Ado Ekiti")
+    assert geocode.searched == ["NTA Road, Ado Ekiti"]
+    assert result.status == "unresolved"
+    assert any("Claude credentials" in e for e in result.evidence)
+    assert any("NG_POSTCODE_API_KEY" in e for e in result.evidence)
