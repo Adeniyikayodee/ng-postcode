@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -63,3 +64,10 @@ class Resolution(Frozen):
     method: Method | None
     question: str | None = Field(description="What to ask the user to get a better answer.")
     evidence: list[str]
+
+
+@dataclass(frozen=True, slots=True)
+class ParseFailure:
+    """Why an address could not be read into a ParsedAddress."""
+
+    reason: str

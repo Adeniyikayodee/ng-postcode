@@ -20,8 +20,7 @@ from .core import (
     unresolved,
 )
 from .geocode import GeocodeFailure
-from .models import Geocoded, ParsedAddress, Resolution
-from .parse import ParseFailure
+from .models import Geocoded, ParsedAddress, ParseFailure, Resolution
 
 Parser = Callable[[str], Awaitable[ParsedAddress | ParseFailure]]
 Geocoder = Callable[[str], Awaitable[Geocoded | GeocodeFailure | None]]
@@ -37,13 +36,20 @@ class Resolver:
     parser: Parser | None = None
     geocoder: Geocoder | None = None
 
-    async def resolve(self, text: str, location: Coordinate | None = None) -> Resolution:
+    async def resolve(
+        self,
+        text: str,
+        location: Coordinate | None = None,
+        parsed: ParsedAddress | None = None,
+    ) -> Resolution:
+        """Resolve `text`. A caller that has already read the address, such as a host
+        model, passes its reading as `parsed`, which replaces the parser."""
         typed = find_typed_postcode(text)
         if typed is not None:
             return from_typed(typed, *await self._assigned(typed))
         if location is not None:
             return await self._by_location(location)
-        return await self._by_text(text)
+        return await self._by_text(text, parsed)
 
     async def _assigned(self, code: Postcode) -> tuple[bool | None, str]:
         if self.nipost is None:
@@ -64,9 +70,14 @@ class Resolver:
             return unresolved("location", f"NIPOST reverse geocoding failed: {found}.")
         return from_location(found)
 
-    async def _by_text(self, text: str) -> Resolution:
-        parsed, evidence = await self._parse(text)
-        place, searched = await self._place(parsed.geocode_queries if parsed else [text])
+    async def _by_text(self, text: str, given: ParsedAddress | None) -> Resolution:
+        parsed, evidence = (
+            (given, [f"Read the address as: {describe(given)}."])
+            if given is not None
+            else await self._parse(text)
+        )
+        queries = parsed.geocode_queries if parsed and parsed.geocode_queries else [text]
+        place, searched = await self._place(queries)
         evidence += searched
         question = parsed.question if parsed and parsed.question else None
         if place is None:
@@ -86,7 +97,7 @@ class Resolver:
 
     async def _parse(self, text: str) -> tuple[ParsedAddress | None, list[str]]:
         if self.parser is None:
-            return None, ["No Claude credentials, so the raw text was searched."]
+            return None, ["No reading of the address was available, so the raw text was searched."]
         parsed = await self.parser(text)
         if isinstance(parsed, ParseFailure):
             return None, [f"Could not read the address with Claude ({parsed.reason})."]

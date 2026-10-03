@@ -582,14 +582,19 @@ name = "ng-address-resolver"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "anthropic" },
     { name = "httpx" },
     { name = "ng-postcode", extra = ["client"] },
     { name = "pydantic" },
 ]
 
+[package.optional-dependencies]
+claude = [
+    { name = "anthropic" },
+]
+
 [package.dev-dependencies]
 dev = [
+    { name = "anthropic" },
     { name = "mypy" },
     { name = "pytest" },
     { name = "ruff" },
@@ -597,14 +602,16 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=1.11,<2" },
+    { name = "anthropic", marker = "extra == 'claude'", specifier = ">=1.11,<2" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "ng-postcode", extras = ["client"], editable = "../python" },
     { name = "pydantic", specifier = ">=2.7" },
 ]
+provides-extras = ["claude"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "anthropic", specifier = ">=1.11,<2" },
     { name = "mypy", specifier = ">=1.13" },
     { name = "pytest", specifier = ">=8" },
     { name = "ruff", specifier = ">=0.8" },

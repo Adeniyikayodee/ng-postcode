@@ -12,8 +12,8 @@ import httpx2
 import pytest
 
 from ng_address.cli import claude_from
-from ng_address.models import ParsedAddress
-from ng_address.parse import FALLBACK_BETA, MODEL, ClaudeParser, ParseFailure
+from ng_address.models import ParsedAddress, ParseFailure
+from ng_address.parse import FALLBACK_BETA, MODEL, ClaudeParser
 
 PARSED = {
     "house_number": None,

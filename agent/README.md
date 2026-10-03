@@ -35,11 +35,13 @@ from ng_address import Resolver
 result = await Resolver(nipost=..., parser=..., geocoder=...).resolve("...")
 ```
 
+The core needs no model. Install `ng-address-resolver[claude]` to let the CLI and `ng_address.parse.ClaudeParser` read addresses with Claude. A caller that has already read the address, such as the host model of an MCP server, passes its own `ParsedAddress` as `resolve(..., parsed=...)` instead.
+
 ## Configuration
 
 | Variable | Purpose |
 | --- | --- |
-| Anthropic credentials | Read by the Anthropic SDK (`ANTHROPIC_API_KEY` or an `ant auth login` profile). Without them the raw text is searched instead. |
+| Anthropic credentials | Needs the `claude` extra. Read by the Anthropic SDK (`ANTHROPIC_API_KEY` or an `ant auth login` profile). Without them the raw text is searched instead. |
 | `NG_POSTCODE_API_KEY` | NIPOST API key. Without it no postcode can be returned. |
 | `NG_GEOCODER_URL` | A Nominatim server, ideally your own. |
 | `NG_GEOCODER_CONTACT` | A URL or email sent in the User-Agent to identify you. Required for the public Nominatim. |

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
 from typing import Any
 
 import httpx
@@ -10,8 +12,14 @@ from ng_postcode.api import Coordinate
 from ng_postcode.client import AsyncClient
 
 from ng_address.geocode import GeocodeFailure
-from ng_address.models import Geocoded, Landmark, ParsedAddress, Precision, Relation
-from ng_address.parse import ParseFailure
+from ng_address.models import (
+    Geocoded,
+    Landmark,
+    ParsedAddress,
+    ParseFailure,
+    Precision,
+    Relation,
+)
 from ng_address.resolve import Resolver
 
 
@@ -145,3 +153,24 @@ async def test_degrades_without_claude_or_nipost() -> None:
     assert result.status == "unresolved"
     assert any("Claude credentials" in e for e in result.evidence)
     assert any("NG_POSTCODE_API_KEY" in e for e in result.evidence)
+
+
+@pytest.mark.anyio
+async def test_a_reading_from_the_caller_replaces_the_parser() -> None:
+    async def never(text: str) -> ParsedAddress | ParseFailure:
+        raise AssertionError("the parser must not run when a reading is supplied")
+
+    resolver = Resolver(
+        nipost=nipost(),
+        parser=never,
+        geocoder=FakeGeocoder({"Fabian Hotel, Ado Ekiti": "building"}),
+    )
+    result = await resolver.resolve("back of Fabian Hotel", parsed=reading("opposite"))
+    assert (result.level, result.code) == ("area", "EK-01-A03-FK")
+    assert result.question is not None
+    assert "opposite Fabian Hotel" in result.question
+
+
+def test_the_core_imports_without_the_anthropic_sdk() -> None:
+    check = "import sys, ng_address, ng_address.cli; sys.exit('anthropic' in sys.modules)"
+    assert subprocess.run([sys.executable, "-c", check], check=False).returncode == 0

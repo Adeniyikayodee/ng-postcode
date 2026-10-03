@@ -21,7 +21,10 @@ classifiers = [
     "Topic :: Scientific/Engineering :: GIS",
     "Typing :: Typed",
 ]
-dependencies = ["anthropic>=1.11,<2", "httpx>=0.27", "ng-postcode[client]>=0.1,<0.2", "pydantic>=2.7"]
+dependencies = ["httpx>=0.27", "ng-postcode[client]>=0.1,<0.2", "pydantic>=2.7"]
+
+[project.optional-dependencies]
+claude = ["anthropic>=1.11,<2"]
 
 [project.scripts]
 ng-address = "ng_address.cli:main"
@@ -30,7 +33,7 @@ ng-address = "ng_address.cli:main"
 Repository = "https://github.com/Adeniyikayodee/ng-postcode"
 
 [dependency-groups]
-dev = ["mypy>=1.13", "pytest>=8", "ruff>=0.8"]
+dev = ["anthropic>=1.11,<2", "mypy>=1.13", "pytest>=8", "ruff>=0.8"]
 
 # Inside the repository, build against the local library so the two never drift.
 [tool.uv.sources]

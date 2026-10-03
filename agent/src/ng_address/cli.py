@@ -14,15 +14,17 @@ import os
 import sys
 from collections.abc import Mapping
 from importlib.metadata import version
+from typing import TYPE_CHECKING
 
-import anthropic
 from ng_postcode.api import Coordinate
 from ng_postcode.client import AsyncClient
 
 from .geocode import PUBLIC_NOMINATIM, Nominatim
 from .models import Resolution
-from .parse import MODEL, ClaudeParser
-from .resolve import Resolver
+from .resolve import Parser, Resolver
+
+if TYPE_CHECKING:
+    import anthropic
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -53,7 +55,7 @@ async def run(text: str, location: Coordinate | None, env: Mapping[str, str]) ->
     nipost = AsyncClient(key) if key else None
     geocoder = geocoder_from(env)
     claude = claude_from()
-    parser = ClaudeParser(claude, env.get("NG_ADDRESS_MODEL") or MODEL) if claude else None
+    parser = parser_from(claude, env.get("NG_ADDRESS_MODEL"))
     try:
         return await Resolver(nipost=nipost, parser=parser, geocoder=geocoder).resolve(
             text, location
@@ -82,7 +84,20 @@ def geocoder_from(env: Mapping[str, str]) -> Nominatim | None:
 
 
 def claude_from() -> anthropic.AsyncAnthropic | None:
+    """A Claude client, or None without the `claude` extra or usable credentials."""
+    try:
+        import anthropic
+    except ImportError:
+        return None
     try:
         return anthropic.AsyncAnthropic()
     except anthropic.AnthropicError:
         return None
+
+
+def parser_from(claude: anthropic.AsyncAnthropic | None, model: str | None) -> Parser | None:
+    if claude is None:
+        return None
+    from .parse import MODEL, ClaudeParser
+
+    return ClaudeParser(claude, model or MODEL)
