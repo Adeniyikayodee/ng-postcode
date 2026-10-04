@@ -198,7 +198,19 @@ function numberText(value: number): string {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     throw new RangeError(`expected a finite number, got ${value}`);
   }
-  return String(value);
+  return plain(String(value));
+}
+
+/** Plain decimals: `String` alone writes 1e-7, which the other implementations do not. */
+function plain(text: string): string {
+  const [mantissa = "", exponent] = text.split("e");
+  if (exponent === undefined) return text;
+  const sign = mantissa.startsWith("-") ? "-" : "";
+  const [whole = "", fraction = ""] = mantissa.replace("-", "").split(".");
+  const shift = Number(exponent);
+  return shift < 0
+    ? `${sign}0.${"0".repeat(-shift - 1)}${whole}${fraction}`
+    : `${sign}${whole}${fraction}${"0".repeat(shift - fraction.length)}`;
 }
 
 function malformed(status: number, message: string): ApiError {

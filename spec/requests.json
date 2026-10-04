@@ -10,6 +10,8 @@
     { "name": "reverse", "request": "reverse", "args": {"lat": 7.6211, "lng": 5.2214}, "sends": {"path": "/v1/search/reverse", "query": [["lat", "7.6211"], ["lng", "5.2214"]]} },
     { "name": "reverse_within", "request": "reverse", "args": {"lat": 7.6211, "lng": 5.2214, "metres": 100}, "sends": {"path": "/v1/search/reverse", "query": [["lat", "7.6211"], ["lng", "5.2214"], ["max_distance_m", "100"]]} },
     { "name": "nearby_within", "request": "nearby", "args": {"lat": 7.6211, "lng": 5.2214, "metres": 62.5}, "sends": {"path": "/v1/search/nearby", "query": [["lat", "7.6211"], ["lng", "5.2214"], ["radius", "62.5"]]} },
+    { "name": "nearby_tiny_radius", "request": "nearby", "args": {"lat": 7.6211, "lng": 5.2214, "metres": 0.0000001}, "sends": {"path": "/v1/search/nearby", "query": [["lat", "7.6211"], ["lng", "5.2214"], ["radius", "0.0000001"]]} },
+    { "name": "nearby_huge_radius", "request": "nearby", "args": {"lat": 7.6211, "lng": 5.2214, "metres": 1.5e22}, "sends": {"path": "/v1/search/nearby", "query": [["lat", "7.6211"], ["lng", "5.2214"], ["radius", "15000000000000000000000"]]} },
     { "name": "reverse_nan_latitude", "request": "reverse", "args": {"lat": "nan", "lng": 5.2214}, "sends": null },
     { "name": "nearby_infinite_longitude", "request": "nearby", "args": {"lat": 7.6211, "lng": "inf"}, "sends": null },
     { "name": "reverse_infinite_distance", "request": "reverse", "args": {"lat": 7.6211, "lng": 5.2214, "metres": "-inf"}, "sends": null }
