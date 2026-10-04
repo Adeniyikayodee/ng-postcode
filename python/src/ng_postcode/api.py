@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any, Generic, TypeVar
 
-from ._postcode import Postcode, Segment
+from ._postcode import WHITE_SPACE, Postcode, Segment
 
 T = TypeVar("T")
 
@@ -151,7 +151,7 @@ def autocomplete(partial: str) -> Request[Autocomplete]:
 
     Raises `ValueError` for an empty `partial`: the live API never answers one.
     """
-    if not partial.strip():
+    if not partial.strip(WHITE_SPACE):
         raise ValueError("partial must not be empty")
     return Request("/v1/search/autocomplete", (("q", partial),), _autocomplete)
 
@@ -184,7 +184,9 @@ def decode(request: Request[T], status: int, body: str) -> T | ApiError:
         return _malformed(status, "expected a JSON object")
     failure = envelope.get("error")
     if isinstance(failure, dict):
-        code = _text(failure, "code") or "unknown_error"
+        # A code that is not text is unknown; an empty one is passed on as sent.
+        code = _text(failure, "code")
+        code = "unknown_error" if code is None else code
         return ApiError(status, code, _text(failure, "message") or "")
     if isinstance(failure, str):
         return ApiError(status, "unknown_error", failure)

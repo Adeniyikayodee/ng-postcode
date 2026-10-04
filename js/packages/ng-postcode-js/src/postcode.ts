@@ -162,6 +162,17 @@ export function isValid(text: string): boolean {
   return parse(text) instanceof Postcode;
 }
 
+const WHITE_SPACE = "\\t-\\r \\x85\\xa0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000";
+const EDGES = new RegExp(`^[${WHITE_SPACE}]+|[${WHITE_SPACE}]+$`, "g");
+
+/**
+ * Trim Unicode White_Space, which every implementation trims. `trim()` alone skips
+ * U+0085 and removes U+FEFF, which the others keep.
+ */
+export function trimWhiteSpace(text: string): string {
+  return text.replace(EDGES, "");
+}
+
 function isAsciiAlphanumeric(char: string): boolean {
   return /^[A-Za-z0-9]$/.test(char);
 }
@@ -202,7 +213,7 @@ function unconfuse(segment: Segment, text: string): string {
 }
 
 function pad(segment: Segment, value: string): string | InvalidSegment {
-  const text = value.trim();
+  const text = trimWhiteSpace(value);
   const [start, end] = SPANS[segment];
   const width = end - start;
   const shortest = NUMERIC.has(segment) ? 1 : width;

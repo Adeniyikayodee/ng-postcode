@@ -7,6 +7,8 @@
     { "name": "autocomplete", "request": "autocomplete", "args": {"q": "EK 01 A"}, "sends": {"path": "/v1/search/autocomplete", "query": [["q", "EK 01 A"]]} },
     { "name": "autocomplete_empty", "request": "autocomplete", "args": {"q": ""}, "sends": null },
     { "name": "autocomplete_no_break_space", "request": "autocomplete", "args": {"q": "\u00a0"}, "sends": null },
+    { "name": "autocomplete_next_line", "request": "autocomplete", "args": {"q": "\u0085"}, "sends": null },
+    { "name": "autocomplete_control_character", "request": "autocomplete", "args": {"q": "\u001c"}, "sends": {"path": "/v1/search/autocomplete", "query": [["q", "\u001c"]]} },
     { "name": "autocomplete_blank", "request": "autocomplete", "args": {"q": "  "}, "sends": null },
     { "name": "reverse", "request": "reverse", "args": {"lat": 7.6211, "lng": 5.2214}, "sends": {"path": "/v1/search/reverse", "query": [["lat", "7.6211"], ["lng", "5.2214"]]} },
     { "name": "reverse_within", "request": "reverse", "args": {"lat": 7.6211, "lng": 5.2214, "metres": 100}, "sends": {"path": "/v1/search/reverse", "query": [["lat", "7.6211"], ["lng", "5.2214"], ["max_distance_m", "100"]]} },

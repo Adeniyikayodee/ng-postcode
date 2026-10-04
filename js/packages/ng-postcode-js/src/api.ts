@@ -6,7 +6,7 @@
  * Response fields keep the API's own names.
  */
 
-import { type Postcode, SEGMENTS, type Segment } from "./postcode.js";
+import { type Postcode, SEGMENTS, type Segment, trimWhiteSpace } from "./postcode.js";
 
 export const BASE_URL = "https://api.postcode.gov.ng";
 
@@ -137,7 +137,7 @@ export function lookup(code: Postcode, level = 1): Request<Lookup> {
  * Throws `RangeError` for an empty `partial`: the live API never answers one.
  */
 export function autocomplete(partial: string): Request<Autocomplete> {
-  if (!partial.trim()) throw new RangeError("partial must not be empty");
+  if (!trimWhiteSpace(partial)) throw new RangeError("partial must not be empty");
   return { path: "/v1/search/autocomplete", params: [["q", partial]], read: readAutocomplete };
 }
 

@@ -14,6 +14,12 @@ _DIGITS = frozenset(string.digits)
 _SEPARATORS = frozenset(" -")
 _TO_LETTER = str.maketrans("0158", "OISB")
 _TO_DIGIT = str.maketrans("OILSB", "01158")
+# Unicode White_Space, which every implementation trims. `str.strip()` alone also
+# removes the separators U+001C to U+001F, which the others keep.
+WHITE_SPACE = (
+    "\t\n\x0b\x0c\r \x85\xa0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006"
+    "\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000"
+)
 
 
 class Segment(Enum):
@@ -229,7 +235,7 @@ def _unconfuse(segment: Segment, text: str) -> str:
 
 
 def _padded(segment: Segment, value: str) -> str | InvalidSegment:
-    text, width = value.strip(), len(_SPANS[segment])
+    text, width = value.strip(WHITE_SPACE), len(_SPANS[segment])
     shortest = 1 if segment in _NUMERIC else width
     fits = shortest <= len(text) <= width and text.isascii() and text.isalnum()
     return text.rjust(width, "0") if fits else InvalidSegment(segment)
