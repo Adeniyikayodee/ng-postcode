@@ -97,11 +97,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
   # Smithery serves a bundle that pins one version, so it is rebuilt for each release.
-  # Smithery has no trusted publishing: its key is a secret of the smithery environment.
+  # Smithery has no trusted publishing: its key is a secret of the smitheryAPI environment.
   smithery:
     needs: pypi
     runs-on: ubuntu-latest
-    environment: smithery
+    environment: smitheryAPI
     defaults:
       run:
         working-directory: mcp
@@ -117,7 +117,7 @@ jobs:
           SMITHERY_API_KEY: ${{ secrets.SMITHERY_API_KEY }}
         run: |
           if [ -z "$SMITHERY_API_KEY" ]; then
-            echo "::warning::No SMITHERY_API_KEY in the smithery environment, so the Smithery listing was not updated."
+            echo "::warning::No SMITHERY_API_KEY in the smitheryAPI environment, so the Smithery listing was not updated."
             exit 0
           fi
           npx -y @smithery/cli@4.11.1 mcp publish "$RUNNER_TEMP/ng-postcode.mcpb" -n adeniyikayode22/ng-postcode
