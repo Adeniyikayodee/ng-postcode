@@ -13,7 +13,7 @@ Part of the [ng-postcode project](https://github.com/Adeniyikayodee/ng-postcode)
 <dependency>
   <groupId>io.github.adeniyikayodee</groupId>
   <artifactId>ng-postcode-api</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
 </dependency>
 ```
 
