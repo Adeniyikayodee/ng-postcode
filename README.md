@@ -147,7 +147,7 @@ cd js && npm ci && npm test                            # JavaScript library and 
 cd java && ./mvnw verify                               # Java libraries
 ```
 
-CI runs formatting, linting, type checks and tests for every package. Releases publish from tags (`v*` to crates.io; `py-v*`, `mcp-v*` and `agent-v*` to PyPI and the MCP Registry; `js-v*` and `js-mcp-v*` to npm) through trusted publishing, so no tokens are stored. Maven Central has no trusted publishing, so `java-v*` uses a token and a signing key held as environment secrets, and the upload is published by hand.
+CI runs formatting, linting, type checks and tests for every package. Releases publish from tags (`v*` to crates.io; `py-v*`, `mcp-v*` and `agent-v*` to PyPI and the MCP Registry; `js-v*` and `js-mcp-v*` to npm) through trusted publishing, so no tokens are stored. Maven Central has no trusted publishing, so `java-v*` uses a token and a signing key held as environment secrets, and the upload is published by hand. An `mcp-v*` release also creates a GitHub release, which Glama rebuilds its listing from, and republishes the Smithery bundle with a key held the same way.
 
 ## License
 
