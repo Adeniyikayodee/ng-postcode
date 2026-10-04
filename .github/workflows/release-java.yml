@@ -27,8 +27,8 @@ jobs:
           java-version: "17"
           cache: maven
           server-id: central
-          server-username: CENTRAL_USERNAME
-          server-password: CENTRAL_PASSWORD
+          server-username-env-var: CENTRAL_USERNAME
+          server-password-env-var: CENTRAL_PASSWORD
       - name: Tag matches project version
         run: test "java-v$(./mvnw -q help:evaluate -Dexpression=project.version -DforceStdout)" = "$GITHUB_REF_NAME"
       - run: ./mvnw -B verify
