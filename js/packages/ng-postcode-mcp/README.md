@@ -8,7 +8,7 @@ This is the Node edition of the [ng-postcode](https://github.com/Adeniyikayodee/
 
 ## Install
 
-It runs over stdio with `npx` and needs Node 20.10 or later. Most clients take this entry in their MCP settings:
+It runs over stdio with `npx` and needs Node 22.12 or later. Most clients take this entry in their MCP settings:
 
 ```json
 {

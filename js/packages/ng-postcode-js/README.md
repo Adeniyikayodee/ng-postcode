@@ -8,7 +8,7 @@ Part of the [ng-postcode project](https://github.com/Adeniyikayodee/ng-postcode)
 npm install ng-postcode-js
 ```
 
-No runtime dependencies. Needs Node 20 or later, or any runtime with `fetch`.
+No runtime dependencies. Needs Node 22.12 or later, or any runtime with `fetch`.
 
 ## Offline
 
