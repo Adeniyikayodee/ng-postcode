@@ -11,6 +11,7 @@ import json
 import math
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
+from decimal import Decimal
 from typing import Any, Generic, TypeVar
 
 from ._postcode import Postcode, Segment
@@ -202,7 +203,8 @@ def _number_text(value: float) -> str:
     number = float(value)
     if not math.isfinite(number):
         raise ValueError(f"expected a finite number, got {value!r}")
-    return str(int(number)) if number.is_integer() else repr(number)
+    # Plain decimals: `repr` alone writes 1e-07, which the other implementations do not.
+    return format(Decimal(repr(number)), "f").removesuffix(".0")
 
 
 def _malformed(status: int, message: str) -> ApiError:
