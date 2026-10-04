@@ -34,6 +34,7 @@
       { "input": "EK_01-A03-FK-01", "error": { "kind": "invalid_character", "char": "_", "index": 2 } },
       { "input": "ÉK-01-A03-FK-01", "error": { "kind": "invalid_character", "char": "É", "index": 0 } },
       { "input": "EK-01-A03-FK-0١", "error": { "kind": "invalid_character", "char": "١", "index": 14 } },
+      { "input": "EK-01-A03-FK-0😀", "error": { "kind": "invalid_character", "char": "😀", "index": 14 } },
       { "input": "E1-01-A03-FK-01", "error": { "kind": "segment", "segment": "state" } },
       { "input": "EK-0A-A03-FK-01", "error": { "kind": "segment", "segment": "lga" } },
       { "input": "EK-00-A03-FK-01", "error": { "kind": "segment", "segment": "lga" } },
