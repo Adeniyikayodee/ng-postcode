@@ -204,7 +204,8 @@ def _number_text(value: float) -> str:
     if not math.isfinite(number):
         raise ValueError(f"expected a finite number, got {value!r}")
     # Plain decimals: `repr` alone writes 1e-07, which the other implementations do not.
-    return format(Decimal(repr(number)), "f").removesuffix(".0")
+    # Adding zero turns -0.0 into 0.0.
+    return format(Decimal(repr(number + 0.0)), "f").removesuffix(".0")
 
 
 def _malformed(status: int, message: str) -> ApiError:
