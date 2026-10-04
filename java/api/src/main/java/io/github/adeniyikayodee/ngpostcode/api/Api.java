@@ -189,7 +189,9 @@ public final class Api {
             return null;
         }
         var suggestions = new ArrayList<Suggestion>();
-        for (JsonNode item : data.path("suggestions")) {
+        JsonNode items = data.path("suggestions");
+        // Only a list: iterating an object would read its values as suggestions.
+        for (JsonNode item : items.isArray() ? items : JSON.createArrayNode()) {
             if (item.isObject()) {
                 suggestions.add(new Suggestion(textOrEmpty(item, "code"), text(item, "label")));
             }

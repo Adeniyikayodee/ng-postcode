@@ -142,6 +142,12 @@ class SpecTest {
     }
 
     @Test
+    void suggestionsThatAreNotAListAreIgnored() {
+        String body = "{\"data\": {\"segment\": \"state\", \"suggestions\": {\"a\": {\"code\": \"X\"}}}}";
+        assertEquals(new Autocomplete(Segment.STATE, List.of()), ok(Api.decode(Api.autocomplete("E"), 200, body)));
+    }
+
+    @Test
     void reverse() {
         Reverse found = ok(live(Api.reverse(HERE), "reverse_found"));
         assertEquals(
