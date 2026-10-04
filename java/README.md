@@ -17,7 +17,7 @@ Part of the [ng-postcode project](https://github.com/Adeniyikayodee/ng-postcode)
 </dependency>
 ```
 
-Needs Java 17 or later. The core also runs on Android; the client does not, as Android has no `java.net.http`.
+Needs Java 17 or later. Neither library has been tested on Android, and the client cannot run there, as Android has no `java.net.http`.
 
 ## Offline
 
