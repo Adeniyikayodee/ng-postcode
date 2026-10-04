@@ -55,7 +55,8 @@ public final class Api {
      * @throws IllegalArgumentException for a blank {@code partial}: the live API never answers one
      */
     public static Request<Autocomplete> autocomplete(String partial) {
-        if (partial.isBlank()) {
+        // Unicode White_Space, as the other implementations trim: isBlank() keeps a no-break space.
+        if (partial.chars().allMatch(c -> Character.isSpaceChar(c) || (c >= '\t' && c <= '\r') || c == 0x85)) {
             throw new IllegalArgumentException("partial must not be empty");
         }
         return new Request<>("/v1/search/autocomplete", List.of(Map.entry("q", partial)), Api::readAutocomplete);

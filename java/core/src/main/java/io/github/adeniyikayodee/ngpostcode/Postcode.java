@@ -78,7 +78,7 @@ public record Postcode(String compact) implements Parsed, Comparable<Postcode> {
         String[] values = {state, lga, district, area, unit};
         var joined = new StringBuilder();
         for (Segment segment : Segment.values()) {
-            String text = values[segment.ordinal()].strip();
+            String text = trimmed(values[segment.ordinal()]);
             int width = segment.end - segment.start;
             int shortest = segment == Segment.LGA || segment == Segment.UNIT ? 1 : width;
             if (text.length() < shortest || text.length() > width || !text.chars().allMatch(Postcode::isAlphanumeric)) {
@@ -178,6 +178,23 @@ public record Postcode(String compact) implements Parsed, Comparable<Postcode> {
             }
         }
         return null;
+    }
+
+    /** Trims Unicode White_Space, as the other implementations do: strip() keeps a no-break space. */
+    private static String trimmed(String text) {
+        int start = 0;
+        int end = text.length();
+        while (start < end && isWhiteSpace(text.charAt(start))) {
+            start++;
+        }
+        while (end > start && isWhiteSpace(text.charAt(end - 1))) {
+            end--;
+        }
+        return text.substring(start, end);
+    }
+
+    private static boolean isWhiteSpace(int c) {
+        return Character.isSpaceChar(c) || (c >= '\t' && c <= '\r') || c == 0x85;
     }
 
     // Explicit ranges: Character.isDigit and isLetter also accept non-ASCII scripts.
