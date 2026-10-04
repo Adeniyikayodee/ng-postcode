@@ -29,6 +29,11 @@ class ClientTest {
     private HttpServer server;
 
     private Client clientFor(HttpHandler handler) throws IOException {
+        // Generous: a cold runner can take over a second to answer the first request.
+        return clientFor(handler, Duration.ofSeconds(30));
+    }
+
+    private Client clientFor(HttpHandler handler, Duration timeout) throws IOException {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/", exchange -> {
             seen.add(exchange);
@@ -36,7 +41,7 @@ class ClientTest {
         });
         server.start();
         String base = "http://127.0.0.1:" + server.getAddress().getPort();
-        return new Client("secret", base, HttpClient.newHttpClient(), Duration.ofMillis(300));
+        return new Client("secret", base, HttpClient.newHttpClient(), timeout);
     }
 
     private static void reply(HttpExchange exchange, int status, String body) throws IOException {
@@ -79,7 +84,7 @@ class ClientTest {
 
     @Test
     void aSilentServerTimesOutAsAValueWithoutTheKey() throws IOException {
-        Client client = clientFor(exchange -> {});
+        Client client = clientFor(exchange -> {}, Duration.ofMillis(300));
         var failed = assertInstanceOf(Result.Failed.class, client.send(Api.lookup(CODE)));
         assertInstanceOf(TransportError.class, failed.failure());
         assertFalse(failed.failure().toString().contains("secret"));
