@@ -6,7 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-PACKAGE = "ng-postcode-mcp==0.4.4"
+PACKAGE = "ng-postcode-mcp==0.4.5"
 USUAL_PLACES = (Path.home() / ".local/bin", Path("/opt/homebrew/bin"), Path("/usr/local/bin"))
 
 # A host fills unset options with an empty string; the server reads that as "not set".

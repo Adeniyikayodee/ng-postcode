@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ng-postcode-mcp"
-version = "0.4.4"
+version = "0.4.5"
 description = "MCP server for Nigeria's NIPOST digital postcode (NDAPS): validate, look up, reverse-geocode and resolve addresses to postcodes."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -26,7 +26,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: GIS",
     "Typing :: Typed",
 ]
-dependencies = ["mcp>=2.3,<3", "ng-address-resolver>=0.1.5,<0.2", "ng-postcode[client]>=0.2.3,<0.3"]
+dependencies = ["mcp>=2.3,<3", "ng-address-resolver>=0.1.5,<0.2", "ng-postcode[client]>=0.2.4,<0.3"]
 
 [project.scripts]
 ng-postcode-mcp = "ng_postcode_mcp.server:main"
