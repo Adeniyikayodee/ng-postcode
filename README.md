@@ -7,7 +7,7 @@
 [![npm](https://img.shields.io/npm/v/ng-postcode-js.svg?label=npm%20ng-postcode-js)](https://www.npmjs.com/package/ng-postcode-js)
 [![npm MCP server](https://img.shields.io/npm/v/ng-postcode-mcp.svg?label=npm%20ng-postcode-mcp)](https://www.npmjs.com/package/ng-postcode-mcp)
 
-Developer tools for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026: libraries for Rust, Python, and JavaScript, MCP servers for AI assistants on PyPI and npm, and a resolver that turns described addresses into postcodes.
+Developer tools for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026: libraries for Rust, Python, JavaScript, and Java, MCP servers for AI assistants on PyPI and npm, and a resolver that turns described addresses into postcodes.
 
 A postcode has 11 characters in five segments, written `EK-01-A03-FK-01`: state, LGA, district, area and building unit.
 
@@ -18,6 +18,7 @@ A postcode has 11 characters in five segments, written `EK-01-A03-FK-01`: state,
 | `ng-postcode` (Rust) | Parse, validate and format codes offline; client for the postcode.gov.ng API | `cargo add ng-postcode` | [`src/`](src), [docs](https://docs.rs/ng-postcode) |
 | `ng-postcode` (Python) | The same behaviour, with sync and async clients | `pip install ng-postcode` | [`python/`](python) |
 | `ng-postcode-js` | The same behaviour for JavaScript and TypeScript, with a `fetch` client | `npm install ng-postcode-js` | [`js/packages/ng-postcode-js`](js/packages/ng-postcode-js) |
+| `ng-postcode` and `ng-postcode-api` (Java) | The same behaviour for Java 17 and later; the core has no dependencies | `io.github.adeniyikayodee:ng-postcode-api` | [`java/`](java) |
 | `ng-postcode-mcp` | MCP server: validate, look up, autocomplete, find by location, resolve addresses | `uvx ng-postcode-mcp` | [`mcp/`](mcp) |
 | `ng-postcode-mcp` (npm) | The same server for Node, without address resolution | `npx ng-postcode-mcp` | [`js/packages/ng-postcode-mcp`](js/packages/ng-postcode-mcp) |
 | `ng-address-resolver` | Resolve free-text addresses to postcodes, only as precisely as the evidence allows (pre-alpha) | `pip install ng-address-resolver` | [`agent/`](agent) |
@@ -69,6 +70,16 @@ if (code instanceof Postcode) {
 }
 ```
 
+**Java**
+
+```java
+import io.github.adeniyikayodee.ngpostcode.Postcode;
+
+if (Postcode.parse("ek 01 a03 fk 01") instanceof Postcode code) {
+    System.out.println(code + " " + code.compact()); // EK-01-A03-FK-01 EK01A03FK01
+}
+```
+
 **Rust**
 
 ```rust
@@ -97,7 +108,7 @@ Input may be hyphenated, spaced or compact, in either case. The compact form mat
 
 ## Design
 
-- **One behaviour, three languages:** Rust, Python and JavaScript all run the cases in [`spec/`](spec), so they cannot drift apart. The Node MCP server registers its tools from [`spec/mcp.json`](spec/mcp.json), which the Python server generates.
+- **One behaviour, four languages:** Rust, Python, JavaScript and Java all run the cases in [`spec/`](spec), so they cannot drift apart. The Node MCP server registers its tools from [`spec/mcp.json`](spec/mcp.json), which the Python server generates.
 - **Offline first:** parsing and validation never touch the network. API access is a separate, optional layer.
 - **Errors are values:** expected failures, such as a malformed code or a rejected API key, come back as return values.
 - **Careful with money and guesses:** the MCP server caps lookups at the free level unless told otherwise, and never corrects a mistyped code into a paid call. The resolver gives an area or district code when that is all the evidence supports.
@@ -129,9 +140,10 @@ cd python && uv run --group dev pytest                 # Python library
 cd mcp && uv run --group dev pytest                    # MCP server
 cd agent && uv run --group dev pytest                  # resolver
 cd js && npm ci && npm test                            # JavaScript library and Node MCP server
+cd java && ./mvnw verify                               # Java libraries
 ```
 
-CI runs formatting, linting, type checks and tests for every package. Releases publish from tags (`v*` is tagged after a crates.io release; `py-v*`, `mcp-v*` and `agent-v*` publish to PyPI and the MCP Registry; `js-v*` and `js-mcp-v*` publish to npm) through trusted publishing, so no tokens are stored.
+CI runs formatting, linting, type checks and tests for every package. Releases publish from tags (`v*` to crates.io; `py-v*`, `mcp-v*` and `agent-v*` to PyPI and the MCP Registry; `js-v*` and `js-mcp-v*` to npm) through trusted publishing, so no tokens are stored. Maven Central has no trusted publishing, so `java-v*` uses a token and a signing key held as environment secrets, and the upload is published by hand.
 
 ## License
 

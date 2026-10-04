@@ -7,6 +7,7 @@ Open-source tools for Nigeria's National Digital Alphanumeric Postcode System (N
 | [`ng-postcode` for Python](https://pypi.org/project/ng-postcode/) | `pip install ng-postcode` | Validate, parse and format codes offline; call the NIPOST API |
 | [`ng-postcode` for Rust](https://crates.io/crates/ng-postcode) | `cargo add ng-postcode` | The same behaviour in Rust |
 | [`ng-postcode-js`](https://www.npmjs.com/package/ng-postcode-js) | `npm install ng-postcode-js` | The same behaviour in JavaScript and TypeScript |
+| [`ng-postcode` for Java](https://central.sonatype.com/artifact/io.github.adeniyikayodee/ng-postcode-api) | `io.github.adeniyikayodee:ng-postcode-api` | The same behaviour in Java 17 and later |
 | [`ng-postcode-mcp`](https://pypi.org/project/ng-postcode-mcp/) | `uvx ng-postcode-mcp` or `npx ng-postcode-mcp` | Give an AI assistant postcode tools |
 | [`ng-address-resolver`](https://pypi.org/project/ng-address-resolver/) | `pip install ng-address-resolver` | Turn a described address into a postcode (pre-release) |
 
