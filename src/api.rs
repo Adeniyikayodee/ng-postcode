@@ -5,21 +5,26 @@
 //! offline.
 
 use std::fmt;
-use std::marker::PhantomData;
 
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Deserializer};
+use serde_json::{Map, Value};
 
 use crate::{Postcode, Segment};
 
 pub const BASE_URL: &str = "https://api.postcode.gov.ng";
 
 /// A GET request whose successful response decodes to `T`.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Request<T> {
     pub path: &'static str,
     pub query: Vec<(&'static str, String)>,
-    response: PhantomData<fn() -> T>,
+    read: fn(&Value) -> Option<T>,
+}
+
+/// Two requests are equal when they send the same thing.
+impl<T> PartialEq for Request<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path && self.query == other.query
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -46,7 +51,7 @@ pub fn lookup(code: Postcode, level: u8) -> Result<Request<Lookup>, InvalidReque
         return Err(InvalidRequest::Level(level));
     }
     let query = [("code", code.to_string()), ("level", level.to_string())];
-    Ok(Request::get("/v1/lookup", query))
+    Ok(Request::get("/v1/lookup", query, read_lookup))
 }
 
 /// Suggests completions for a partial postcode such as `EK 01 A`.
@@ -55,7 +60,11 @@ pub fn autocomplete(partial: &str) -> Result<Request<Autocomplete>, InvalidReque
         return Err(InvalidRequest::EmptyQuery);
     }
     let query = [("q", partial.to_owned())];
-    Ok(Request::get("/v1/search/autocomplete", query))
+    Ok(Request::get(
+        "/v1/search/autocomplete",
+        query,
+        read_autocomplete,
+    ))
 }
 
 /// Finds the postcode of the nearest building, within 25 m unless
@@ -65,7 +74,7 @@ pub fn reverse(
     max_distance_m: Option<f64>,
 ) -> Result<Request<Reverse>, InvalidRequest> {
     let query = around(at, "max_distance_m", max_distance_m)?;
-    Ok(Request::get("/v1/search/reverse", query))
+    Ok(Request::get("/v1/search/reverse", query, read_reverse))
 }
 
 /// Lists buildings around a point, nearest first, within 300 m unless
@@ -75,7 +84,7 @@ pub fn nearby(
     radius_m: Option<f64>,
 ) -> Result<Request<Vec<NearbyUnit>>, InvalidRequest> {
     let query = around(at, "radius", radius_m)?;
-    Ok(Request::get("/v1/search/nearby", query))
+    Ok(Request::get("/v1/search/nearby", query, read_nearby))
 }
 
 fn around(
@@ -95,74 +104,165 @@ fn around(
 }
 
 impl<T> Request<T> {
-    fn get(path: &'static str, query: impl IntoIterator<Item = (&'static str, String)>) -> Self {
+    fn get(
+        path: &'static str,
+        query: impl IntoIterator<Item = (&'static str, String)>,
+        read: fn(&Value) -> Option<T>,
+    ) -> Self {
         Self {
             path,
             query: query.into_iter().collect(),
-            response: PhantomData,
+            read,
         }
     }
-}
 
-impl<T: DeserializeOwned> Request<T> {
     /// Decodes the response to this request from its status and body.
     pub fn decode(&self, status: u16, body: &str) -> Result<T, ApiError> {
-        let malformed = |reason| ApiError::Malformed { status, reason };
-        match serde_json::from_str(body) {
-            Ok(Envelope {
-                error: Some(failure),
-                ..
-            }) => {
-                let (code, message) = match failure {
-                    Failure::Detail { code, message } => (code, message),
-                    Failure::Text(message) => (None, Some(message)),
-                };
-                Err(ApiError::Rejected {
-                    status,
-                    code: code.unwrap_or_else(|| "unknown_error".to_owned()),
-                    message: message.unwrap_or_default(),
-                })
+        let malformed = |reason: &str| ApiError::Malformed {
+            status,
+            reason: reason.to_owned(),
+        };
+        let rejected = |code: Option<String>, message: Option<String>| ApiError::Rejected {
+            status,
+            code: code.unwrap_or_else(|| "unknown_error".to_owned()),
+            message: message.unwrap_or_default(),
+        };
+        // Read as a tree and checked by hand: `data` this version cannot read must not
+        // hide the `error` beside it, and keys beside the two are ignored.
+        let envelope: Value =
+            serde_json::from_str(body).map_err(|error| malformed(&error.to_string()))?;
+        let envelope = envelope
+            .as_object()
+            .ok_or_else(|| malformed("expected a JSON object"))?;
+        match envelope.get("error") {
+            Some(Value::Object(failure)) => {
+                return Err(rejected(text(failure, "code"), text(failure, "message")))
             }
-            Ok(_) if !(200..300).contains(&status) => {
-                Err(malformed("an error status without an error".to_owned()))
-            }
-            Ok(Envelope {
-                data: Some(data), ..
-            }) => Ok(data),
-            Ok(_) => Err(malformed("neither data nor error".to_owned())),
-            Err(error) => Err(malformed(error.to_string())),
+            Some(Value::String(message)) => return Err(rejected(None, Some(message.clone()))),
+            _ => {}
         }
+        if !(200..300).contains(&status) {
+            return Err(malformed("an error status without an error"));
+        }
+        (self.read)(envelope.get("data").unwrap_or(&Value::Null))
+            .ok_or_else(|| malformed("unexpected data"))
     }
 }
 
-/// Keys beside `data` and `error` are ignored, so the API can add to the envelope.
-#[derive(Deserialize)]
-struct Envelope<T> {
-    data: Option<T>,
-    error: Option<Failure>,
+// The readers below are strict about one thing each: the field that carries the
+// answer. Any other field of the wrong type is read as absent, so a change NIPOST
+// makes to one field cannot fail the whole response.
+
+type Object = Map<String, Value>;
+
+fn text(data: &Object, key: &str) -> Option<String> {
+    data.get(key)?.as_str().map(str::to_owned)
 }
 
-#[derive(Deserialize)]
-#[serde(untagged)]
-enum Failure {
-    Detail {
-        code: Option<String>,
-        message: Option<String>,
-    },
-    Text(String),
+fn number(data: &Object, key: &str) -> Option<f64> {
+    data.get(key)?.as_f64()
 }
 
-/// Reads `null` like a missing key.
-fn or_default<'de, D: Deserializer<'de>, T: Deserialize<'de> + Default>(
-    deserializer: D,
-) -> Result<T, D::Error> {
-    Option::deserialize(deserializer).map(Option::unwrap_or_default)
+fn object<'a>(data: &'a Object, key: &str) -> Option<&'a Object> {
+    data.get(key)?.as_object()
 }
 
-/// A segment name this version does not know is `None`, not a failed response.
-fn known_segment<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<Segment>, D::Error> {
-    let name = Option::<String>::deserialize(deserializer)?;
-    Ok(name.and_then(|name| Segment::deserialize(serde_json::Value::String(name)).ok()))
+fn raw(data: &Object, key: &str) -> Option<Value> {
+    data.get(key).filter(|value| !value.is_null()).cloned()
+}
+
+fn read_lookup(data: &Value) -> Option<Lookup> {
+    let data = data.as_object()?;
+    Some(Lookup {
+        postcode: text(data, "postcode").unwrap_or_default(),
+        // A body without it is malformed, not an unassigned code.
+        valid: data.get("valid")?.as_bool()?,
+        administrative_address: object(data, "administrative_address").map(|admin| {
+            AdministrativeAddress {
+                state_name: text(admin, "state_name"),
+                lga_name: text(admin, "lga_name"),
+                locality_name: text(admin, "locality_name"),
+                zone: text(admin, "zone"),
+            }
+        }),
+        recent_house_address: object(data, "recent_house_address").map(|recent| {
+            RecentHouseAddress {
+                recent: text(recent, "recent"),
+            }
+        }),
+        building_use_status: text(data, "building_use_status"),
+        other_building_info: raw(data, "other_building_info"),
+        point_geometry: raw(data, "point_geometry"),
+        status: text(data, "status"),
+        verified: data.get("verified").and_then(Value::as_bool),
+    })
+}
+
+fn read_autocomplete(data: &Value) -> Option<Autocomplete> {
+    let data = data.as_object()?;
+    let suggestions = data.get("suggestions").and_then(Value::as_array);
+    Some(Autocomplete {
+        // A segment name this version does not know is `None`, not a failed response.
+        segment: match data.get("segment").and_then(Value::as_str) {
+            Some("state") => Some(Segment::State),
+            Some("lga") => Some(Segment::Lga),
+            Some("district") => Some(Segment::District),
+            Some("area") => Some(Segment::Area),
+            Some("unit") => Some(Segment::Unit),
+            _ => None,
+        },
+        suggestions: suggestions
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_object)
+            .map(|item| Suggestion {
+                code: text(item, "code").unwrap_or_default(),
+                label: text(item, "label"),
+            })
+            .collect(),
+    })
+}
+
+fn read_reverse(data: &Value) -> Option<Reverse> {
+    let data = data.as_object()?;
+    let point = data.get("coordinate").and_then(Value::as_array);
+    Some(Reverse {
+        // A body without it is malformed, not an empty search.
+        found: data.get("found")?.as_bool()?,
+        coordinate: point.and_then(|point| match point.as_slice() {
+            [lng, lat] => Some([lng.as_f64()?, lat.as_f64()?]),
+            _ => None,
+        }),
+        unit: object(data, "unit").map(|unit| NearestUnit {
+            postcode: text(unit, "postcode").unwrap_or_default(),
+            display: text(unit, "display").unwrap_or_default(),
+            distance_m: number(unit, "distance_m"),
+            confidence: text(unit, "confidence"),
+            state_name: text(unit, "state_name"),
+            lga_name: text(unit, "lga_name"),
+            locality_name: text(unit, "locality_name"),
+            address: text(unit, "address"),
+        }),
+        area: text(data, "area"),
+        district: text(data, "district"),
+        state: text(data, "state"),
+        message: text(data, "message"),
+        radius_m: number(data, "radius_m"),
+        depth: text(data, "depth"),
+    })
+}
+
+fn read_nearby(data: &Value) -> Option<Vec<NearbyUnit>> {
+    let units = data.as_array()?.iter().filter_map(Value::as_object);
+    Some(
+        units
+            .map(|unit| NearbyUnit {
+                postcode: text(unit, "postcode").unwrap_or_default(),
+                display: text(unit, "display").unwrap_or_default(),
+                distance_m: number(unit, "distance_m"),
+            })
+            .collect(),
+    )
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -208,9 +308,8 @@ impl fmt::Display for InvalidRequest {
 impl std::error::Error for InvalidRequest {}
 
 /// Fields above the level granted to the key are `None`.
-#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Lookup {
-    #[serde(default)]
     pub postcode: String,
     /// Required: a body without it is malformed, not an unassigned code.
     pub valid: bool,
@@ -229,8 +328,7 @@ pub struct Lookup {
     pub verified: Option<bool>,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
-#[serde(default)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct AdministrativeAddress {
     pub state_name: Option<String>,
     pub lga_name: Option<String>,
@@ -238,33 +336,27 @@ pub struct AdministrativeAddress {
     pub zone: Option<String>,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
-#[serde(default)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RecentHouseAddress {
     pub recent: Option<String>,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
-#[serde(default)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Autocomplete {
     /// The segment the suggestions complete.
-    #[serde(deserialize_with = "known_segment")]
     pub segment: Option<Segment>,
-    #[serde(deserialize_with = "or_default")]
     pub suggestions: Vec<Suggestion>,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
-#[serde(default)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Suggestion {
     /// The value of the segment being completed, such as `A03`, not a full prefix.
-    #[serde(deserialize_with = "or_default")]
     pub code: String,
     /// Documented by NIPOST but not sent by the live API as of October 2026.
     pub label: Option<String>,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Reverse {
     /// Required: a body without it is malformed, not an empty search.
     pub found: bool,
@@ -283,22 +375,16 @@ pub struct Reverse {
     pub depth: Option<String>,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
-#[serde(default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct NearbyUnit {
-    #[serde(deserialize_with = "or_default")]
     pub postcode: String,
-    #[serde(deserialize_with = "or_default")]
     pub display: String,
     pub distance_m: Option<f64>,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
-#[serde(default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct NearestUnit {
-    #[serde(deserialize_with = "or_default")]
     pub postcode: String,
-    #[serde(deserialize_with = "or_default")]
     pub display: String,
     pub distance_m: Option<f64>,
     /// `high`, `medium` or `low`, graded by distance.

@@ -15,11 +15,6 @@ pub struct Postcode([u8; LEN]);
 
 /// The five segments of a postcode, `AA-99-H77-BB-55`, from widest to narrowest.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[cfg_attr(
-    feature = "api",
-    derive(serde::Deserialize),
-    serde(rename_all = "lowercase")
-)]
 pub enum Segment {
     /// Two letters.
     State,

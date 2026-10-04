@@ -1,5 +1,5 @@
 {
-  "about": "Synthetic bodies the live API has not sent but may. Every implementation must reach the same outcome: ok, rejected (with the given code) or malformed.",
+  "about": "Synthetic bodies the live API has not sent but may. Every implementation must reach the same outcome: ok, rejected (with the given code) or malformed. Only the field that carries the answer is strict (valid, found, or the list itself); any other field of the wrong type is read as absent.",
   "cases": [
     { "name": "extra_envelope_key", "request": "lookup", "status": 200, "body": {"data": {"postcode": "FC-03-B06-AG-12", "valid": true}, "meta": {"request_id": "r1"}}, "outcome": "ok" },
     { "name": "unknown_data_field", "request": "lookup", "status": 200, "body": {"data": {"postcode": "FC-03-B06-AG-12", "valid": true, "tier": "gold"}}, "outcome": "ok" },
@@ -13,6 +13,15 @@
     { "name": "error_without_code", "request": "lookup", "status": 500, "body": {"error": {"message": "boom"}}, "outcome": "rejected", "code": "unknown_error" },
     { "name": "error_as_text", "request": "lookup", "status": 500, "body": {"error": "boom"}, "outcome": "rejected", "code": "unknown_error" },
     { "name": "error_wins_over_data", "request": "lookup", "status": 200, "body": {"data": {"postcode": "X", "valid": true}, "error": {"code": "bad_request", "message": "no"}}, "outcome": "rejected", "code": "bad_request" },
+    { "name": "error_with_empty_code", "request": "lookup", "status": 500, "body": {"error": {"code": "", "message": "boom"}}, "outcome": "rejected", "code": "" },
+    { "name": "error_with_code_of_the_wrong_type", "request": "lookup", "status": 500, "body": {"error": {"code": 5}}, "outcome": "rejected", "code": "unknown_error" },
+    { "name": "error_wins_over_data_it_cannot_read", "request": "lookup", "status": 429, "body": {"data": {}, "error": {"code": "rate_limited"}}, "outcome": "rejected", "code": "rate_limited" },
+    { "name": "error_wins_over_data_of_the_wrong_type", "request": "nearby", "status": 429, "body": {"data": -3, "error": {"code": "rate_limited"}}, "outcome": "rejected", "code": "rate_limited" },
+    { "name": "optional_text_of_the_wrong_type", "request": "lookup", "status": 200, "body": {"data": {"postcode": 5, "valid": true, "status": 7, "verified": "yes"}}, "outcome": "ok" },
+    { "name": "optional_object_of_the_wrong_type", "request": "reverse", "status": 200, "body": {"data": {"found": true, "unit": [], "coordinate": -3, "radius_m": "far"}}, "outcome": "ok" },
+    { "name": "suggestions_of_the_wrong_type", "request": "autocomplete", "status": 200, "body": {"data": {"segment": "state", "suggestions": {"a": {"code": "X"}}}}, "outcome": "ok" },
+    { "name": "list_item_of_the_wrong_type", "request": "nearby", "status": 200, "body": {"data": [{"postcode": "FC-03-B06-AG-12"}, "state", []]}, "outcome": "ok" },
+    { "name": "autocomplete_data_as_a_list", "request": "autocomplete", "status": 200, "body": {"data": []}, "outcome": "malformed" },
     { "name": "error_status_with_data", "request": "lookup", "status": 500, "body": {"data": {}}, "outcome": "malformed" },
     { "name": "error_status_without_envelope", "request": "lookup", "status": 503, "body": {"message": "unavailable"}, "outcome": "malformed" },
     { "name": "lookup_without_valid", "request": "lookup", "status": 200, "body": {"data": {"postcode": "FC-03-B06-AG-12"}}, "outcome": "malformed" },

@@ -15,7 +15,7 @@ include = ["/src", "/examples", "/CRATE.md", "/LICENSE"]
 
 [features]
 serde = ["dep:serde"]
-api = ["serde", "serde/derive", "dep:serde_json"]
+api = ["serde", "dep:serde_json"]
 client = ["api", "dep:ureq"]
 
 [dependencies]

@@ -3,8 +3,6 @@
 use std::fmt;
 use std::time::Duration;
 
-use serde::de::DeserializeOwned;
-
 use crate::api::{ApiError, Request, BASE_URL};
 
 const TIMEOUT: Duration = Duration::from_secs(10);
@@ -46,7 +44,7 @@ impl Client {
         }
     }
 
-    pub fn send<T: DeserializeOwned>(&self, request: &Request<T>) -> Result<T, Error> {
+    pub fn send<T>(&self, request: &Request<T>) -> Result<T, Error> {
         let call = self
             .agent
             .get(format!("{}{}", self.base_url, request.path))

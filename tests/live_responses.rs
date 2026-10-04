@@ -3,7 +3,6 @@
 
 use ng_postcode::api::{self, ApiError, Coordinate, Request};
 use ng_postcode::{Postcode, Segment};
-use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 const RESPONSES: &str = include_str!("../spec/responses.json");
@@ -12,7 +11,7 @@ const HERE: Coordinate = Coordinate {
     lng: 5.2214,
 };
 
-fn live<T: DeserializeOwned>(request: Request<T>, name: &str) -> Result<T, ApiError> {
+fn live<T>(request: Request<T>, name: &str) -> Result<T, ApiError> {
     let all: Value = serde_json::from_str(RESPONSES).expect("responses.json is valid JSON");
     let status = all[name]["status"].as_u64().expect("status") as u16;
     request.decode(status, &all[name]["body"].to_string())
