@@ -12,6 +12,10 @@
   <name>ng-postcode-api</name>
   <description>Client for the postcode.gov.ng API: requests, decoding and an HTTP client.</description>
 
+  <properties>
+    <module.name>io.github.adeniyikayodee.ngpostcode.api</module.name>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>io.github.adeniyikayodee</groupId>

@@ -12,6 +12,10 @@
   <name>ng-postcode</name>
   <description>Parse, validate and format Nigeria's NIPOST digital postcode (NDAPS) offline.</description>
 
+  <properties>
+    <module.name>io.github.adeniyikayodee.ngpostcode</module.name>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
