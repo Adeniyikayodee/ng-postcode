@@ -5,7 +5,7 @@
 
 Rust library for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026. Parse, validate and format postcodes offline, and call the [postcode.gov.ng](https://docs.postcode.gov.ng) API for lookup, autocomplete and reverse geocoding.
 
-Part of the [ng-postcode project](https://github.com/Adeniyikayodee/ng-postcode), which has the same behaviour in Python and JavaScript, MCP servers for AI assistants, and an address resolver.
+Part of the [ng-postcode project](https://github.com/Adeniyikayodee/ng-postcode), which has the same behaviour in Python, JavaScript and Java, MCP servers for AI assistants, and an address resolver.
 
 ## Format
 

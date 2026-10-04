@@ -2,7 +2,7 @@
 
 JavaScript and TypeScript library for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026. Parse, validate and format postcodes offline, and call the [postcode.gov.ng](https://docs.postcode.gov.ng) API for lookup, autocomplete and reverse geocoding.
 
-Part of the [ng-postcode project](https://github.com/Adeniyikayodee/ng-postcode), which has the same behaviour in Rust and Python and an MCP server for AI assistants. All three run the same shared test cases.
+Part of the [ng-postcode project](https://github.com/Adeniyikayodee/ng-postcode), which has the same behaviour in Rust, Python and Java and an MCP server for AI assistants. All four run the same shared test cases.
 
 ```sh
 npm install ng-postcode-js
