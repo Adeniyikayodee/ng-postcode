@@ -48,7 +48,7 @@
     "ng-postcode-js": "^0.1.0"
   },
   "engines": {
-    "node": ">=20.10"
+    "node": ">=22.12"
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "^2.3.0"
