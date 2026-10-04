@@ -1,0 +1,40 @@
+name: Release Java libraries
+
+# Push a tag such as java-v0.1.0. Maven Central has no trusted publishing, so its
+# token and the signing key are secrets of the maven-central environment. The
+# upload is validated but not published: finish it at central.sonatype.com.
+on:
+  push:
+    tags: ["java-v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: maven-central
+      url: https://central.sonatype.com/artifact/io.github.adeniyikayodee/ng-postcode
+    defaults:
+      run:
+        working-directory: java
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+          server-id: central
+          server-username: CENTRAL_USERNAME
+          server-password: CENTRAL_PASSWORD
+      - name: Tag matches project version
+        run: test "java-v$(./mvnw -q help:evaluate -Dexpression=project.version -DforceStdout)" = "$GITHUB_REF_NAME"
+      - run: ./mvnw -B verify
+      - run: ./mvnw -B -Prelease -DskipTests deploy
+        env:
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          MAVEN_GPG_KEY: ${{ secrets.MAVEN_GPG_KEY }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
