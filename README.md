@@ -134,6 +134,8 @@ Observed on 3 October 2026:
 
 ## Development
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the shared spec, how to add a language, and the commit standards.
+
 ```sh
 cargo test --all-features                              # Rust
 cd python && uv run --group dev pytest                 # Python library
