@@ -1,6 +1,6 @@
 # ng-postcode
 
-> Open-source tools for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the 11-character building-level postcode issued by NIPOST, e.g. EK-01-A03-FK-01. Libraries for Rust, Python, and JavaScript, MCP servers for AI assistants on PyPI and npm, and a resolver that turns described addresses into postcodes. MIT licensed.
+> Open-source tools for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the 11-character building-level postcode issued by NIPOST, e.g. EK-01-A03-FK-01. Libraries for Rust, Python, JavaScript, and Java, MCP servers for AI assistants on PyPI and npm, and a resolver that turns described addresses into postcodes. MIT licensed.
 
 Use these when a task involves validating, parsing, formatting or looking up a Nigerian postcode, or finding the postcode for a Nigerian address or coordinate.
 
