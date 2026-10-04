@@ -161,26 +161,7 @@ language.
 
 ## Working with AI coding agents
 
-Use them. A good share of this repository was written with one. Just take it
-easy, and remember whose name is on the commit.
-
-1. **You are the author.** The agent does not get paged. If you cannot explain
-   a line in your pull request, it is not ready.
-2. **Verify before you push.** Run the suites yourself and read the diff.
-   "It should work" is a hypothesis, however confidently it was typed.
-3. **The spec is the judge.** When a shared case fails, fix the code. An agent
-   that makes the test pass by editing the case has solved the wrong problem.
-4. **Agents know APIs they have never called.** Any claim about how NIPOST
-   behaves needs a captured response and a date, not a fluent paragraph.
-5. **Keep it small.** An agent can write two thousand lines before your tea
-   cools. Nobody can review them that fast, so send the one change you meant.
-6. **Keep secrets out of the chat.** A key pasted into a prompt is a key you
-   now need to rotate.
-
-A cautionary tale from this repository: a client test passed on the author's
-machine and then hung three CI jobs for ten minutes, because the local JDK was
-newer than every version the library supports. The agent was sure. CI was not.
-CI was right.
+Use them, but verify. Run the tests and read the diff before you push.
 
 ## Commit standards
 
