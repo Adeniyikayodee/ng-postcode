@@ -1,7 +1,6 @@
 package io.github.adeniyikayodee.ngpostcode.api;
 
 import io.github.adeniyikayodee.ngpostcode.api.Failure.TransportError;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -9,6 +8,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 /** Blocking HTTP client over {@link Api}: the only class that performs I/O. Safe to share. */
@@ -59,12 +61,19 @@ public final class Client {
                 .timeout(timeout)
                 .header("X-API-Key", apiKey)
                 .build();
+        // The request timeout stops at the response headers before Java 26, so a body that
+        // stalls would hang. The deadline here covers the whole exchange.
+        var pending = http.sendAsync(call, HttpResponse.BodyHandlers.ofString());
         try {
-            HttpResponse<String> response = http.send(call, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = pending.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
             return Api.decode(request, response.statusCode(), response.body());
-        } catch (IOException error) {
-            return failed(error);
+        } catch (TimeoutException error) {
+            pending.cancel(true);
+            return failed(new TimeoutException("request timed out"));
+        } catch (ExecutionException error) {
+            return failed(error.getCause());
         } catch (InterruptedException error) {
+            pending.cancel(true);
             Thread.currentThread().interrupt();
             return failed(error);
         }
@@ -74,7 +83,7 @@ public final class Client {
         return URLEncoder.encode(text, StandardCharsets.UTF_8);
     }
 
-    private static <T> Result<T> failed(Exception error) {
+    private static <T> Result<T> failed(Throwable error) {
         String reason = error.getMessage() != null ? error.getMessage() : error.getClass().getSimpleName();
         return new Result.Failed<>(new TransportError(reason));
     }

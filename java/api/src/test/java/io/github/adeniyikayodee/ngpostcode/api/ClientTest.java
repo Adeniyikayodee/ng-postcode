@@ -83,6 +83,19 @@ class ClientTest {
     }
 
     @Test
+    void aBodyThatStallsTimesOutToo() throws IOException {
+        Client client = clientFor(
+                exchange -> {
+                    exchange.sendResponseHeaders(200, 100);
+                    exchange.getResponseBody().write("{\"data\":".getBytes(StandardCharsets.UTF_8));
+                    exchange.getResponseBody().flush();
+                },
+                Duration.ofMillis(300));
+        var failed = assertInstanceOf(Result.Failed.class, client.send(Api.lookup(CODE)));
+        assertInstanceOf(TransportError.class, failed.failure());
+    }
+
+    @Test
     void aSilentServerTimesOutAsAValueWithoutTheKey() throws IOException {
         Client client = clientFor(exchange -> {}, Duration.ofMillis(300));
         var failed = assertInstanceOf(Result.Failed.class, client.send(Api.lookup(CODE)));
