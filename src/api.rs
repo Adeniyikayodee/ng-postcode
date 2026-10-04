@@ -87,7 +87,8 @@ fn around(
         .into_iter()
         .filter_map(|(key, value)| Some((key, value?)))
         .map(|(key, value)| match value.is_finite() {
-            true => Ok((key, value.to_string())),
+            // Adding zero writes -0.0 as "0", as the other implementations do.
+            true => Ok((key, (value + 0.0).to_string())),
             false => Err(InvalidRequest::NotFinite(key)),
         })
         .collect()
