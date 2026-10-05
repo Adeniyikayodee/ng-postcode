@@ -7,7 +7,7 @@ description = "Parse, validate and format Nigeria's NIPOST digital postcode (NDA
 license = "MIT"
 repository = "https://github.com/Adeniyikayodee/ng-postcode"
 documentation = "https://docs.rs/ng-postcode"
-keywords = ["nigeria", "postcode", "nipost", "address", "geocoding"]
+keywords = ["nigeria", "postcode", "nipost", "ndaps", "postal-code"]
 categories = ["parser-implementations", "api-bindings", "science::geo", "value-formatting"]
 readme = "CRATE.md"
 # The repository also holds the Python package and the shared spec.
