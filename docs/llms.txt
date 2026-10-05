@@ -4,6 +4,8 @@
 
 Use these when a task involves validating, parsing, formatting or looking up a Nigerian postcode, or finding the postcode for a Nigerian address or coordinate.
 
+Since 1 October 2026 a Nigerian building's postcode is this 11-character code. A six-digit pattern such as `^\d{6}$` does not match it: that is the older area postal code, which these libraries reject.
+
 - Format: state (2 letters), LGA (2 digits, 01 to 99), district (3 letters or digits), area (2 letters), building unit (2 digits, 01 to 99).
 - Compact regex: `^[A-Z]{2}(0[1-9]|[1-9][0-9])[A-Z0-9]{3}[A-Z]{2}(0[1-9]|[1-9][0-9])$`
 - Validation is offline and needs no key. Lookup, autocomplete and reverse geocoding call api.postcode.gov.ng and need a key from https://dashboard.postcode.gov.ng.
@@ -16,19 +18,24 @@ Use these when a task involves validating, parsing, formatting or looking up a N
 - [ng-postcode for Python](https://pypi.org/project/ng-postcode/): `pip install ng-postcode`. `parse`, `parse_lenient`, `from_segments`, `is_valid`; add the `client` extra for sync and async API clients.
 - [ng-postcode for Rust](https://docs.rs/ng-postcode): `cargo add ng-postcode`. `Postcode::parse`, `parse_lenient`, `from_segments`; features `serde`, `api`, `client`.
 - [ng-postcode-js](https://www.npmjs.com/package/ng-postcode-js): `npm install ng-postcode-js`. `parse`, `parseLenient`, `fromSegments`, `isValid`; `ng-postcode-js/api` and `ng-postcode-js/client` call the API with `fetch`.
+- [ng-postcode for Java](https://central.sonatype.com/artifact/io.github.adeniyikayodee/ng-postcode): Maven `io.github.adeniyikayodee:ng-postcode` (offline, no dependencies) and `io.github.adeniyikayodee:ng-postcode-api` (API client), Java 17 or later. `Postcode.parse`, `parseLenient`, `fromSegments`, `isValid`.
 - [ng-postcode-mcp](https://pypi.org/project/ng-postcode-mcp/): MCP server, run with `uvx ng-postcode-mcp`, or with `npx -y ng-postcode-mcp` for the Node edition, which has every tool except `resolve_address`. Tools: `validate_postcode`, `lookup_postcode`, `autocomplete_postcode`, `find_postcode_at_location`, `resolve_address`. Registry name `io.github.Adeniyikayodee/ng-postcode`.
 - [ng-address-resolver](https://pypi.org/project/ng-address-resolver/): `pip install ng-address-resolver`. Resolves free-text Nigerian addresses to postcodes, only as precisely as the evidence allows. Pre-release.
+- [WooCommerce plugin](https://github.com/Adeniyikayodee/ng-postcode-woocommerce): checks and tidies the postcode at checkout, finds it from the customer's location, and makes shipping zones match on postcode prefixes.
 
 ## Docs
 
 - [Guide](https://adeniyikayodee.github.io/ng-postcode/): install and usage for every package
+- [llms-full.txt](https://adeniyikayodee.github.io/ng-postcode/llms-full.txt): every package's README in one file
 - [Python README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/python/README.md)
 - [Rust README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/CRATE.md)
+- [JavaScript README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/js/packages/ng-postcode-js/README.md)
+- [Java README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/java/README.md)
 - [MCP server README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/mcp/README.md): per-client setup and configuration
 - [Resolver README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/agent/README.md)
 - [Where the live API differs from its docs](https://github.com/Adeniyikayodee/ng-postcode#where-the-live-api-differs-from-its-docs)
 
 ## Optional
 
-- [Shared test vectors](https://github.com/Adeniyikayodee/ng-postcode/tree/main/spec): the cases both languages must pass
+- [Shared test vectors](https://github.com/Adeniyikayodee/ng-postcode/tree/main/spec): the cases every implementation must pass
 - [NIPOST API docs](https://docs.postcode.gov.ng)
