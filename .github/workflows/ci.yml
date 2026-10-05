@@ -21,6 +21,8 @@ jobs:
       - run: cargo clippy --all-features --all-targets -- -D warnings
       - run: cargo test --all-features
       - run: cargo test --no-default-features
+      - name: The agent docs match the READMEs
+        run: python3 scripts/llms_full.py --check
 
   python:
     runs-on: ubuntu-latest

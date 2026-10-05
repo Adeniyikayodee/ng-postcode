@@ -1,0 +1,748 @@
+<!-- docs/llms.txt -->
+
+# ng-postcode
+
+> Open-source tools for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the 11-character building-level postcode issued by NIPOST, e.g. EK-01-A03-FK-01. Libraries for Rust, Python, JavaScript, and Java, MCP servers for AI assistants on PyPI and npm, and a resolver that turns described addresses into postcodes. MIT licensed.
+
+Use these when a task involves validating, parsing, formatting or looking up a Nigerian postcode, or finding the postcode for a Nigerian address or coordinate.
+
+Since 1 October 2026 a Nigerian building's postcode is this 11-character code. A six-digit pattern such as `^\d{6}$` does not match it: that is the older area postal code, which these libraries reject.
+
+- Format: state (2 letters), LGA (2 digits, 01 to 99), district (3 letters or digits), area (2 letters), building unit (2 digits, 01 to 99).
+- Compact regex: `^[A-Z]{2}(0[1-9]|[1-9][0-9])[A-Z0-9]{3}[A-Z]{2}(0[1-9]|[1-9][0-9])$`
+- Validation is offline and needs no key. Lookup, autocomplete and reverse geocoding call api.postcode.gov.ng and need a key from https://dashboard.postcode.gov.ng.
+- A well-formed code is not necessarily assigned to a building; only the API confirms that.
+
+- To pass a postcode between systems or agents, use a postcode reference: `{"code": "EK-01-A03-FK", "level": "area", "confidence": "medium"}`. Schema: https://adeniyikayodee.github.io/ng-postcode/schemas/postcode-reference.schema.json
+
+## Packages
+
+- [ng-postcode for Python](https://pypi.org/project/ng-postcode/): `pip install ng-postcode`. `parse`, `parse_lenient`, `from_segments`, `is_valid`; add the `client` extra for sync and async API clients.
+- [ng-postcode for Rust](https://docs.rs/ng-postcode): `cargo add ng-postcode`. `Postcode::parse`, `parse_lenient`, `from_segments`; features `serde`, `api`, `client`.
+- [ng-postcode-js](https://www.npmjs.com/package/ng-postcode-js): `npm install ng-postcode-js`. `parse`, `parseLenient`, `fromSegments`, `isValid`; `ng-postcode-js/api` and `ng-postcode-js/client` call the API with `fetch`.
+- [ng-postcode for Java](https://central.sonatype.com/artifact/io.github.adeniyikayodee/ng-postcode): Maven `io.github.adeniyikayodee:ng-postcode` (offline, no dependencies) and `io.github.adeniyikayodee:ng-postcode-api` (API client), Java 17 or later. `Postcode.parse`, `parseLenient`, `fromSegments`, `isValid`.
+- [ng-postcode-mcp](https://pypi.org/project/ng-postcode-mcp/): MCP server, run with `uvx ng-postcode-mcp`, or with `npx -y ng-postcode-mcp` for the Node edition, which has every tool except `resolve_address`. Tools: `validate_postcode`, `lookup_postcode`, `autocomplete_postcode`, `find_postcode_at_location`, `resolve_address`. Registry name `io.github.Adeniyikayodee/ng-postcode`.
+- [ng-address-resolver](https://pypi.org/project/ng-address-resolver/): `pip install ng-address-resolver`. Resolves free-text Nigerian addresses to postcodes, only as precisely as the evidence allows. Pre-release.
+- [WooCommerce plugin](https://github.com/Adeniyikayodee/ng-postcode-woocommerce): checks and tidies the postcode at checkout, finds it from the customer's location, and makes shipping zones match on postcode prefixes.
+
+## Docs
+
+- [Guide](https://adeniyikayodee.github.io/ng-postcode/): install and usage for every package
+- [llms-full.txt](https://adeniyikayodee.github.io/ng-postcode/llms-full.txt): every package's README in one file
+- [Python README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/python/README.md)
+- [Rust README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/CRATE.md)
+- [JavaScript README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/js/packages/ng-postcode-js/README.md)
+- [Java README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/java/README.md)
+- [MCP server README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/mcp/README.md): per-client setup and configuration
+- [Resolver README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/agent/README.md)
+- [Where the live API differs from its docs](https://github.com/Adeniyikayodee/ng-postcode#where-the-live-api-differs-from-its-docs)
+
+## Optional
+
+- [Shared test vectors](https://github.com/Adeniyikayodee/ng-postcode/tree/main/spec): the cases every implementation must pass
+- [NIPOST API docs](https://docs.postcode.gov.ng)
+
+---
+
+<!-- README.md -->
+
+# ng-postcode
+
+[![CI](https://github.com/Adeniyikayodee/ng-postcode/actions/workflows/ci.yml/badge.svg)](https://github.com/Adeniyikayodee/ng-postcode/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/ng-postcode.svg)](https://crates.io/crates/ng-postcode)
+[![PyPI](https://img.shields.io/pypi/v/ng-postcode.svg?label=pypi%20ng-postcode)](https://pypi.org/project/ng-postcode/)
+[![MCP server](https://img.shields.io/pypi/v/ng-postcode-mcp.svg?label=pypi%20ng-postcode-mcp)](https://pypi.org/project/ng-postcode-mcp/)
+[![npm](https://img.shields.io/npm/v/ng-postcode-js.svg?label=npm%20ng-postcode-js)](https://www.npmjs.com/package/ng-postcode-js)
+[![npm MCP server](https://img.shields.io/npm/v/ng-postcode-mcp.svg?label=npm%20ng-postcode-mcp)](https://www.npmjs.com/package/ng-postcode-mcp)
+
+Developer tools for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026: libraries for Rust, Python, JavaScript, and Java, MCP servers for AI assistants on PyPI and npm, and a resolver that turns described addresses into postcodes.
+
+A postcode has 11 characters in five segments, written `EK-01-A03-FK-01`: state, LGA, district, area and building unit.
+
+## Packages
+
+| Package | What it does | Install | Source |
+| --- | --- | --- | --- |
+| `ng-postcode` (Rust) | Parse, validate and format codes offline; client for the postcode.gov.ng API | `cargo add ng-postcode` | [`src/`](src), [docs](https://docs.rs/ng-postcode) |
+| `ng-postcode` (Python) | The same behaviour, with sync and async clients | `pip install ng-postcode` | [`python/`](python) |
+| `ng-postcode-js` | The same behaviour for JavaScript and TypeScript, with a `fetch` client | `npm install ng-postcode-js` | [`js/packages/ng-postcode-js`](js/packages/ng-postcode-js) |
+| `ng-postcode` and `ng-postcode-api` (Java) | The same behaviour for Java 17 and later; the core has no dependencies | `io.github.adeniyikayodee:ng-postcode-api` | [`java/`](java) |
+| `ng-postcode-mcp` | MCP server: validate, look up, autocomplete, find by location, resolve addresses | `uvx ng-postcode-mcp` | [`mcp/`](mcp) |
+| `ng-postcode-mcp` (npm) | The same server for Node, without address resolution | `npx ng-postcode-mcp` | [`js/packages/ng-postcode-mcp`](js/packages/ng-postcode-mcp) |
+| `ng-address-resolver` | Resolve free-text addresses to postcodes, only as precisely as the evidence allows (pre-alpha) | `pip install ng-address-resolver` | [`agent/`](agent) |
+
+Each package has its own README with full usage.
+
+For Go, see [abcubed3/postcode](https://github.com/abcubed3/postcode), a client library for the same postcode and the postcode.gov.ng API, maintained by its own author.
+
+For online stores, [ng-postcode-woocommerce](https://github.com/Adeniyikayodee/ng-postcode-woocommerce) is a WooCommerce plugin built on the same rules and the same shared test cases: it checks and tidies the postcode at checkout, finds it from the customer's location, and makes shipping zones match on postcode prefixes.
+
+## Quick start
+
+**AI assistants**
+
+The MCP server works with any MCP client. It runs over stdio as `uvx ng-postcode-mcp`, with the API key in the environment. Most clients take this entry in their MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "ng-postcode": {
+      "command": "uvx",
+      "args": ["ng-postcode-mcp"],
+      "env": { "NG_POSTCODE_API_KEY": "nipost_live_..." }
+    }
+  }
+}
+```
+
+To run it with Node, use `"command": "npx"` and `"args": ["-y", "ng-postcode-mcp"]`; that edition has every tool except address resolution. Per-client steps for Cursor, VS Code, Codex, Claude and others are in the [MCP server README](mcp#install). Validation works without a key. The server is listed in the MCP Registry as `io.github.Adeniyikayodee/ng-postcode`.
+
+**Python**
+
+```python
+from ng_postcode import Postcode, parse
+
+match parse("ek 01 a03 fk 01"):
+    case Postcode() as code:
+        print(code, code.compact)  # EK-01-A03-FK-01 EK01A03FK01
+    case error:
+        print(error)               # e.g. "invalid lga segment"
+```
+
+**JavaScript and TypeScript**
+
+```ts
+import { Postcode, parse } from "ng-postcode-js";
+
+const code = parse("ek 01 a03 fk 01");
+if (code instanceof Postcode) {
+  console.log(String(code), code.compact); // EK-01-A03-FK-01 EK01A03FK01
+} else {
+  console.log(String(code));               // e.g. "invalid lga segment"
+}
+```
+
+**Java**
+
+```java
+import io.github.adeniyikayodee.ngpostcode.Postcode;
+
+if (Postcode.parse("ek 01 a03 fk 01") instanceof Postcode code) {
+    System.out.println(code + " " + code.compact()); // EK-01-A03-FK-01 EK01A03FK01
+}
+```
+
+**Rust**
+
+```rust
+use ng_postcode::{Postcode, Segment};
+
+let code: Postcode = "ek 01 a03 fk 01".parse()?;
+assert_eq!(code.to_string(), "EK-01-A03-FK-01");
+assert_eq!(code.prefix(Segment::Area), "EK-01-A03-FK");
+```
+
+## For coding agents
+
+Language models trained before October 2026 expect a six-digit Nigerian postcode. To point a coding agent at the current format, paste this into your project's `AGENTS.md`, `CLAUDE.md`, or editor rules:
+
+```text
+Nigerian postcodes: since 1 October 2026 a building's postcode is NIPOST's 11-character
+digital postcode (NDAPS), such as EK-01-A03-FK-01, and a six-digit pattern does not match it.
+Validate and format it with ng-postcode (pip, cargo), ng-postcode-js (npm), or
+io.github.adeniyikayodee:ng-postcode (Maven).
+Reference: https://adeniyikayodee.github.io/ng-postcode/llms.txt
+```
+
+## The format
+
+| Segment | Example | Shape |
+| --- | --- | --- |
+| State | `EK` | 2 letters |
+| LGA | `01` | 2 digits, 01 to 99 |
+| District | `A03` | 3 letters or digits |
+| Area | `FK` | 2 letters |
+| Building unit | `01` | 2 digits, 01 to 99 |
+
+Input may be hyphenated, spaced or compact, in either case. The compact form matches `^[A-Z]{2}(0[1-9]|[1-9][0-9])[A-Z0-9]{3}[A-Z]{2}(0[1-9]|[1-9][0-9])$`. A well-formed code is not necessarily assigned to a building; only the NIPOST API can confirm that.
+
+## Passing a postcode between systems
+
+[`docs/schemas/postcode-reference.schema.json`](docs/schemas/postcode-reference.schema.json) defines a small JSON object for handing a location from one system or AI agent to another: the code, its level (`state` to `building`), and optionally a confidence and whether NIPOST confirmed it. A resolved or partial `resolve_address` answer already fits it.
+
+## Design
+
+- **One behaviour, four languages:** Rust, Python, JavaScript and Java all run the cases in [`spec/`](spec), so they cannot drift apart. The Node MCP server registers its tools from [`spec/mcp.json`](spec/mcp.json), which the Python server generates.
+- **Offline first:** parsing and validation never touch the network. API access is a separate, optional layer.
+- **Errors are values:** expected failures, such as a malformed code or a rejected API key, come back as return values.
+- **Careful with money and guesses:** the MCP server caps lookups at the free level unless told otherwise, and never corrects a mistyped code into a paid call. The resolver gives an area or district code when that is all the evidence supports.
+
+## Status
+
+- The NIPOST API needs a key for every endpoint, from the [developer dashboard](https://dashboard.postcode.gov.ng). Offline validation needs nothing.
+- The API layer is tested against responses captured from the live API with a level 1 key, kept in [`spec/responses.json`](spec/responses.json). Run [`scripts/live_check.py`](scripts/live_check.py) with your own key to repeat the comparison. Lookup levels 2 and up need a higher-access key and are tested only against NIPOST's documented examples.
+- The resolver and the `resolve_address` tool are pre-release. They work against the live API, but their accuracy on real addresses is unmeasured. Described addresses need a geocoder you run or pay for; text alone rarely identifies a building, so ask users for a location pin when the exact building matters.
+
+### Where the live API differs from its docs
+
+Observed on 3 October 2026:
+
+- Every endpoint needs a key, including search, assembly and level 1 lookup, which the docs describe as public.
+- Lookup also returns `status` (`valid`, `not_found`, `invalid`) and `verified`. A malformed code is answered with HTTP 200 and `status: invalid`.
+- Autocomplete suggestions carry only `code`, the value of the next segment. The documented `label` is not sent.
+- Reverse geocoding also returns `depth`.
+- Nearby search, which the docs leave unspecified, returns a list of `postcode`, `display` and `distance_m`, nearest first.
+- Asking for a level the key lacks returns `403 level_not_granted`.
+- An empty autocomplete query never gets a response, so the libraries refuse to send one.
+- `EK-01-A03-FK-01`, the example used throughout NIPOST's docs, is reported as not assigned.
+
+## Development
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the shared spec, how to add a language, and the commit standards.
+
+```sh
+cargo test --all-features                              # Rust
+cd python && uv run --group dev pytest                 # Python library
+cd mcp && uv run --group dev pytest                    # MCP server
+cd agent && uv run --group dev pytest                  # resolver
+cd js && npm ci && npm test                            # JavaScript library and Node MCP server
+cd java && ./mvnw verify                               # Java libraries
+```
+
+CI runs formatting, linting, type checks and tests for every package. Releases publish from tags (`v*` to crates.io; `py-v*`, `mcp-v*` and `agent-v*` to PyPI and the MCP Registry; `js-v*` and `js-mcp-v*` to npm) through trusted publishing, so no tokens are stored. Maven Central has no trusted publishing, so `java-v*` uses a token and a signing key held as environment secrets, and the upload is published by hand. An `mcp-v*` release also creates a GitHub release, which Glama rebuilds its listing from, and republishes the Smithery bundle with a key held the same way.
+
+## License
+
+MIT
+
+---
+
+<!-- python/README.md -->
+
+# ng-postcode
+
+Python library for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026. Parse, validate and format postcodes offline, and call the [postcode.gov.ng](https://docs.postcode.gov.ng) API for lookup, autocomplete and reverse geocoding.
+
+Also available for Rust as [`ng-postcode` on crates.io](https://crates.io/crates/ng-postcode) for JavaScript as [`ng-postcode-js` on npm](https://www.npmjs.com/package/ng-postcode-js), and for Java as [`ng-postcode-api` on Maven Central](https://central.sonatype.com/artifact/io.github.adeniyikayodee/ng-postcode-api).
+
+```sh
+pip install ng-postcode            # offline core, no dependencies
+pip install "ng-postcode[client]"  # adds the API client (httpx)
+```
+
+## Format
+
+An 11-character code in five segments: state, LGA, district, area, building unit.
+
+| Style | Example |
+| --- | --- |
+| Canonical | `EK-01-A03-FK-01` |
+| Display | `EK 01 A03 FK 01` |
+| Compact | `EK01A03FK01` |
+
+Compact form as a regular expression: `^[A-Z]{2}(0[1-9]|[1-9][0-9])[A-Z0-9]{3}[A-Z]{2}(0[1-9]|[1-9][0-9])$`
+
+## Offline
+
+Expected failures are returned as values, so the type checker makes you handle them.
+
+```python
+from ng_postcode import Postcode, Segment, parse
+
+match parse("ek 01 a03 fk 01"):
+    case Postcode() as code:
+        print(code)  # EK-01-A03-FK-01
+        print(code.compact)  # EK01A03FK01, store this
+        print(code.spaced)  # EK 01 A03 FK 01
+        print(code.prefix(Segment.AREA))  # EK-01-A03-FK
+    case error:
+        print(error)  # e.g. "invalid lga segment"
+```
+
+- `parse` accepts hyphenated, spaced or compact input in either case.
+- `parse_lenient` first swaps look-alikes that cannot occur where they stand (`O`/`0`, `I`/`1`, `S`/`5`, `B`/`8`) and reports how many it changed.
+- `from_segments` assembles a code from its parts and zero-fills the LGA and unit.
+- `Postcode` is immutable, hashable and sorts by state, LGA, district, area, unit.
+
+A well-formed code is not necessarily assigned to a building. Only the API can confirm that a postcode exists.
+
+## API
+
+```python
+from ng_postcode import Postcode, parse
+from ng_postcode.api import lookup
+from ng_postcode.client import Client
+
+code = parse("EK-01-A03-FK-01")
+assert isinstance(code, Postcode)
+
+with Client(api_key="nipost_live_...") as client:
+    found = client.send(lookup(code, level=2))
+```
+
+`send` returns the typed response, an `ApiError` (for example `auth_required` or `insufficient_credits`) or a `TransportError`. `AsyncClient` has the same interface for asyncio.
+
+`ng_postcode.api` covers lookup, autocomplete, reverse geocoding and nearby search. Each function returns a `Request` value and `decode` turns a status and body into a typed result, so it works with any HTTP client without the `client` extra.
+
+## License
+
+MIT
+
+---
+
+<!-- CRATE.md -->
+
+# ng-postcode
+
+[![crates.io](https://img.shields.io/crates/v/ng-postcode.svg)](https://crates.io/crates/ng-postcode)
+[![docs.rs](https://docs.rs/ng-postcode/badge.svg)](https://docs.rs/ng-postcode)
+
+Rust library for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026. Parse, validate and format postcodes offline, and call the [postcode.gov.ng](https://docs.postcode.gov.ng) API for lookup, autocomplete and reverse geocoding.
+
+Part of the [ng-postcode project](https://github.com/Adeniyikayodee/ng-postcode), which has the same behaviour in Python, JavaScript and Java, MCP servers for AI assistants, and an address resolver.
+
+## Format
+
+An 11-character code in five segments: state, LGA, district, area, building unit.
+
+| Style | Example |
+| --- | --- |
+| Canonical | `EK-01-A03-FK-01` |
+| Display | `EK 01 A03 FK 01` |
+| Compact | `EK01A03FK01` |
+
+Compact form as a regular expression: `^[A-Z]{2}(0[1-9]|[1-9][0-9])[A-Z0-9]{3}[A-Z]{2}(0[1-9]|[1-9][0-9])$`
+
+## Offline
+
+```rust
+use ng_postcode::{Postcode, Segment};
+
+// Hyphens, spaces and case are all accepted.
+let code: Postcode = "ek 01 a03 fk 01".parse()?;
+
+assert_eq!(code.to_string(), "EK-01-A03-FK-01"); // canonical
+assert_eq!(code.as_str(), "EK01A03FK01");        // compact, for storage
+assert_eq!(code.to_spaced(), "EK 01 A03 FK 01"); // for display
+
+assert_eq!(code.state(), "EK");
+assert_eq!(code.prefix(Segment::Area), "EK-01-A03-FK");
+```
+
+- `Postcode::parse` checks the structure: 2 letters, 2 digits, 3 letters or digits, 2 letters, 2 digits, with numeric segments from 01 to 99.
+- `Postcode::parse_lenient` first swaps look-alike characters that cannot occur where they stand (`O`/`0`, `I`/`1`, `S`/`5`, `B`/`8`) and reports how many it changed.
+- `Postcode::from_segments` assembles a code from its parts and zero-fills the LGA and unit.
+- `Postcode` is `Copy`, 11 bytes, and sorts by state, LGA, district, area, unit.
+
+A well-formed code is not necessarily assigned to a building, and the state is not checked against a list of state codes. Only the API can confirm that a postcode exists.
+
+## API
+
+```toml
+ng-postcode = { version = "0.3", features = ["client"] }
+```
+
+```rust
+use ng_postcode::{api, client::Client};
+
+let client = Client::new(std::env::var("NG_POSTCODE_API_KEY")?);
+let found = client.send(&api::lookup("FC-03-B06-AG-12".parse()?, 2)?)?;
+println!("{:?}", found.administrative_address);
+```
+
+`api` covers lookup, autocomplete, reverse geocoding and nearby search. Each function returns a `Request` value, or `InvalidRequest` for one the API cannot answer, such as an empty autocomplete or a coordinate that is not finite, and `Request::decode` turns a status and body into a typed result, so the `api` feature alone works with any HTTP client, sync or async. The `client` feature adds a small blocking one.
+
+## Features
+
+| Feature | Adds |
+| --- | --- |
+| `serde` | `Serialize` and `Deserialize` for `Postcode` |
+| `api` | Request and response types, no I/O |
+| `client` | Blocking HTTP client |
+
+## License
+
+MIT
+
+---
+
+<!-- js/packages/ng-postcode-js/README.md -->
+
+# ng-postcode-js
+
+JavaScript and TypeScript library for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026. Parse, validate and format postcodes offline, and call the [postcode.gov.ng](https://docs.postcode.gov.ng) API for lookup, autocomplete and reverse geocoding.
+
+Part of the [ng-postcode project](https://github.com/Adeniyikayodee/ng-postcode), which has the same behaviour in Rust, Python and Java and an MCP server for AI assistants. All four run the same shared test cases.
+
+```sh
+npm install ng-postcode-js
+```
+
+No runtime dependencies. Needs Node 22.12 or later, or any runtime with `fetch`.
+
+## Offline
+
+Expected failures are returned as values, so the type checker makes you handle them.
+
+```ts
+import { Postcode, parse } from "ng-postcode-js";
+
+const code = parse("ek 01 a03 fk 01");
+if (code instanceof Postcode) {
+  console.log(String(code)); // EK-01-A03-FK-01
+  console.log(code.compact); // EK01A03FK01, store this
+  console.log(code.spaced); // EK 01 A03 FK 01
+  console.log(code.prefix("area")); // EK-01-A03-FK
+} else {
+  console.log(String(code)); // e.g. "invalid lga segment"
+}
+```
+
+- `parse` accepts hyphenated, spaced or compact input in either case.
+- `parseLenient` first swaps look-alikes that cannot occur where they stand (`O`/`0`, `I`/`1`, `S`/`5`, `B`/`8`) and reports how many it changed.
+- `fromSegments` assembles a code from its parts and zero-fills the LGA and unit.
+- `isValid` answers yes or no.
+
+A well-formed code is not necessarily assigned to a building. Only the API can confirm that a postcode exists.
+
+## API
+
+```ts
+import { Postcode, parse } from "ng-postcode-js";
+import { ApiError, lookup } from "ng-postcode-js/api";
+import { Client, TransportError } from "ng-postcode-js/client";
+
+const code = parse("FC-03-B06-AG-12");
+if (!(code instanceof Postcode)) throw new Error(String(code));
+
+const client = new Client(process.env.NG_POSTCODE_API_KEY ?? "");
+const found = await client.send(lookup(code, 1));
+
+if (found instanceof ApiError || found instanceof TransportError) {
+  console.error(String(found)); // e.g. "invalid_api_key (401): ..."
+} else {
+  console.log(found.valid, found.status); // true valid
+}
+```
+
+`ng-postcode-js/api` covers `lookup`, `autocomplete`, `reverse` and `nearby`. Each returns a plain `Request`, and `decode` turns a status and body into a typed result, so it works with any HTTP client. A request that cannot succeed, such as a level outside 1 to 5, an empty autocomplete or a coordinate that is not finite, throws `RangeError` before anything is sent.
+
+The client refuses redirects, so the key is never sent to another host. Response fields keep the API's own names, such as `administrative_address`.
+
+Get a key from the [NIPOST developer dashboard](https://dashboard.postcode.gov.ng). Level 1 lookups confirm a code is assigned; levels 2 and up return address details and consume credits.
+
+## License
+
+MIT
+
+---
+
+<!-- java/README.md -->
+
+# ng-postcode for Java
+
+Java libraries for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026. Parse, validate and format postcodes offline, and call the [postcode.gov.ng](https://docs.postcode.gov.ng) API for lookup, autocomplete and reverse geocoding.
+
+Part of the [ng-postcode project](https://github.com/Adeniyikayodee/ng-postcode), which has the same behaviour in Rust, Python and JavaScript. All four run the same shared test cases.
+
+| Artifact | What it does | Dependencies |
+| --- | --- | --- |
+| `io.github.adeniyikayodee:ng-postcode` | Parse, validate and format codes offline | None |
+| `io.github.adeniyikayodee:ng-postcode-api` | Requests, decoding and an HTTP client | The core and Jackson |
+
+```xml
+<dependency>
+  <groupId>io.github.adeniyikayodee</groupId>
+  <artifactId>ng-postcode-api</artifactId>
+  <version>0.1.1</version>
+</dependency>
+```
+
+Needs Java 17 or later. Neither library has been tested on Android, and the client cannot run there, as Android has no `java.net.http`.
+
+## Offline
+
+Expected failures are returned as values of a sealed type, so the compiler makes you handle them.
+
+```java
+import io.github.adeniyikayodee.ngpostcode.Postcode;
+import io.github.adeniyikayodee.ngpostcode.Segment;
+
+if (Postcode.parse("ek 01 a03 fk 01") instanceof Postcode code) {
+    System.out.println(code);                      // EK-01-A03-FK-01
+    System.out.println(code.compact());            // EK01A03FK01, store this
+    System.out.println(code.spaced());             // EK 01 A03 FK 01
+    System.out.println(code.prefix(Segment.AREA)); // EK-01-A03-FK
+}
+```
+
+- `Postcode.parse` accepts hyphenated, spaced or compact input in either case, and returns a `Postcode` or a `ParseError` such as "invalid lga segment".
+- `Postcode.parseLenient` first swaps look-alikes that cannot occur where they stand (`O`/`0`, `I`/`1`, `S`/`5`, `B`/`8`) and reports how many it changed.
+- `Postcode.fromSegments` assembles a code from its parts and zero-fills the LGA and unit.
+- `Postcode.isValid` answers yes or no.
+
+A well-formed code is not necessarily assigned to a building. Only the API can confirm that a postcode exists.
+
+## API
+
+```java
+import io.github.adeniyikayodee.ngpostcode.Postcode;
+import io.github.adeniyikayodee.ngpostcode.api.Api;
+import io.github.adeniyikayodee.ngpostcode.api.Client;
+import io.github.adeniyikayodee.ngpostcode.api.Lookup;
+import io.github.adeniyikayodee.ngpostcode.api.Result;
+
+var client = new Client(System.getenv("NG_POSTCODE_API_KEY"));
+Result<Lookup> found = client.send(Api.lookup(new Postcode("FC03B06AG12"), 1));
+
+if (found instanceof Result.Ok<Lookup> ok) {
+    System.out.println(ok.value().valid() + " " + ok.value().status()); // true valid
+} else if (found instanceof Result.Failed<Lookup> failed) {
+    System.err.println(failed.failure()); // e.g. "invalid_api_key (401): ..."
+}
+```
+
+`Api` covers `lookup`, `autocomplete`, `reverse` and `nearby`. Each returns a plain `Request`, and `Api.decode` turns a status and body into a typed result, so it works with any HTTP client. A request that cannot succeed, such as a level outside 1 to 5, a blank autocomplete or a coordinate that is not finite, throws `IllegalArgumentException` before anything is sent.
+
+The client never follows redirects, so the key is never sent to another host, and it gives up after 10 seconds. Fields the API may omit are `null`.
+
+Get a key from the [NIPOST developer dashboard](https://dashboard.postcode.gov.ng). Level 1 lookups confirm a code is assigned; levels 2 and up return address details and consume credits.
+
+## License
+
+MIT
+
+---
+
+<!-- mcp/README.md -->
+
+# ng-postcode-mcp
+
+MCP server for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026. It lets AI assistants validate postcodes offline, look them up, autocomplete them and find them by location through the [postcode.gov.ng](https://docs.postcode.gov.ng) API, and resolve described addresses to postcodes.
+
+Built on the [`ng-postcode`](https://pypi.org/project/ng-postcode/) and [`ng-address-resolver`](https://pypi.org/project/ng-address-resolver/) libraries. A Node edition with the same tools, apart from `resolve_address`, is on npm as [`ng-postcode-mcp`](https://www.npmjs.com/package/ng-postcode-mcp) and runs with `npx`.
+
+<!-- mcp-name: io.github.Adeniyikayodee/ng-postcode -->
+
+## Tools
+
+| Tool | What it does | Needs a key | Cost |
+| --- | --- | --- | --- |
+| `validate_postcode` | Checks structure offline; returns canonical forms, segments and a suggested fix for look-alike characters | No | Free |
+| `lookup_postcode` | Confirms a code is assigned; level 2 adds the address, level 3 building use | Yes | Level 1 free, 2+ uses credits |
+| `autocomplete_postcode` | Suggests the next segment of a partly typed code | Yes | Free tier |
+| `find_postcode_at_location` | Returns the postcode of the nearest building to a coordinate | Yes | Free tier |
+| `resolve_address` | Turns a described address ("back of Fabian Hotel, off NTA Road") or a location pin into a postcode, only as precisely as the evidence allows | Yes, plus a geocoder for text | Free tier |
+
+All tools are read-only. Errors come back as messages the model can act on, such as a missing key or an exhausted credit balance.
+
+### How `resolve_address` answers
+
+The assistant reads the address and passes its landmarks and map searches to the tool; the server makes no model calls of its own. The answer is never more precise than its evidence:
+
+| Evidence | Answer |
+| --- | --- |
+| A postcode written in the address, or a location pin on a building | Building code |
+| A landmark the address *is* | Building code, medium confidence |
+| A building near a landmark ("behind", "opposite") | Area code, plus a question for the user |
+| A street only | District code, low confidence |
+| A town only, or nothing found | No code, plus a question |
+
+Text alone rarely identifies a building, so ask users for a location pin when the exact building matters. This tool is pre-release: it works against the live API, but its accuracy on real addresses is unmeasured.
+
+## Install
+
+Works with any MCP client. The server runs over stdio:
+
+| Setting | Value |
+| --- | --- |
+| Command | `uvx` |
+| Arguments | `ng-postcode-mcp` |
+| Environment | `NG_POSTCODE_API_KEY` (optional for `validate_postcode`) |
+
+It needs [uv](https://docs.astral.sh/uv/) installed. Get an API key from the [NIPOST developer dashboard](https://dashboard.postcode.gov.ng).
+
+Most clients take this entry in their MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "ng-postcode": {
+      "command": "uvx",
+      "args": ["ng-postcode-mcp"],
+      "env": { "NG_POSTCODE_API_KEY": "nipost_live_..." }
+    }
+  }
+}
+```
+
+| Client | How to add it |
+| --- | --- |
+| Claude Code | `claude mcp add ng-postcode -e NG_POSTCODE_API_KEY=nipost_live_... -- uvx ng-postcode-mcp` |
+| Claude Desktop | The entry above, in its MCP server settings |
+| Codex | `codex mcp add ng-postcode --env NG_POSTCODE_API_KEY=nipost_live_... -- uvx ng-postcode-mcp` |
+| Cursor | The entry above, in `.cursor/mcp.json` (project) or `~/.cursor/mcp.json` (global) |
+| VS Code | The same server object in `.vscode/mcp.json`, under a top-level `"servers"` key instead of `"mcpServers"` |
+| Others | Any client that launches stdio servers: use the command, arguments and environment above |
+
+### As a bundle
+
+[`bundle/`](bundle) holds an MCPB manifest for clients that install `.mcpb` files, such as Claude Desktop. It runs the published package with uv and asks for the API key in the client's own settings. Build it with `npx @anthropic-ai/mcpb pack mcp/bundle ng-postcode.mcpb` from the repository root. [`bundle-python/`](bundle-python) is the same bundle for hosts that only run Python bundles, such as Smithery; it starts the server with `uvx`, so uv must be installed. `scripts/smithery_bundle.py` builds the copy Smithery accepts, which also carries each tool's input schema.
+
+## Configuration
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `NG_POSTCODE_API_KEY` | none | NIPOST API key. Read from the environment only; never passed through tools. |
+| `NG_POSTCODE_MAX_LEVEL` | `1` | Highest lookup level tools may request. Levels 2+ consume credits, so raise it deliberately. |
+| `NG_POSTCODE_BASE_URL` | `https://api.postcode.gov.ng` | Alternative API host, such as a staging stack. |
+| `NG_GEOCODER_URL` | none | A Nominatim server `resolve_address` uses to place described addresses. Without it, only typed postcodes and location pins resolve. |
+| `NG_GEOCODER_CONTACT` | none | A URL or email sent in the User-Agent. Required for the public Nominatim. |
+| `NG_POSTCODE_TRANSPORT` | `stdio` | `http` serves streamable HTTP at `/mcp` instead. |
+| `NG_POSTCODE_HOST`, `NG_POSTCODE_PORT` | `127.0.0.1`, `8000` | Where the HTTP transport listens. |
+
+The public Nominatim at `https://nominatim.openstreetmap.org` allows light personal use only; a service whose main job is geocoding must run its own instance. Map data © OpenStreetMap contributors.
+
+## HTTP and Docker
+
+```sh
+NG_POSTCODE_TRANSPORT=http uvx ng-postcode-mcp        # http://127.0.0.1:8000/mcp
+docker build -t ng-postcode-mcp . && docker run --rm -i ng-postcode-mcp   # from the repository root
+```
+
+Over HTTP a caller can send its own NIPOST key in the `X-NIPOST-API-Key` header, and that key is used for that caller's requests only. A caller that sends none uses the server's key, if `NG_POSTCODE_API_KEY` is set.
+
+To host the server for other people, leave `NG_POSTCODE_API_KEY` unset so every caller brings a key, and serve it over HTTPS so the header is encrypted. Callers are trusting the host with their key, and all of them share the host's geocoder, which answers one search a second. Validation still works without any key. If you do set a server key, anyone who can reach the server spends its credits, so keep it on loopback or behind your own authentication. `NG_POSTCODE_MAX_LEVEL` caps every caller either way.
+
+## Safety
+
+- The key is read from the environment or the `X-NIPOST-API-Key` header, never from tool arguments, and never appears in results or logs.
+- Lookups default to level 1, which is free. A model cannot spend credits unless you raise `NG_POSTCODE_MAX_LEVEL`.
+- A mistyped code is never corrected and sent to the API silently. The server returns the suggestion and asks the model to confirm it with the user.
+- Levels 2 and up return house addresses. Treat them as personal data under the Nigeria Data Protection Act.
+- `resolve_address` sends the search strings to the geocoder you configure. With a third-party geocoder, that shares address text with it.
+
+## License
+
+MIT
+
+---
+
+<!-- js/packages/ng-postcode-mcp/README.md -->
+
+# ng-postcode-mcp
+
+MCP server for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026. It lets AI assistants validate postcodes offline, look them up, autocomplete them and find them by location through the [postcode.gov.ng](https://docs.postcode.gov.ng) API.
+
+This is the Node edition of the [ng-postcode](https://github.com/Adeniyikayodee/ng-postcode) server. It registers its tools from the same contract as the Python edition, so names, descriptions and schemas are identical. The Python edition also has `resolve_address` and an HTTP transport.
+
+<!-- mcp-name: io.github.Adeniyikayodee/ng-postcode -->
+
+## Install
+
+It runs over stdio with `npx` and needs Node 22.12 or later. Most clients take this entry in their MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "ng-postcode": {
+      "command": "npx",
+      "args": ["-y", "ng-postcode-mcp"],
+      "env": { "NG_POSTCODE_API_KEY": "nipost_live_..." }
+    }
+  }
+}
+```
+
+Get an API key from the [NIPOST developer dashboard](https://dashboard.postcode.gov.ng). Validation works without one.
+
+## Tools
+
+| Tool | What it does | Needs a key | Cost |
+| --- | --- | --- | --- |
+| `validate_postcode` | Checks structure offline; returns canonical forms, segments and a suggested fix for look-alike characters | No | Free |
+| `lookup_postcode` | Confirms a code is assigned; level 2 adds the address, level 3 building use | Yes | Level 1 free, 2+ uses credits |
+| `autocomplete_postcode` | Suggests the next segment of a partly typed code | Yes | Free tier |
+| `find_postcode_at_location` | Returns the postcode of the nearest building to a coordinate | Yes | Free tier |
+
+All tools are read-only. Errors come back as messages the model can act on.
+
+## Configuration
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `NG_POSTCODE_API_KEY` | none | NIPOST API key. Read from the environment only; never passed through tools. |
+| `NG_POSTCODE_MAX_LEVEL` | `1` | Highest lookup level tools may request. Levels 2+ consume credits, so raise it deliberately. |
+| `NG_POSTCODE_BASE_URL` | `https://api.postcode.gov.ng` | Alternative API host, such as a staging stack. |
+
+## Safety
+
+- Lookups default to level 1, which is free. A model cannot spend credits unless you raise `NG_POSTCODE_MAX_LEVEL`.
+- A mistyped code is never corrected and sent to the API silently. The server returns the suggestion and asks the model to confirm it with the user.
+- Names and house addresses are withheld from location results unless the cap is 2 or more. Treat them as personal data under the Nigeria Data Protection Act.
+- The key is never sent to another host: the client refuses redirects.
+
+## License
+
+MIT
+
+---
+
+<!-- agent/README.md -->
+
+# ng-address-resolver
+
+Resolve free-text Nigerian addresses, such as "back of Fabian Hotel, off NTA Road, Ado Ekiti", to NIPOST digital postcodes (NDAPS). It answers only as precisely as the evidence allows, and asks a question when it cannot.
+
+**Status: pre-release.** The typed-postcode, location-pin and geocoded paths have run against the live NIPOST API and a live geocoder. The Claude reading step is tested only against a mocked API, and accuracy on real addresses is unmeasured.
+
+## How it decides
+
+1. **A postcode written in the text** is extracted (never auto-corrected) and confirmed with NIPOST.
+2. **A location pin** is reverse-geocoded by NIPOST. This is the only route to a high-confidence building code.
+3. **Text only** is read by Claude into street, landmarks and their relation ("behind", "opposite", "at"), area, LGA and state, then placed with a geocoder and reverse-geocoded by NIPOST.
+
+| Evidence | Answer |
+| --- | --- |
+| Typed postcode NIPOST confirms, or a pin within 10 m of a building | Building code, high confidence |
+| A pin within 25 m, or the landmark the address *is* | Building code, medium confidence |
+| A building near a landmark ("behind", "opposite") | Area code, e.g. `EK-01-A03-FK` |
+| A street only | District code, low confidence |
+| A town only, or nothing found | No code, plus a question for the user |
+
+Text alone rarely identifies a building: a landmark's own building is not the one behind it, and a road's map point is not any house on it. Ask users for a location pin when you need the exact building.
+
+## Usage
+
+```sh
+ng-address "back of Fabian Hotel, off NTA Road, Ado Ekiti"
+ng-address "my house" --lat 7.6211 --lng 5.2214
+```
+
+The result is JSON: `status` (`resolved`, `partial`, `unresolved`), `code`, `level`, `confidence`, `method`, `question` and the `evidence` behind it.
+
+```python
+from ng_address import Resolver
+
+result = await Resolver(nipost=..., parser=..., geocoder=...).resolve("...")
+```
+
+The core needs no model. Install `ng-address-resolver[claude]` to let the CLI and `ng_address.parse.ClaudeParser` read addresses with Claude. A caller that has already read the address, such as the host model of an MCP server, passes its own `ParsedAddress` as `resolve(..., parsed=...)` instead.
+
+## Configuration
+
+| Variable | Purpose |
+| --- | --- |
+| Anthropic credentials | Needs the `claude` extra. Read by the Anthropic SDK (`ANTHROPIC_API_KEY` or an `ant auth login` profile). Without them the raw text is searched instead. |
+| `NG_POSTCODE_API_KEY` | NIPOST API key. Without it no postcode can be returned. |
+| `NG_GEOCODER_URL` | A Nominatim server, ideally your own. |
+| `NG_GEOCODER_CONTACT` | A URL or email sent in the User-Agent to identify you. Required for the public Nominatim. |
+| `NG_ADDRESS_MODEL` | Claude model. Defaults to `claude-opus-5-5`. |
+
+The public Nominatim at `https://nominatim.openstreetmap.org` allows light personal use only. A service whose main job is geocoding must run its own instance or use a commercial geocoder. Map data © OpenStreetMap contributors.
+
+Each address uses at most one Claude call at low effort, up to three geocoder searches, and one or two NIPOST calls.
+
+## License
+
+MIT
