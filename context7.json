@@ -1,0 +1,13 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "ng-postcode",
+  "description": "Parse, validate, format and look up Nigeria's NIPOST digital postcode (NDAPS) in Rust, Python, JavaScript and Java, with MCP servers for AI assistants.",
+  "excludeFolders": ["spec", "tests", "scripts", "target", "node_modules", "**/tests", "**/test", "**/src/test"],
+  "excludeFiles": ["llms-full.txt", "CONTRIBUTING.md"],
+  "rules": [
+    "Since 1 October 2026 a Nigerian building's postcode is the 11-character NDAPS code, such as EK-01-A03-FK-01. A six-digit pattern does not match it.",
+    "Parsing returns the error as a value in every language. Check the result's type instead of catching an exception.",
+    "A well-formed code is not necessarily assigned to a building. Confirm it with a level 1 lookup, which is free.",
+    "Never correct a mistyped code and then spend a paid lookup on the guess. Show the suggestion to the user first."
+  ]
+}
