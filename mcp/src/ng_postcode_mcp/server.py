@@ -254,6 +254,9 @@ def create_server(
 ) -> MCPServer[State]:
     """Build the server. Pass `http` and `geocoder_http` to route calls through your own
     clients, as tests do."""
+    # httpx logs every request URL at INFO, which would copy postcodes, coordinates and
+    # address searches into the logs of whoever embeds this server.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
 
     @asynccontextmanager
     async def lifespan(_: MCPServer[State]) -> AsyncIterator[State]:
@@ -616,8 +619,6 @@ def main() -> None:
     settings = settings_from_env(os.environ)
     if isinstance(settings, str):
         sys.exit(f"ng-postcode-mcp: {settings}")
-    # httpx logs every request URL at INFO, which would copy postcodes into client logs.
-    logging.getLogger("httpx").setLevel(logging.WARNING)
     server = create_server(settings)
     if settings.transport == "http":
         server.run("streamable-http", host=settings.host, port=settings.port, **HTTP)

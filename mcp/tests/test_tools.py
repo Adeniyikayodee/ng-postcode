@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import logging
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -362,3 +363,9 @@ async def test_answers_the_shared_offline_calls(case: dict[str, Any]) -> None:
         assert text(result).endswith(case.get("error", ""))
     else:
         assert result.structured_content == case["result"]
+
+
+def test_building_the_server_keeps_request_urls_out_of_the_logs() -> None:
+    logging.getLogger("httpx").setLevel(logging.INFO)
+    create_server(Settings(api_key=None))
+    assert logging.getLogger("httpx").level == logging.WARNING
