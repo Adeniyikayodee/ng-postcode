@@ -163,6 +163,11 @@ public final class Api {
         return data.path(key).textValue();
     }
 
+    /** A unit or suggestion without its code is no answer, so it is dropped. */
+    private static boolean coded(JsonNode item, String key) {
+        return item.isObject() && !textOrEmpty(item, key).isEmpty();
+    }
+
     private static String textOrEmpty(JsonNode data, String key) {
         String value = text(data, key);
         return value != null ? value : "";
@@ -208,7 +213,7 @@ public final class Api {
         JsonNode items = data.path("suggestions");
         // Only a list: iterating an object would read its values as suggestions.
         for (JsonNode item : items.isArray() ? items : JSON.createArrayNode()) {
-            if (item.isObject()) {
+            if (coded(item, "code")) {
                 suggestions.add(new Suggestion(textOrEmpty(item, "code"), text(item, "label")));
             }
         }
@@ -228,7 +233,7 @@ public final class Api {
         return new Reverse(
                 data.path("found").booleanValue(),
                 readCoordinate(data.path("coordinate")),
-                unit.isObject()
+                coded(unit, "postcode")
                         ? new NearestUnit(
                                 textOrEmpty(unit, "postcode"),
                                 textOrEmpty(unit, "display"),
@@ -263,7 +268,7 @@ public final class Api {
         }
         var units = new ArrayList<NearbyUnit>();
         for (JsonNode item : data) {
-            if (item.isObject()) {
+            if (coded(item, "postcode")) {
                 units.add(new NearbyUnit(
                         textOrEmpty(item, "postcode"), textOrEmpty(item, "display"), number(item.path("distance_m"))));
             }
