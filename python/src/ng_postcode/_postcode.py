@@ -199,13 +199,19 @@ def is_valid(text: str) -> bool:
 
 
 def _collect(text: str) -> str | ParseError:
-    kept = [(index, char) for index, char in enumerate(text) if char not in _SEPARATORS]
-    invalid = next(((i, c) for i, c in kept if not (c.isascii() and c.isalnum())), None)
-    if invalid is not None:
-        return InvalidCharacter(char=invalid[1], index=invalid[0])
-    if len(kept) != LENGTH:
-        return WrongLength(found=len(kept))
-    return "".join(char for _, char in kept).upper()
+    # Every character is checked, but no more than a postcode's worth is held, so the
+    # memory used does not grow with the input.
+    kept: list[str] = []
+    found = 0
+    for index, char in enumerate(text):
+        if char in _SEPARATORS:
+            continue
+        if not (char.isascii() and char.isalnum()):
+            return InvalidCharacter(char=char, index=index)
+        if found < LENGTH:
+            kept.append(char)
+        found += 1
+    return "".join(kept).upper() if found == LENGTH else WrongLength(found=found)
 
 
 def _part(compact: str, segment: Segment) -> str:

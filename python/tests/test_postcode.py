@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import tracemalloc
 
 import pytest
 
@@ -71,3 +72,13 @@ def test_lenient_counts_corrections() -> None:
 def test_is_valid_agrees_with_parse() -> None:
     assert is_valid("ek 01 a03 fk 01")
     assert not is_valid("EK-01-A03")
+
+
+def test_a_long_input_is_refused_without_holding_it() -> None:
+    text = "A" * 1_000_000
+    tracemalloc.start()
+    refused = parse(text)
+    _, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+    assert refused == WrongLength(found=1_000_000)
+    assert peak < 100_000
