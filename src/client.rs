@@ -22,17 +22,18 @@ pub enum Error {
 
 impl Client {
     pub fn new(api_key: impl Into<String>) -> Self {
-        let config = ureq::Agent::config_builder()
-            // Error statuses carry a JSON body that `Request::decode` reads.
-            .http_status_as_error(false)
-            // A redirect would carry the key to another host, so none is followed.
-            .max_redirects(0)
-            .timeout_global(Some(TIMEOUT))
-            .build();
         Self {
-            agent: config.into(),
+            agent: agent(TIMEOUT),
             base_url: BASE_URL.to_owned(),
             api_key: api_key.into(),
+        }
+    }
+
+    /// Allows `timeout` for a whole exchange, body included, instead of 10 seconds.
+    pub fn with_timeout(self, timeout: Duration) -> Self {
+        Self {
+            agent: agent(timeout),
+            ..self
         }
     }
 
@@ -57,6 +58,17 @@ impl Client {
         let body = response.body_mut().read_to_string()?;
         Ok(request.decode(response.status().as_u16(), &body)?)
     }
+}
+
+fn agent(timeout: Duration) -> ureq::Agent {
+    ureq::Agent::config_builder()
+        // Error statuses carry a JSON body that `Request::decode` reads.
+        .http_status_as_error(false)
+        // A redirect would carry the key to another host, so none is followed.
+        .max_redirects(0)
+        .timeout_global(Some(timeout))
+        .build()
+        .into()
 }
 
 impl From<ureq::Error> for Error {
