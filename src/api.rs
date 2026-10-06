@@ -236,7 +236,10 @@ fn read_reverse(data: &Value) -> Option<Reverse> {
         // A body without it is malformed, not an empty search.
         found: data.get("found")?.as_bool()?,
         coordinate: point.and_then(|point| match point.as_slice() {
-            [lng, lat] => Some([lng.as_f64()?, lat.as_f64()?]),
+            [lng, lat] => Some(Coordinate {
+                lat: lat.as_f64()?,
+                lng: lng.as_f64()?,
+            }),
             _ => None,
         }),
         unit: object(data, "unit")
@@ -369,8 +372,8 @@ pub struct Suggestion {
 pub struct Reverse {
     /// Required: a body without it is malformed, not an empty search.
     pub found: bool,
-    /// The queried point, echoed back as `[lng, lat]`.
-    pub coordinate: Option<[f64; 2]>,
+    /// The queried point, echoed back.
+    pub coordinate: Option<Coordinate>,
     /// The nearest building, absent when nothing is in range.
     pub unit: Option<NearestUnit>,
     pub area: Option<String>,
