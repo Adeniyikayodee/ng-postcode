@@ -103,6 +103,9 @@ public final class Api {
         if (!envelope.isObject()) {
             return malformed(status, "expected a JSON object");
         }
+        if (!finite(envelope)) {
+            return malformed(status, "number out of range");
+        }
         JsonNode failure = envelope.path("error");
         if (failure.isObject()) {
             String code = text(failure, "code");
@@ -133,6 +136,19 @@ public final class Api {
             throw new IllegalArgumentException("expected a finite number, got " + value);
         }
         return new BigDecimal(Double.toString(value)).stripTrailingZeros().toPlainString();
+    }
+
+    /** Whether every number in the tree fits a double, as the other implementations require. */
+    private static boolean finite(JsonNode node) {
+        if (node.isNumber()) {
+            return Double.isFinite(node.doubleValue());
+        }
+        for (JsonNode child : node) {
+            if (!finite(child)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static <T> Result<T> failed(int status, String code, String message) {

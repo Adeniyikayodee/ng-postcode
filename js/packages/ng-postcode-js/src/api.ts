@@ -166,7 +166,7 @@ export function nearby(at: Coordinate, radiusM?: number): Request<readonly Nearb
 export function decode<T>(request: Request<T>, status: number, body: string): T | ApiError {
   let envelope: unknown;
   try {
-    envelope = JSON.parse(body);
+    envelope = JSON.parse(body, finite);
   } catch (error) {
     return malformed(status, `not JSON: ${error instanceof Error ? error.message : error}`);
   }
@@ -185,6 +185,13 @@ export function decode<T>(request: Request<T>, status: number, body: string): T 
 }
 
 type Json = Record<string, unknown>;
+
+/** A number no float can hold parses as Infinity, which the other implementations refuse. */
+function finite(_key: string, value: unknown): unknown {
+  if (typeof value === "number" && !Number.isFinite(value))
+    throw new RangeError("number out of range");
+  return value;
+}
 
 function around(at: Coordinate, key: string, metres?: number): Array<readonly [string, string]> {
   const point: Array<readonly [string, string]> = [
