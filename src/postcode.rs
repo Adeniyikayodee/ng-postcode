@@ -244,7 +244,7 @@ impl fmt::Display for Segment {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
             State => "state",
-            Lga => "LGA",
+            Lga => "lga",
             District => "district",
             Area => "area",
             Unit => "unit",
@@ -257,7 +257,7 @@ impl fmt::Display for ParseError {
         match self {
             Self::Length { found } => write!(f, "expected {LEN} letters and digits, found {found}"),
             Self::InvalidCharacter { ch, index } => {
-                write!(f, "invalid character {ch:?} at byte {index}")
+                write!(f, "invalid character '{ch}' at index {index}")
             }
             Self::Segment(segment) => write!(f, "invalid {segment} segment"),
         }

@@ -61,7 +61,7 @@ class InvalidCharacter:
     index: int
 
     def __str__(self) -> str:
-        return f"invalid character {self.char!r} at index {self.index}"
+        return f"invalid character '{self.char}' at index {self.index}"
 
 
 @dataclass(frozen=True, slots=True)

@@ -1,5 +1,5 @@
 {
-  "about": "Conformance cases every ng-postcode implementation must pass. Errors: length {found}, invalid_character {char, index}, segment {segment}.",
+  "about": "Conformance cases every ng-postcode implementation must pass. Errors: length {found}, invalid_character {char, index}, segment {segment}, each with the message every implementation prints for it.",
   "parse": {
     "valid": [
       { "input": "EK-01-A03-FK-01", "canonical": "EK-01-A03-FK-01", "compact": "EK01A03FK01", "spaced": "EK 01 A03 FK 01" },
@@ -28,18 +28,19 @@
       { "input": "OG-14-M82-QA-09", "canonical": "OG-14-M82-QA-09", "compact": "OG14M82QA09", "spaced": "OG 14 M82 QA 09" }
     ],
     "invalid": [
-      { "input": "", "error": { "kind": "length", "found": 0 } },
-      { "input": "EK-01-A03-FK", "error": { "kind": "length", "found": 9 } },
-      { "input": "EK-01-A03-FK-011", "error": { "kind": "length", "found": 12 } },
-      { "input": "EK_01-A03-FK-01", "error": { "kind": "invalid_character", "char": "_", "index": 2 } },
-      { "input": "ÉK-01-A03-FK-01", "error": { "kind": "invalid_character", "char": "É", "index": 0 } },
-      { "input": "EK-01-A03-FK-0١", "error": { "kind": "invalid_character", "char": "١", "index": 14 } },
-      { "input": "EK-01-A03-FK-0😀", "error": { "kind": "invalid_character", "char": "😀", "index": 14 } },
-      { "input": "E1-01-A03-FK-01", "error": { "kind": "segment", "segment": "state" } },
-      { "input": "EK-0A-A03-FK-01", "error": { "kind": "segment", "segment": "lga" } },
-      { "input": "EK-00-A03-FK-01", "error": { "kind": "segment", "segment": "lga" } },
-      { "input": "EK-01-A03-F7-01", "error": { "kind": "segment", "segment": "area" } },
-      { "input": "EK-01-A03-FK-00", "error": { "kind": "segment", "segment": "unit" } }
+      { "input": "", "error": { "kind": "length", "found": 0, "message": "expected 11 letters and digits, found 0" } },
+      { "input": "EK-01-A03-FK", "error": { "kind": "length", "found": 9, "message": "expected 11 letters and digits, found 9" } },
+      { "input": "EK-01-A03-FK-011", "error": { "kind": "length", "found": 12, "message": "expected 11 letters and digits, found 12" } },
+      { "input": "EK_01-A03-FK-01", "error": { "kind": "invalid_character", "char": "_", "index": 2, "message": "invalid character '_' at index 2" } },
+      { "input": "ÉK-01-A03-FK-01", "error": { "kind": "invalid_character", "char": "É", "index": 0, "message": "invalid character 'É' at index 0" } },
+      { "input": "EK-01-A03-FK-0١", "error": { "kind": "invalid_character", "char": "١", "index": 14, "message": "invalid character '١' at index 14" } },
+      { "input": "EK-01-A03-FK-0😀", "error": { "kind": "invalid_character", "char": "😀", "index": 14, "message": "invalid character '😀' at index 14" } },
+      { "input": "EK'01-A03-FK-01", "error": { "kind": "invalid_character", "char": "'", "index": 2, "message": "invalid character ''' at index 2" } },
+      { "input": "E1-01-A03-FK-01", "error": { "kind": "segment", "segment": "state", "message": "invalid state segment" } },
+      { "input": "EK-0A-A03-FK-01", "error": { "kind": "segment", "segment": "lga", "message": "invalid lga segment" } },
+      { "input": "EK-00-A03-FK-01", "error": { "kind": "segment", "segment": "lga", "message": "invalid lga segment" } },
+      { "input": "EK-01-A03-F7-01", "error": { "kind": "segment", "segment": "area", "message": "invalid area segment" } },
+      { "input": "EK-01-A03-FK-00", "error": { "kind": "segment", "segment": "unit", "message": "invalid unit segment" } }
     ]
   },
   "parse_lenient": [
@@ -47,23 +48,23 @@
     { "input": "0G-14-T18-8N-l6", "canonical": "OG-14-T18-BN-16", "corrections": 3 },
     { "input": "5E-1S-A03-FK-01", "canonical": "SE-15-A03-FK-01", "corrections": 2 },
     { "input": "JI-24-O18-JP-23", "canonical": "JI-24-O18-JP-23", "corrections": 0 },
-    { "input": "EK-0X-A03-FK-01", "error": { "kind": "segment", "segment": "lga" } },
-    { "input": "EK-OO-A03-FK-01", "error": { "kind": "segment", "segment": "lga" } },
-    { "input": "EK-01-A03", "error": { "kind": "length", "found": 7 } }
+    { "input": "EK-0X-A03-FK-01", "error": { "kind": "segment", "segment": "lga", "message": "invalid lga segment" } },
+    { "input": "EK-OO-A03-FK-01", "error": { "kind": "segment", "segment": "lga", "message": "invalid lga segment" } },
+    { "input": "EK-01-A03", "error": { "kind": "length", "found": 7, "message": "expected 11 letters and digits, found 7" } }
   ],
   "from_segments": [
     { "segments": ["ek", " 1", "a03", "fk", "1"], "canonical": "EK-01-A03-FK-01" },
     { "segments": ["LA", "11", "W06", "TC", "10"], "canonical": "LA-11-W06-TC-10" },
     { "segments": ["EK", "\u00a01", "A03", "FK", "1\u00a0"], "canonical": "EK-01-A03-FK-01" },
     { "segments": ["EK", "\u00851", "A03", "FK", "1\u3000"], "canonical": "EK-01-A03-FK-01" },
-    { "segments": ["EK", "\u001c1", "A03", "FK", "1"], "error": { "kind": "segment", "segment": "lga" } },
-    { "segments": ["EK", "1", "A03", "FK", "1\ufeff"], "error": { "kind": "segment", "segment": "unit" } },
-    { "segments": ["E", "1", "A03", "FK", "1"], "error": { "kind": "segment", "segment": "state" } },
-    { "segments": ["EK", "001", "A03", "FK", "1"], "error": { "kind": "segment", "segment": "lga" } },
-    { "segments": ["EK", "1", "A3", "FK", "1"], "error": { "kind": "segment", "segment": "district" } },
-    { "segments": ["EK", "1", "A03", "F-", "1"], "error": { "kind": "segment", "segment": "area" } },
-    { "segments": ["EK", "1", "A03", "FK", ""], "error": { "kind": "segment", "segment": "unit" } },
-    { "segments": ["EK", "1", "A03", "FK", "00"], "error": { "kind": "segment", "segment": "unit" } }
+    { "segments": ["EK", "\u001c1", "A03", "FK", "1"], "error": { "kind": "segment", "segment": "lga", "message": "invalid lga segment" } },
+    { "segments": ["EK", "1", "A03", "FK", "1\ufeff"], "error": { "kind": "segment", "segment": "unit", "message": "invalid unit segment" } },
+    { "segments": ["E", "1", "A03", "FK", "1"], "error": { "kind": "segment", "segment": "state", "message": "invalid state segment" } },
+    { "segments": ["EK", "001", "A03", "FK", "1"], "error": { "kind": "segment", "segment": "lga", "message": "invalid lga segment" } },
+    { "segments": ["EK", "1", "A3", "FK", "1"], "error": { "kind": "segment", "segment": "district", "message": "invalid district segment" } },
+    { "segments": ["EK", "1", "A03", "F-", "1"], "error": { "kind": "segment", "segment": "area", "message": "invalid area segment" } },
+    { "segments": ["EK", "1", "A03", "FK", ""], "error": { "kind": "segment", "segment": "unit", "message": "invalid unit segment" } },
+    { "segments": ["EK", "1", "A03", "FK", "00"], "error": { "kind": "segment", "segment": "unit", "message": "invalid unit segment" } }
   ],
   "prefix": [
     { "input": "LA-11-W06-TC-10", "through": "state", "prefix": "LA" },
