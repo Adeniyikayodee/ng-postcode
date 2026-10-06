@@ -31,6 +31,26 @@ def build(kind: str, args: dict[str, Any]) -> Request[Any]:
     return reverse(at, metres) if kind == "reverse" else nearby(at, metres)
 
 
+UNTYPED: list[dict[str, Any]] = (
+    json.loads(SPEC.read_text(encoding="utf-8"))["untyped"] if CASES else []
+)
+
+
+@pytest.mark.parametrize("case", UNTYPED, ids=[case["name"] for case in UNTYPED])
+def test_refuses_an_argument_of_the_wrong_type(case: dict[str, Any]) -> None:
+    with pytest.raises(TypeError):
+        untyped(case["request"], case["args"], case.get("parsed", False))
+
+
+def untyped(kind: str, args: dict[str, Any], parsed: bool) -> Request[Any]:
+    """The request built from arguments passed exactly as the case writes them."""
+    if kind == "lookup":
+        return lookup(Postcode(args["code"]) if parsed else args["code"], args["level"])
+    if kind == "autocomplete":
+        return autocomplete(args["q"])
+    return reverse(Coordinate(lat=args["lat"], lng=args["lng"]), args.get("metres"))
+
+
 @pytest.mark.parametrize("case", CASES, ids=[case["name"] for case in CASES])
 def test_builds_the_shared_request(case: dict[str, Any]) -> None:
     try:

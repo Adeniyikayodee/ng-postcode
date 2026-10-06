@@ -19,5 +19,17 @@
     { "name": "reverse_nan_latitude", "request": "reverse", "args": {"lat": "nan", "lng": 5.2214}, "sends": null },
     { "name": "nearby_infinite_longitude", "request": "nearby", "args": {"lat": 7.6211, "lng": "inf"}, "sends": null },
     { "name": "reverse_infinite_distance", "request": "reverse", "args": {"lat": 7.6211, "lng": 5.2214, "metres": "-inf"}, "sends": null }
+  ],
+  "untyped_about": "Arguments of the wrong type, passed exactly as written. A language without static types must refuse each one at run time, so that text which was never validated cannot reach a paid lookup. Rust and Java cannot express them. parsed means the code is first built into a postcode.",
+  "untyped": [
+    { "name": "lookup_code_as_text", "request": "lookup", "args": {"code": "EK01A03FK01", "level": 2} },
+    { "name": "lookup_code_that_is_not_a_postcode", "request": "lookup", "args": {"code": "not a postcode", "level": 2} },
+    { "name": "lookup_level_as_text", "request": "lookup", "parsed": true, "args": {"code": "EK01A03FK01", "level": "2"} },
+    { "name": "lookup_level_as_a_boolean", "request": "lookup", "parsed": true, "args": {"code": "EK01A03FK01", "level": true} },
+    { "name": "lookup_level_with_a_fraction", "request": "lookup", "parsed": true, "args": {"code": "EK01A03FK01", "level": 2.5} },
+    { "name": "autocomplete_number", "request": "autocomplete", "args": {"q": 5} },
+    { "name": "reverse_latitude_as_text", "request": "reverse", "args": {"lat": "7.6211", "lng": 5.2214} },
+    { "name": "reverse_longitude_as_a_boolean", "request": "reverse", "args": {"lat": 7.6211, "lng": true} },
+    { "name": "reverse_distance_as_text", "request": "reverse", "args": {"lat": 7.6211, "lng": 5.2214, "metres": "100"} }
   ]
 }

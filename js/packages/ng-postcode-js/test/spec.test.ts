@@ -90,6 +90,15 @@ test.each(spec("requests").cases as Case[])("request $name", (c) => {
   expect(sent).toEqual(c.sends);
 });
 
+test.each(spec("requests").untyped as Case[])("untyped $name", (c) => {
+  const { code, level, q, lat, lng, metres } = c.args;
+  expect(() => {
+    if (c.request === "lookup") lookup(c.parsed ? parse(code) : code, level);
+    else if (c.request === "autocomplete") autocomplete(q);
+    else reverse({ lat, lng }, metres);
+  }).toThrow(/must be|expected/);
+});
+
 const REQUESTS: Record<string, Request<unknown>> = {
   lookup: lookup(CODE),
   autocomplete: autocomplete("E"),

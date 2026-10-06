@@ -6,7 +6,7 @@
  * Response fields keep the API's own names.
  */
 
-import { type Postcode, SEGMENTS, type Segment, trimWhiteSpace } from "./postcode.js";
+import { Postcode, SEGMENTS, type Segment, trimWhiteSpace } from "./postcode.js";
 
 export const BASE_URL = "https://api.postcode.gov.ng";
 
@@ -118,9 +118,12 @@ export interface NearbyUnit {
  * Resolve a postcode. Levels are cumulative from 1 (validity only) to 5, and
  * the API caps the answer at the level granted to the key.
  *
- * Throws `RangeError` for a level outside 1 to 5.
+ * Throws `RangeError` for a level outside 1 to 5, and `TypeError` for a code that is
+ * not a `Postcode`, so that text which was never validated cannot reach a paid lookup.
  */
 export function lookup(code: Postcode, level = 1): Request<Lookup> {
+  if (!(code instanceof Postcode)) throw new TypeError("code must be a Postcode from parse()");
+  if (typeof level !== "number") throw new TypeError(`level must be a number, got ${level}`);
   if (!Number.isInteger(level) || level < 1 || level > 5) {
     throw new RangeError(`level must be 1 to 5, got ${level}`);
   }
@@ -137,6 +140,7 @@ export function lookup(code: Postcode, level = 1): Request<Lookup> {
  * Throws `RangeError` for an empty `partial`: the live API never answers one.
  */
 export function autocomplete(partial: string): Request<Autocomplete> {
+  if (typeof partial !== "string") throw new TypeError("partial must be text");
   if (!trimWhiteSpace(partial)) throw new RangeError("partial must not be empty");
   return { path: "/v1/search/autocomplete", params: [["q", partial]], read: readAutocomplete };
 }
@@ -202,9 +206,8 @@ function around(at: Coordinate, key: string, metres?: number): Array<readonly [s
 }
 
 function numberText(value: number): string {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    throw new RangeError(`expected a finite number, got ${value}`);
-  }
+  if (typeof value !== "number") throw new TypeError(`expected a number, got ${value}`);
+  if (!Number.isFinite(value)) throw new RangeError(`expected a finite number, got ${value}`);
   return plain(String(value));
 }
 
