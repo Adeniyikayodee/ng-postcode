@@ -42,6 +42,7 @@ Every tool is read-only except `lookup_postcode_details`, which spends credits. 
 | --- | --- | --- |
 | `NG_POSTCODE_API_KEY` | none | NIPOST API key. Read from the environment only; never passed through tools. |
 | `NG_POSTCODE_MAX_LEVEL` | `1` | Highest lookup level tools may request. Levels 2+ consume credits, so raise it deliberately. |
+| `NG_POSTCODE_MAX_PAID_CALLS` | `25` | How many paid lookups one run of the server may make with its own key. |
 | `NG_POSTCODE_BASE_URL` | `https://api.postcode.gov.ng` | Alternative API host, such as a staging stack. |
 
 ## Safety
