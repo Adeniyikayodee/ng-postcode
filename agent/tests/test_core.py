@@ -147,6 +147,14 @@ def test_location_with_no_building_asks_to_move_the_pin() -> None:
     assert "pin" in result.question
 
 
+@pytest.mark.parametrize("code", ["", "EK-01", "not a postcode"])
+def test_a_building_without_a_well_formed_code_resolves_nothing(code: str) -> None:
+    on_the_pin = from_location(found(3, code))
+    at_the_landmark = from_geocoded(found(3, code), place("building"), None, True)
+    for answer in (on_the_pin, at_the_landmark):
+        assert (answer.status, answer.code, answer.level) == ("unresolved", None, None)
+
+
 def test_the_landmark_itself_resolves_to_its_building() -> None:
     result = from_geocoded(
         found(8.0), place("building"), Landmark(name="Fabian Hotel", relation="at"), True
