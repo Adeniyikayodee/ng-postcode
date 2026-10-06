@@ -56,6 +56,7 @@ class ClientTest {
         server.stop(0);
     }
 
+    // spec/client.json: sends_the_key
     @Test
     void sendsTheKeyAndQueryAndDecodesTheAnswer() throws IOException {
         Client client = clientFor(
@@ -66,6 +67,7 @@ class ClientTest {
         assertEquals("secret", seen.get(0).getRequestHeaders().getFirst("X-API-Key"));
     }
 
+    // spec/client.json: refuses_redirects
     @Test
     void aRedirectIsNotFollowed() throws IOException {
         Client client = clientFor(exchange -> {
@@ -82,6 +84,7 @@ class ClientTest {
                         .build()));
     }
 
+    // spec/client.json: times_out_a_stalled_body
     @Test
     void aBodyThatStallsTimesOutToo() throws IOException {
         Client client = clientFor(
@@ -95,6 +98,7 @@ class ClientTest {
         assertInstanceOf(TransportError.class, failed.failure());
     }
 
+    // spec/client.json: failures_are_values
     @Test
     void aSilentServerTimesOutAsAValueWithoutTheKey() throws IOException {
         Client client = clientFor(exchange -> {}, Duration.ofMillis(300));

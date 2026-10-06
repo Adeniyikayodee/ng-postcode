@@ -30,6 +30,7 @@ def sync_client(key: str, handler: Callable[[httpx.Request], httpx.Response]) ->
     return Client(key, http=httpx.Client(transport=httpx.MockTransport(handler)))
 
 
+# spec/client.json: sends_the_key
 def test_sends_the_key_and_decodes_the_answer() -> None:
     with sync_client("key", api) as client:
         found = client.send(lookup(CODE))
@@ -37,6 +38,7 @@ def test_sends_the_key_and_decodes_the_answer() -> None:
     assert (found.postcode, found.valid) == ("EK-01-A03-FK-01", True)
 
 
+# spec/client.json: failures_are_values
 def test_api_and_network_failures_are_values() -> None:
     with sync_client("wrong", api) as client:
         assert client.send(lookup(CODE)) == ApiError(

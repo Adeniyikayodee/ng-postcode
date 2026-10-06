@@ -1,0 +1,15 @@
+{
+  "about": "What every HTTP client must do beyond building requests and decoding answers. A client test names the obligation it proves in a comment, `spec/client.json: <name>`, and scripts/client_obligations.py fails CI when a client lacks one.",
+  "obligations": {
+    "sends_the_key": "The key travels in the X-API-Key header.",
+    "refuses_redirects": "A redirect is not followed, as it would carry the key to another host.",
+    "times_out_a_stalled_body": "One deadline covers the whole exchange, so a body that stalls or drips ends as a transport failure.",
+    "failures_are_values": "A refused request, an unreachable host and a timeout come back as values that never contain the key."
+  },
+  "clients": [
+    "tests/client.rs",
+    "python/tests/test_client.py",
+    "js/packages/ng-postcode-js/test/client.test.ts",
+    "java/api/src/test/java/io/github/adeniyikayodee/ngpostcode/api/ClientTest.java"
+  ]
+}

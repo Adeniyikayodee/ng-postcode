@@ -52,6 +52,7 @@ read them directly.
 | `requests.json` | What each API request sends, or that it is refused |
 | `responses.json` | Bodies captured from the live API, which all must decode |
 | `tolerance.json` | Bodies the API may one day send, and the outcome each must reach |
+| `client.json` | What every HTTP client must do, such as refusing redirects. A check fails when a client's tests do not name each one |
 | `mcp.json` | The MCP tools, generated from the Python server |
 
 A change in behaviour starts in `spec/`:
@@ -78,7 +79,8 @@ both servers fail while the three are out of step.
    the cases into the new language.
 3. Add the API layer as a separate, optional part: request builders, a decoder
    that takes a status and a body, and a thin HTTP client. Pass
-   `requests.json`, `responses.json`, and `tolerance.json`.
+   `requests.json`, `responses.json`, and `tolerance.json`, and prove each
+   obligation in `client.json`.
 4. Add a CI job, a Dependabot entry, and a README for the package.
 
 These have caught real bugs in earlier ports, so check each one deliberately:
