@@ -30,6 +30,7 @@ pub enum Segment {
 
 /// Why a string is not a well-formed postcode.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum ParseError {
     /// The input did not hold exactly 11 letters and digits.
     Length { found: usize },
@@ -41,6 +42,7 @@ pub enum ParseError {
 
 /// The result of [`Postcode::parse_lenient`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct Corrected {
     pub postcode: Postcode,
     /// How many characters were swapped for their look-alike.

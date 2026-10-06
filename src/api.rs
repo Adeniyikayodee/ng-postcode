@@ -35,6 +35,7 @@ pub struct Coordinate {
 
 /// Why a request was not built. Nothing is sent.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum InvalidRequest {
     /// The lookup level is outside 1 to 5.
     Level(u8),
@@ -278,6 +279,7 @@ fn read_nearby(data: &Value) -> Option<Vec<NearbyUnit>> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum ApiError {
     /// The API refused the request, for example `auth_required` (401),
     /// `insufficient_credits` (402) or a rate limit (429).
@@ -321,6 +323,7 @@ impl std::error::Error for InvalidRequest {}
 
 /// Fields above the level granted to the key are `None`.
 #[derive(Clone, Debug, Default, PartialEq)]
+#[non_exhaustive]
 pub struct Lookup {
     pub postcode: String,
     /// Required: a body without it is malformed, not an unassigned code.
@@ -341,6 +344,7 @@ pub struct Lookup {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct AdministrativeAddress {
     pub state_name: Option<String>,
     pub lga_name: Option<String>,
@@ -349,11 +353,13 @@ pub struct AdministrativeAddress {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct RecentHouseAddress {
     pub recent: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct Autocomplete {
     /// The segment the suggestions complete.
     pub segment: Option<Segment>,
@@ -361,6 +367,7 @@ pub struct Autocomplete {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct Suggestion {
     /// The value of the segment being completed, such as `A03`, not a full prefix.
     pub code: String,
@@ -369,6 +376,7 @@ pub struct Suggestion {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[non_exhaustive]
 pub struct Reverse {
     /// Required: a body without it is malformed, not an empty search.
     pub found: bool,
@@ -388,6 +396,7 @@ pub struct Reverse {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[non_exhaustive]
 pub struct NearbyUnit {
     pub postcode: String,
     pub display: String,
@@ -395,6 +404,7 @@ pub struct NearbyUnit {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[non_exhaustive]
 pub struct NearestUnit {
     pub postcode: String,
     pub display: String,
