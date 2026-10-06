@@ -104,6 +104,27 @@ async def test_a_slow_answer_does_not_hold_up_other_searches() -> None:
 
 
 @pytest.mark.anyio
+async def test_a_burst_is_refused_instead_of_booking_the_queue_ahead() -> None:
+    sent: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        sent.append(request.url.params["q"])
+        return httpx.Response(200, json=[])
+
+    http = httpx.AsyncClient(transport=httpx.MockTransport(handle))
+    geocoder = Nominatim(
+        "https://geo.example", "test", http=http, min_interval_s=0.01, max_wait_s=0.05
+    )
+    burst = await asyncio.gather(*(geocoder(f"place {n}") for n in range(50)))
+    refused = [answer for answer in burst if isinstance(answer, GeocodeFailure)]
+    assert 40 <= len(refused) < 50
+    assert len(sent) == 50 - len(refused)
+
+    assert await geocoder("after the burst") is None
+    assert sent[-1] == "after the burst"
+
+
+@pytest.mark.anyio
 async def test_failures_are_values() -> None:
     def down(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("refused", request=request)
