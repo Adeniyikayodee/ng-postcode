@@ -13,6 +13,7 @@ function client(respond: (url: URL, init: RequestInit) => Response | Promise<Res
   return new Client("secret", { fetch: fake, timeoutMs: 50 });
 }
 
+// spec/client.json: sends_the_key, refuses_redirects
 test("sends the key and query, refuses redirects, and decodes the answer", async () => {
   let seen: [string, RequestInit] | undefined;
   const found = await client((url, init) => {
@@ -24,6 +25,7 @@ test("sends the key and query, refuses redirects, and decodes the answer", async
   expect(seen?.[1]).toMatchObject({ headers: { "X-API-Key": "secret" }, redirect: "error" });
 });
 
+// spec/client.json: failures_are_values
 test("failures are values, and never carry the key", async () => {
   const refused = await client(() =>
     Response.json({ error: { code: "invalid_api_key", message: "no" } }, { status: 401 }),
@@ -56,6 +58,7 @@ test("calls fetch without a receiver, as browsers and Workers require", async ()
   expect(receiver).toBeUndefined();
 });
 
+// spec/client.json: times_out_a_stalled_body
 test("a body that stalls times out", async () => {
   const server = createServer((_, response) => {
     response.writeHead(200, { "Content-Length": 100 });

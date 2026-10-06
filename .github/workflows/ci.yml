@@ -27,6 +27,8 @@ jobs:
       - run: cargo audit
       - name: The agent docs match the READMEs
         run: python3 scripts/llms_full.py --check
+      - name: Every client tests the obligations in spec/client.json
+        run: python3 scripts/client_obligations.py
 
   python:
     runs-on: ubuntu-latest
