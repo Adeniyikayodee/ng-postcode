@@ -11,8 +11,10 @@ import pytest
 from ng_postcode import Postcode
 from ng_postcode.api import (
     ApiError,
+    Autocomplete,
     Coordinate,
     Request,
+    Reverse,
     autocomplete,
     decode,
     lookup,
@@ -48,3 +50,13 @@ def test_reaches_the_shared_outcome(case: dict[str, Any]) -> None:
     else:
         found = ("rejected", decoded.code)
     assert found == (case["outcome"], case.get("code"))
+    assert case.get("expect", {}).items() <= facts(decoded).items()
+
+
+def facts(decoded: Any) -> dict[str, Any]:
+    """What a case may expect of the answer."""
+    if isinstance(decoded, tuple):
+        return {"count": len(decoded)}
+    if isinstance(decoded, Autocomplete):
+        return {"count": len(decoded.suggestions)}
+    return {"unit": decoded.unit is not None} if isinstance(decoded, Reverse) else {}

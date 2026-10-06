@@ -99,7 +99,23 @@ class SpecTest {
             }
             assertEquals(c.get("outcome").asText(), outcome);
             assertEquals(c.path("code").textValue(), code);
+            if (decoded instanceof Result.Ok<?> ok) {
+                for (var fact : c.path("expect").properties()) {
+                    assertEquals(fact.getValue(), JSON.valueToTree(facts(ok.value()).get(fact.getKey())), fact.getKey());
+                }
+            }
         }));
+    }
+
+    /** What a case may expect of the answer. */
+    private static Map<String, Object> facts(Object value) {
+        if (value instanceof List<?> units) {
+            return Map.of("count", units.size());
+        }
+        if (value instanceof Autocomplete found) {
+            return Map.of("count", found.suggestions().size());
+        }
+        return value instanceof Reverse found ? Map.of("unit", found.unit() != null) : Map.of();
     }
 
     private static <T> Result<T> live(Request<T> request, String name) {

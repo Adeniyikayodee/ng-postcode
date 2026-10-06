@@ -106,7 +106,16 @@ test.each(spec("tolerance").cases as Case[])("tolerance $name", (c) => {
       ? ["malformed", undefined]
       : ["rejected", decoded.code];
   expect(found).toEqual([c.outcome, c.code]);
+  expect(facts(decoded)).toMatchObject(c.expect ?? {});
 });
+
+/** What a case may expect of the answer. */
+function facts(decoded: unknown): Record<string, unknown> {
+  if (Array.isArray(decoded)) return { count: decoded.length };
+  const found = decoded as { suggestions?: unknown[]; found?: boolean; unit?: unknown };
+  if (found.suggestions) return { count: found.suggestions.length };
+  return "found" in found ? { unit: found.unit !== null } : {};
+}
 
 const live = <T>(request: Request<T>, name: string): T => {
   const captured = spec("responses")[name];
