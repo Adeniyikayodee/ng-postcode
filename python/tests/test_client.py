@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
+import time
+from collections.abc import AsyncIterator, Callable, Iterator
 
 import httpx
 
@@ -66,6 +67,31 @@ def test_a_redirect_is_not_followed_even_by_a_client_that_would() -> None:
         assert isinstance(result, ApiError)
         assert (result.status, result.code) == (302, "malformed_response")
     assert hosts == ["api.postcode.gov.ng"] * 2
+
+
+# spec/client.json: times_out_a_stalled_body
+def test_a_body_that_drips_is_cut_off_at_the_deadline() -> None:
+    class Drip(httpx.SyncByteStream, httpx.AsyncByteStream):
+        def __iter__(self) -> Iterator[bytes]:
+            while True:
+                time.sleep(0.01)
+                yield b" "
+
+        async def __aiter__(self) -> AsyncIterator[bytes]:
+            while True:
+                await asyncio.sleep(0.01)
+                yield b" "
+
+    transport = httpx.MockTransport(lambda _: httpx.Response(200, stream=Drip()))
+    with Client("key", http=httpx.Client(transport=transport), timeout=0.05) as client:
+        assert client.send(lookup(CODE)) == TransportError("timed out")
+
+    async def run() -> Lookup | ApiError | TransportError:
+        http = httpx.AsyncClient(transport=transport)
+        async with AsyncClient("key", http=http, timeout=0.05) as client:
+            return await client.send(lookup(CODE))
+
+    assert asyncio.run(run()) == TransportError("timed out")
 
 
 def test_only_closes_the_http_client_it_created() -> None:

@@ -5,9 +5,11 @@ Install with `pip install "ng-postcode[client]"`.
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from typing import TypeVar
 
+import anyio
 import httpx
 
 from .api import BASE_URL, ApiError, Request, decode
@@ -15,6 +17,7 @@ from .api import BASE_URL, ApiError, Request, decode
 T = TypeVar("T")
 
 TIMEOUT = 10.0
+"""Seconds allowed for a whole exchange, body included."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,22 +35,40 @@ class Client:
     A redirect is never followed, as it would carry the key to another host."""
 
     def __init__(
-        self, api_key: str, *, base_url: str = BASE_URL, http: httpx.Client | None = None
+        self,
+        api_key: str,
+        *,
+        base_url: str = BASE_URL,
+        http: httpx.Client | None = None,
+        timeout: float = TIMEOUT,
     ) -> None:
-        self._http = http if http is not None else httpx.Client(timeout=TIMEOUT)
+        self._http = http if http is not None else httpx.Client(timeout=timeout)
         self._owns_http = http is None
         self._base_url = base_url
         self._headers = {"X-API-Key": api_key}
+        self._timeout = timeout
 
     def send(self, request: Request[T]) -> T | ApiError | TransportError:
         url = self._base_url + request.path
+        # httpx times each read, so a body that drips would never end: the deadline does.
+        deadline = time.monotonic() + self._timeout
         try:
-            response = self._http.get(
-                url, params=request.params, headers=self._headers, follow_redirects=False
-            )
+            with self._http.stream(
+                "GET",
+                url,
+                params=request.params,
+                headers=self._headers,
+                follow_redirects=False,
+                timeout=self._timeout,
+            ) as response:
+                parts = []
+                for part in response.iter_text():
+                    if time.monotonic() > deadline:
+                        return TransportError("timed out")
+                    parts.append(part)
         except httpx.HTTPError as error:
             return _transport(error)
-        return decode(request, response.status_code, response.text)
+        return decode(request, response.status_code, "".join(parts))
 
     def close(self) -> None:
         if self._owns_http:
@@ -65,19 +86,28 @@ class AsyncClient:
     A redirect is never followed, as it would carry the key to another host."""
 
     def __init__(
-        self, api_key: str, *, base_url: str = BASE_URL, http: httpx.AsyncClient | None = None
+        self,
+        api_key: str,
+        *,
+        base_url: str = BASE_URL,
+        http: httpx.AsyncClient | None = None,
+        timeout: float = TIMEOUT,
     ) -> None:
-        self._http = http if http is not None else httpx.AsyncClient(timeout=TIMEOUT)
+        self._http = http if http is not None else httpx.AsyncClient(timeout=timeout)
         self._owns_http = http is None
         self._base_url = base_url
         self._headers = {"X-API-Key": api_key}
+        self._timeout = timeout
 
     async def send(self, request: Request[T]) -> T | ApiError | TransportError:
         url = self._base_url + request.path
         try:
-            response = await self._http.get(
-                url, params=request.params, headers=self._headers, follow_redirects=False
-            )
+            with anyio.fail_after(self._timeout):
+                response = await self._http.get(
+                    url, params=request.params, headers=self._headers, follow_redirects=False
+                )
+        except TimeoutError:
+            return TransportError("timed out")
         except httpx.HTTPError as error:
             return _transport(error)
         return decode(request, response.status_code, response.text)
