@@ -139,8 +139,14 @@ def lookup(code: Postcode, level: int = 1) -> Request[Lookup]:
     """Resolve a postcode. Levels are cumulative from 1 (validity only) to 5, and
     the API caps the answer at the level granted to the key.
 
-    Raises `ValueError` for a level outside 1 to 5.
+    Raises `ValueError` for a level outside 1 to 5, and `TypeError` for a code that
+    is not a `Postcode` or a level that is not an `int`, so that text which was
+    never validated cannot reach a paid lookup.
     """
+    if not isinstance(code, Postcode):
+        raise TypeError(f"code must be a Postcode from parse(), got {type(code).__name__}")
+    if type(level) is not int:
+        raise TypeError(f"level must be an int, got {level!r}")
     if level not in range(1, 6):
         raise ValueError(f"level must be 1 to 5, got {level!r}")
     return Request("/v1/lookup", (("code", str(code)), ("level", str(level))), _lookup)
@@ -151,6 +157,8 @@ def autocomplete(partial: str) -> Request[Autocomplete]:
 
     Raises `ValueError` for an empty `partial`: the live API never answers one.
     """
+    if not isinstance(partial, str):
+        raise TypeError(f"partial must be text, got {partial!r}")
     if not partial.strip(WHITE_SPACE):
         raise ValueError("partial must not be empty")
     return Request("/v1/search/autocomplete", (("q", partial),), _autocomplete)
@@ -202,7 +210,12 @@ def _around(at: Coordinate, key: str, metres: float | None) -> Params:
 
 
 def _number_text(value: float) -> str:
-    number = float(value)
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        raise TypeError(f"expected a number, got {value!r}")
+    try:
+        number = float(value)
+    except OverflowError:
+        number = math.inf
     if not math.isfinite(number):
         raise ValueError(f"expected a finite number, got {value!r}")
     # Plain decimals: `repr` alone writes 1e-07, which the other implementations do not.
