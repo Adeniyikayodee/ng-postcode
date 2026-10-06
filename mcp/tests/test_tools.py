@@ -211,6 +211,29 @@ def test_the_level_cap_withholds_names_and_addresses() -> None:
     assert (held.postcode, held.address, held.state_name) == ("EK-01-A03-FK-01", None, None)
 
 
+def test_the_level_cap_withholds_a_field_the_unit_gains_later() -> None:
+    class Tomorrow(NearestBuilding):
+        occupant: str | None
+
+    unit = Tomorrow(
+        postcode="EK-01-A03-FK-01",
+        display="EK 01 A03 FK 01",
+        distance_m=8.0,
+        confidence="high",
+        state_name=None,
+        lga_name=None,
+        locality_name=None,
+        address=None,
+        occupant="A. Person",
+    )
+    found = Location(
+        found=True, unit=unit, area=None, district=None, state=None, message=None, radius_m=25.0
+    )
+    held = capped(found, 1).unit
+    assert isinstance(held, Tomorrow)
+    assert (held.distance_m, held.occupant) == (8.0, None)
+
+
 @pytest.mark.anyio
 async def test_rejects_out_of_range_arguments() -> None:
     result = await call("find_postcode_at_location", {"latitude": 95, "longitude": 5.22})

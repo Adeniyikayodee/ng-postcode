@@ -72,7 +72,7 @@ HINTS = {
     "level_not_granted": "The key is not granted this lookup level; use a lower level or "
     f"request more access at {KEY_URL}.",
 }
-LEVEL_2_FIELDS = ("state_name", "lga_name", "locality_name", "address")
+LEVEL_1_FIELDS = ("postcode", "display", "distance_m", "confidence")
 STATUS_HINTS = {
     403: "The key lacks the scope or access level for this request.",
     429: "NIPOST rate limit reached; wait before retrying.",
@@ -445,11 +445,12 @@ def geocoder_for(settings: Settings, http: httpx.AsyncClient | None) -> Nominati
 
 
 def capped(location: Location, max_level: int) -> Location:
-    """The location without the fields a level 2 key adds, unless the cap allows them."""
+    """The location with only the unit's level 1 fields, unless the cap allows more. Any
+    field the unit gains later is withheld until it is listed as level 1."""
     if max_level >= 2 or location.unit is None:
         return location
-    unit = location.unit.model_copy(update=dict.fromkeys(LEVEL_2_FIELDS))
-    return location.model_copy(update={"unit": unit})
+    withheld = dict.fromkeys(type(location.unit).model_fields.keys() - set(LEVEL_1_FIELDS))
+    return location.model_copy(update={"unit": location.unit.model_copy(update=withheld)})
 
 
 def completions(found: Autocomplete) -> Completions:
