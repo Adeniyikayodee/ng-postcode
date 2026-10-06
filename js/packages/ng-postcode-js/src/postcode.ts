@@ -50,6 +50,9 @@ export class InvalidSegment {
 
 export type ParseError = WrongLength | InvalidCharacter | InvalidSegment;
 
+/** Held only here, so nothing outside this module can build a `Postcode` unchecked. */
+const CHECKED: unique symbol = Symbol("checked");
+
 /**
  * A well-formed postcode, held in its compact upper-case form.
  *
@@ -57,11 +60,12 @@ export type ParseError = WrongLength | InvalidCharacter | InvalidSegment;
  * code belongs to a real building. Build one with `parse`.
  */
 export class Postcode {
-  private constructor(readonly compact: string) {}
-
-  /** @internal Callers use `parse`; this takes a string already validated. */
-  static unchecked(compact: string): Postcode {
-    return new Postcode(compact);
+  /** @internal Callers use `parse`: only this module holds the key. */
+  constructor(
+    key: typeof CHECKED,
+    readonly compact: string,
+  ) {
+    if (key !== CHECKED) throw new TypeError("build a Postcode with parse()");
   }
 
   /** The canonical hyphenated form, `EK-01-A03-FK-01`. */
@@ -121,7 +125,7 @@ export interface Corrected {
 export function parse(text: string): Postcode | ParseError {
   const compact = collect(text);
   if (typeof compact !== "string") return compact;
-  return validate(compact) ?? Postcode.unchecked(compact);
+  return validate(compact) ?? new Postcode(CHECKED, compact);
 }
 
 /**
@@ -139,7 +143,7 @@ export function parseLenient(text: string): Corrected | ParseError {
   const error = validate(fixed);
   if (error) return error;
   const corrections = [...raw].filter((char, index) => char !== fixed[index]).length;
-  return { postcode: Postcode.unchecked(fixed), corrections };
+  return { postcode: new Postcode(CHECKED, fixed), corrections };
 }
 
 /** Build a code from its segments, zero-filling the LGA and unit. */
