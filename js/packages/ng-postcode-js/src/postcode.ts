@@ -182,17 +182,19 @@ function isAsciiAlphanumeric(char: string): boolean {
 }
 
 function collect(text: string): string | ParseError {
-  const kept: string[] = [];
+  // Every character is checked, but no more than a postcode's worth is held.
+  let kept = "";
+  let found = 0;
   let index = 0;
   for (const char of text) {
     if (char !== " " && char !== "-") {
       if (!isAsciiAlphanumeric(char)) return new InvalidCharacter(char, index);
-      kept.push(char);
+      if (found < LENGTH) kept += char;
+      found += 1;
     }
     index += 1;
   }
-  if (kept.length !== LENGTH) return new WrongLength(kept.length);
-  return kept.join("").toUpperCase();
+  return found === LENGTH ? kept.toUpperCase() : new WrongLength(found);
 }
 
 function part(compact: string, segment: Segment): string {
