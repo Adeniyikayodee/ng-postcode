@@ -1,0 +1,34 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ng-postcode-js"
+version = "0.1.0"
+description = "Alias for ng-postcode on PyPI. The JavaScript library of this name is on npm."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Kayode Adeniyi" }]
+keywords = ["nigeria", "postcode", "nipost", "ndaps", "postal-code"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+]
+dependencies = ["ng-postcode>=0.3"]
+
+[project.optional-dependencies]
+client = ["ng-postcode[client]>=0.3"]
+
+[project.urls]
+Repository = "https://github.com/Adeniyikayodee/ng-postcode"
+"The Python package" = "https://pypi.org/project/ng-postcode/"
+"The JavaScript package" = "https://www.npmjs.com/package/ng-postcode-js"
+
+# The alias ships no code: installing it installs the package it depends on.
+[tool.hatch.build.targets.wheel]
+bypass-selection = true
+
+[tool.hatch.build.targets.sdist]
+only-include = ["README.md", "LICENSE"]

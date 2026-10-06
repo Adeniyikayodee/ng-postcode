@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ng-address"
+version = "0.1.0"
+description = "Alias for ng-address-resolver, which resolves Nigerian addresses to NIPOST digital postcodes."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Kayode Adeniyi" }]
+keywords = ["nigeria", "address", "postcode", "nipost", "ndaps"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+]
+dependencies = ["ng-address-resolver>=0.1.6"]
+
+[project.optional-dependencies]
+claude = ["ng-address-resolver[claude]>=0.1.6"]
+
+[project.urls]
+Repository = "https://github.com/Adeniyikayodee/ng-postcode"
+"The real package" = "https://pypi.org/project/ng-address-resolver/"
+
+# The alias ships no code: installing it installs the package it depends on.
+[tool.hatch.build.targets.wheel]
+bypass-selection = true
+
+[tool.hatch.build.targets.sdist]
+only-include = ["README.md", "LICENSE"]

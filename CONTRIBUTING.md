@@ -37,6 +37,7 @@ is needed.
 | `mcp/` | MCP server (Python), the source of `spec/mcp.json` |
 | `js/packages/ng-postcode-mcp` | MCP server (Node), built from `spec/mcp.json` |
 | `agent/` | Address resolver |
+| `aliases/` | PyPI names people mistype, each of which installs the real package |
 | `scripts/` | Live API check and spec generation |
 | `docs/` | The project site and the postcode reference schema |
 
