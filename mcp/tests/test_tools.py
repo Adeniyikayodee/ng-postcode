@@ -297,6 +297,21 @@ def test_transport_settings() -> None:
     assert isinstance(served, Settings)
     assert (served.transport, served.host, served.port) == ("http", "127.0.0.1", 9000)
     assert isinstance(settings_from_env({"NG_POSTCODE_TRANSPORT": "sse"}), str)
+
+
+def test_a_server_key_is_not_shared_on_a_public_address_by_accident() -> None:
+    public = {"NG_POSTCODE_TRANSPORT": "http", "NG_POSTCODE_HOST": "0.0.0.0"}
+    keyed = public | {"NG_POSTCODE_API_KEY": "k"}
+    refused = settings_from_env(keyed)
+    assert isinstance(refused, str)
+    assert "NG_POSTCODE_ALLOW_SHARED_KEY" in refused
+    for allowed in (
+        public,
+        keyed | {"NG_POSTCODE_ALLOW_SHARED_KEY": "1"},
+        keyed | {"NG_POSTCODE_HOST": "localhost"},
+        keyed | {"NG_POSTCODE_TRANSPORT": "stdio"},
+    ):
+        assert isinstance(settings_from_env(allowed), Settings)
     assert isinstance(settings_from_env({"NG_POSTCODE_PORT": "0"}), str)
 
 
