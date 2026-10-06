@@ -78,6 +78,9 @@ HINTS = {
     "level_not_granted": "The key is not granted this lookup level; use a lower level or "
     f"request more access at {KEY_URL}.",
 }
+# The tools keep nothing between calls, so HTTP is served without sessions: there is
+# nothing for a caller to pile up, and no session id that could stand in for a key.
+HTTP: dict[str, Any] = {"stateless_http": True}
 LEVEL_1_FIELDS = ("postcode", "display", "distance_m", "confidence")
 STATUS_HINTS = {
     403: "The key lacks the scope or access level for this request.",
@@ -608,6 +611,6 @@ def main() -> None:
     logging.getLogger("httpx").setLevel(logging.WARNING)
     server = create_server(settings)
     if settings.transport == "http":
-        server.run("streamable-http", host=settings.host, port=settings.port)
+        server.run("streamable-http", host=settings.host, port=settings.port, **HTTP)
     else:
         server.run()

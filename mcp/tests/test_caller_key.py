@@ -17,6 +17,7 @@ from mcp.client.streamable_http import streamable_http_client
 from mcp.types import CallToolResult
 
 from ng_postcode_mcp import Settings, create_server
+from ng_postcode_mcp.server import HTTP
 
 LOOKUP = {"postcode": "EK-01-A03-FK-01"}
 
@@ -35,7 +36,7 @@ def serving(server_key: str | None, keys_seen: list[str]) -> Iterator[str]:
         return httpx.Response(200, json={"data": {"postcode": "EK-01-A03-FK-01", "valid": True}})
 
     upstream = httpx.AsyncClient(transport=httpx.MockTransport(nipost))
-    app = create_server(Settings(api_key=server_key), http=upstream).streamable_http_app()
+    app = create_server(Settings(api_key=server_key), http=upstream).streamable_http_app(**HTTP)
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))
         port = int(probe.getsockname()[1])
