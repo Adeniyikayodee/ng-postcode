@@ -78,6 +78,7 @@ Most clients take this entry in their MCP settings:
 | --- | --- | --- |
 | `NG_POSTCODE_API_KEY` | none | NIPOST API key. Read from the environment only; never passed through tools. |
 | `NG_POSTCODE_MAX_LEVEL` | `1` | Highest lookup level tools may request. Levels 2+ consume credits, so raise it deliberately. |
+| `NG_POSTCODE_MAX_PAID_CALLS` | `25` | How many paid lookups one run of the server may make with its own key. |
 | `NG_POSTCODE_BASE_URL` | `https://api.postcode.gov.ng` | Alternative API host, such as a staging stack. |
 | `NG_GEOCODER_URL` | none | A Nominatim server `resolve_address` uses to place described addresses. Without it, only typed postcodes and location pins resolve. |
 | `NG_GEOCODER_CONTACT` | none | A URL or email sent in the User-Agent. Required for the public Nominatim. |

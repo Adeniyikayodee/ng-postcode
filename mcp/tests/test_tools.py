@@ -176,6 +176,24 @@ async def test_lookup_refuses_paid_levels_above_the_cap_without_calling_the_api(
 
 
 @pytest.mark.anyio
+async def test_paid_lookups_stop_at_the_ceiling_but_a_callers_own_key_does_not() -> None:
+    seen: list[httpx.Request] = []
+    http = httpx.AsyncClient(transport=httpx.MockTransport(nipost(seen)))
+    settings = Settings(api_key="good", max_level=2, max_paid_calls=2)
+    code = {"postcode": "EK-01-A03-FK-01"}
+    async with Client(create_server(settings, http=http)) as client:
+        results = [await client.call_tool("lookup_postcode_details", code) for _ in range(3)]
+        typo = await client.call_tool("lookup_postcode_details", {"postcode": "EK-01"})
+        free = await client.call_tool("lookup_postcode", code)
+    await http.aclose()
+    assert [result.is_error for result in results] == [False, False, True]
+    assert "NG_POSTCODE_MAX_PAID_CALLS" in text(results[2])
+    assert "not a valid postcode" in text(typo)
+    assert not free.is_error
+    assert [request.url.params["level"] for request in seen] == ["2", "2", "1"]
+
+
+@pytest.mark.anyio
 async def test_lookup_never_autocorrects_before_spending() -> None:
     seen: list[httpx.Request] = []
     result = await call("lookup_postcode", {"postcode": "EK-O1-A03-FK-01"}, seen=seen)
@@ -287,6 +305,10 @@ def test_settings_from_env() -> None:
     assert settings_from_env({"NG_POSTCODE_API_KEY": " k ", "NG_POSTCODE_MAX_LEVEL": "3"}) == (
         Settings(api_key="k", max_level=3)
     )
+    assert settings_from_env({"NG_POSTCODE_MAX_PAID_CALLS": "3"}) == Settings(
+        api_key=None, max_paid_calls=3
+    )
+    assert isinstance(settings_from_env({"NG_POSTCODE_MAX_PAID_CALLS": "many"}), str)
     assert settings_from_env({"NG_POSTCODE_MAX_LEVEL": "9"}) == (
         "NG_POSTCODE_MAX_LEVEL must be 1 to 5, got '9'"
     )

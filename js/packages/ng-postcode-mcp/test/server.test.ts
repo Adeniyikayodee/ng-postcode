@@ -105,6 +105,18 @@ test("paid lookups are a separate tool, offered only above the default cap", asy
   expect(seen).toHaveLength(1);
 });
 
+test("paid lookups stop at the ceiling", async () => {
+  const seen: URL[] = [];
+  const client = await connect({ maxLevel: 2, maxPaidCalls: 2 }, seen);
+  const code = { postcode: "EK-01-A03-FK-01" };
+  const results = [];
+  for (let n = 0; n < 3; n++) results.push(await call(client, "lookup_postcode_details", code));
+  expect(results.map((result) => Boolean(result.isError))).toEqual([false, false, true]);
+  expect(results[2]?.text).toContain("NG_POSTCODE_MAX_PAID_CALLS");
+  expect((await call(client, "lookup_postcode", code)).isError).toBeFalsy();
+  expect(seen).toHaveLength(3);
+});
+
 test("missing and rejected keys come back as messages without the key", async () => {
   const missing = await call(await connect({ apiKey: undefined }), "lookup_postcode", LOOKUP);
   expect([missing.isError, missing.text]).toEqual([
@@ -150,8 +162,13 @@ test("reads settings from the environment", () => {
   expect(settingsFromEnv({})).toEqual({
     apiKey: undefined,
     maxLevel: 1,
+    maxPaidCalls: 25,
     baseUrl: "https://api.postcode.gov.ng",
   });
+  expect(settingsFromEnv({ NG_POSTCODE_MAX_PAID_CALLS: "3" })).toMatchObject({ maxPaidCalls: 3 });
+  expect(settingsFromEnv({ NG_POSTCODE_MAX_PAID_CALLS: "many" })).toBe(
+    "NG_POSTCODE_MAX_PAID_CALLS must be a whole number, got 'many'",
+  );
   expect(settingsFromEnv({ NG_POSTCODE_API_KEY: " k ", NG_POSTCODE_MAX_LEVEL: "3" })).toMatchObject(
     {
       apiKey: "k",

@@ -11,10 +11,11 @@ header; without one it uses the server's key, if the server has one.
 from __future__ import annotations
 
 import inspect
+import itertools
 import logging
 import os
 import sys
-from collections.abc import AsyncIterator, Callable, Mapping
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from importlib.metadata import version
@@ -88,6 +89,7 @@ STATUS_HINTS = {
 class Settings:
     api_key: str | None
     max_level: int = 1
+    max_paid_calls: int = 25
     base_url: str = BASE_URL
     geocoder_url: str | None = None
     geocoder_contact: str | None = None
@@ -101,6 +103,9 @@ def settings_from_env(env: Mapping[str, str]) -> Settings | str:
     raw_level = env.get("NG_POSTCODE_MAX_LEVEL", "1").strip()
     if raw_level not in {"1", "2", "3", "4", "5"}:
         return f"NG_POSTCODE_MAX_LEVEL must be 1 to 5, got {raw_level!r}"
+    raw_paid = env.get("NG_POSTCODE_MAX_PAID_CALLS", "25").strip()
+    if not raw_paid.isdecimal():
+        return f"NG_POSTCODE_MAX_PAID_CALLS must be a whole number, got {raw_paid!r}"
     geocoder_url = env.get("NG_GEOCODER_URL", "").strip().rstrip("/") or None
     geocoder_contact = env.get("NG_GEOCODER_CONTACT", "").strip() or None
     if geocoder_url == PUBLIC_NOMINATIM and geocoder_contact is None:
@@ -114,6 +119,7 @@ def settings_from_env(env: Mapping[str, str]) -> Settings | str:
     return Settings(
         api_key=env.get("NG_POSTCODE_API_KEY", "").strip() or None,
         max_level=int(raw_level),
+        max_paid_calls=int(raw_paid),
         base_url=env.get("NG_POSTCODE_BASE_URL", "").strip() or BASE_URL,
         geocoder_url=geocoder_url,
         geocoder_contact=geocoder_contact,
@@ -225,6 +231,8 @@ class State:
     base_url: str
     nipost: AsyncClient | None
     geocoder: Nominatim | None
+    paid: Iterator[int]
+    """Counts the paid lookups made with the server's own key."""
 
 
 def create_server(
@@ -245,7 +253,7 @@ def create_server(
         )
         geocoder = geocoder_for(settings, geocoder_http)
         try:
-            yield State(shared, settings.base_url, nipost, geocoder)
+            yield State(shared, settings.base_url, nipost, geocoder, itertools.count(1))
         finally:
             if http is None:
                 await shared.aclose()
@@ -326,7 +334,15 @@ def create_server(
                 f"Level {level} is above this server's cap of {settings.max_level}. Levels 2+ "
                 "consume NIPOST credits; the user can raise NG_POSTCODE_MAX_LEVEL to allow it."
             )
-        result = await api(ctx).send(lookup(checked(postcode), level))
+        client, code = api(ctx), checked(postcode)
+        state = ctx.request_context.lifespan_context
+        # A caller's own key is the caller's money; the server's key has a ceiling.
+        if client is state.nipost and next(state.paid) > settings.max_paid_calls:
+            raise ToolError(
+                f"This server has made its {settings.max_paid_calls} paid lookups. The user can "
+                "raise NG_POSTCODE_MAX_PAID_CALLS, or restart the server, to allow more."
+            )
+        result = await client.send(lookup(code, level))
         return PostcodeDetails.model_validate(unwrap(result))
 
     # Not offered at all under the default cap, so a model cannot spend by accident.

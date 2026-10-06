@@ -28,6 +28,8 @@ const LEVEL_1_FIELDS = ["postcode", "display", "distance_m", "confidence"];
 export interface Settings {
   readonly apiKey: string | undefined;
   readonly maxLevel: number;
+  /** How many paid lookups one process may make. Defaults to 25. */
+  readonly maxPaidCalls?: number;
   readonly baseUrl: string;
   /** Your own `fetch`, as tests use. */
   readonly fetch?: typeof fetch;
@@ -37,9 +39,14 @@ export interface Settings {
 export function settingsFromEnv(env: Record<string, string | undefined>): Settings | string {
   const level = (env.NG_POSTCODE_MAX_LEVEL ?? "1").trim();
   if (!/^[1-5]$/.test(level)) return `NG_POSTCODE_MAX_LEVEL must be 1 to 5, got '${level}'`;
+  const paid = (env.NG_POSTCODE_MAX_PAID_CALLS ?? "25").trim();
+  if (!/^[0-9]+$/.test(paid)) {
+    return `NG_POSTCODE_MAX_PAID_CALLS must be a whole number, got '${paid}'`;
+  }
   return {
     apiKey: env.NG_POSTCODE_API_KEY?.trim() || undefined,
     maxLevel: Number(level),
+    maxPaidCalls: Number(paid),
     baseUrl: env.NG_POSTCODE_BASE_URL?.trim() || BASE_URL,
   };
 }
@@ -65,6 +72,9 @@ export function createServer(settings: Settings): McpServer {
     );
   };
 
+  const maxPaidCalls = settings.maxPaidCalls ?? 25;
+  let paid = 0;
+
   const handlers: Record<string, Handler> = {
     validate_postcode: ({ postcode }) => validation(String(postcode)),
 
@@ -77,7 +87,14 @@ export function createServer(settings: Settings): McpServer {
           `Level ${level} is above this server's cap of ${settings.maxLevel}. Levels 2+ consume NIPOST credits; the user can raise NG_POSTCODE_MAX_LEVEL to allow it.`,
         );
       }
-      return unwrap(await api().send(lookup(checked(String(postcode)), Number(level))));
+      const [client, code] = [api(), checked(String(postcode))];
+      paid += 1;
+      if (paid > maxPaidCalls) {
+        throw new ToolError(
+          `This server has made its ${maxPaidCalls} paid lookups. The user can raise NG_POSTCODE_MAX_PAID_CALLS, or restart the server, to allow more.`,
+        );
+      }
+      return unwrap(await client.send(lookup(code, Number(level))));
     },
 
     autocomplete_postcode: async ({ partial }) => {
