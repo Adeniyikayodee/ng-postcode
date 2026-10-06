@@ -99,6 +99,13 @@ test.each(spec("requests").untyped as Case[])("untyped $name", (c) => {
   }).toThrow(/must be|expected/);
 });
 
+test("a Postcode cannot be built without parse", () => {
+  const build = Postcode as unknown as new (...args: unknown[]) => Postcode;
+  expect(() => new build("EK01A03FK01")).toThrow(TypeError);
+  expect(() => new build(Symbol("checked"), "EK01A03FK01")).toThrow(TypeError);
+  expect("unchecked" in Postcode).toBe(false);
+});
+
 const REQUESTS: Record<string, Request<unknown>> = {
   lookup: lookup(CODE),
   autocomplete: autocomplete("E"),
