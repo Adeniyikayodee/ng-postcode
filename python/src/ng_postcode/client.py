@@ -28,7 +28,8 @@ class TransportError:
 
 
 class Client:
-    """Blocking client. Pass `http` to reuse your own `httpx.Client`; it stays yours to close."""
+    """Blocking client. Pass `http` to reuse your own `httpx.Client`; it stays yours to close.
+    A redirect is never followed, as it would carry the key to another host."""
 
     def __init__(
         self, api_key: str, *, base_url: str = BASE_URL, http: httpx.Client | None = None
@@ -41,7 +42,9 @@ class Client:
     def send(self, request: Request[T]) -> T | ApiError | TransportError:
         url = self._base_url + request.path
         try:
-            response = self._http.get(url, params=request.params, headers=self._headers)
+            response = self._http.get(
+                url, params=request.params, headers=self._headers, follow_redirects=False
+            )
         except httpx.HTTPError as error:
             return _transport(error)
         return decode(request, response.status_code, response.text)
@@ -58,7 +61,8 @@ class Client:
 
 
 class AsyncClient:
-    """Async client. Pass `http` to reuse your own `httpx.AsyncClient`; it stays yours to close."""
+    """Async client. Pass `http` to reuse your own `httpx.AsyncClient`; it stays yours to close.
+    A redirect is never followed, as it would carry the key to another host."""
 
     def __init__(
         self, api_key: str, *, base_url: str = BASE_URL, http: httpx.AsyncClient | None = None
@@ -71,7 +75,9 @@ class AsyncClient:
     async def send(self, request: Request[T]) -> T | ApiError | TransportError:
         url = self._base_url + request.path
         try:
-            response = await self._http.get(url, params=request.params, headers=self._headers)
+            response = await self._http.get(
+                url, params=request.params, headers=self._headers, follow_redirects=False
+            )
         except httpx.HTTPError as error:
             return _transport(error)
         return decode(request, response.status_code, response.text)
