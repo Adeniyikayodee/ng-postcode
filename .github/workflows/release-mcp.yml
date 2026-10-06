@@ -124,4 +124,5 @@ jobs:
             echo "::warning::No SMITHERY_API_KEY in the smitheryAPI environment, so the Smithery listing was not updated."
             exit 0
           fi
-          npx -y @smithery/cli@4.11.1 mcp publish "$RUNNER_TEMP/ng-postcode.mcpb" -n adeniyikayode22/ng-postcode
+          npm ci --prefix smithery --ignore-scripts
+          ./smithery/node_modules/.bin/smithery mcp publish "$RUNNER_TEMP/ng-postcode.mcpb" -n adeniyikayode22/ng-postcode
