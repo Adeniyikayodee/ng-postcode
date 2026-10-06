@@ -27,3 +27,8 @@ pub mod api;
 pub mod client;
 
 pub use postcode::{is_valid, Corrected, ParseError, Postcode, Segment};
+
+// Compiles and runs the examples in the crate README.
+#[cfg(all(doctest, feature = "client"))]
+#[doc = include_str!("../CRATE.md")]
+struct Readme;
