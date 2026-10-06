@@ -1,3 +1,5 @@
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 import { expect, test } from "vitest";
 import { ApiError, lookup } from "../src/api.js";
 import { Client, TransportError } from "../src/client.js";
@@ -52,4 +54,17 @@ test("calls fetch without a receiver, as browsers and Workers require", async ()
   } as typeof fetch;
   await new Client("secret", { fetch: fake }).send(lookup(CODE));
   expect(receiver).toBeUndefined();
+});
+
+test("a body that stalls times out", async () => {
+  const server = createServer((_, response) => {
+    response.writeHead(200, { "Content-Length": 100 });
+    response.write('{"data":');
+  }).listen(0, "127.0.0.1");
+  await new Promise((resolve) => server.once("listening", resolve));
+  const baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  const stalled = await new Client("secret", { baseUrl, timeoutMs: 100 }).send(lookup(CODE));
+  server.closeAllConnections();
+  server.close();
+  expect(stalled).toBeInstanceOf(TransportError);
 });
