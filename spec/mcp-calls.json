@@ -103,6 +103,22 @@
         "partial": "  "
       },
       "error": "Give at least the first characters of a postcode."
+    },
+    {
+      "name": "lookup_quote_in_the_code",
+      "tool": "lookup_postcode",
+      "arguments": {
+        "postcode": "EK'01-A03-FK-01"
+      },
+      "error": "'EK'01-A03-FK-01' is not a valid postcode: invalid character ''' at index 2."
+    },
+    {
+      "name": "lookup_long_text_is_cut",
+      "tool": "lookup_postcode",
+      "arguments": {
+        "postcode": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      },
+      "error": "'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA...' is not a valid postcode: expected 11 letters and digits, found 60."
     }
   ]
 }

@@ -487,7 +487,8 @@ def checked(text: str) -> Postcode:
         case error:
             hint = suggestion(text)
             maybe = f" Did you mean {hint}? Confirm with the user first." if hint else ""
-            raise ToolError(f"{text!r} is not a valid postcode: {error}.{maybe}")
+            shown = text if len(text) <= 40 else f"{text[:40]}..."
+            raise ToolError(f"'{shown}' is not a valid postcode: {error}.{maybe}")
 
 
 def nipost_for(ctx: Context[State, Any]) -> AsyncClient | None:
