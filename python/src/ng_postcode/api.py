@@ -177,7 +177,7 @@ def nearby(at: Coordinate, radius_m: float | None = None) -> Request[tuple[Nearb
 def decode(request: Request[T], status: int, body: str) -> T | ApiError:
     """Decode the response to `request` from its status and body."""
     try:
-        envelope = json.loads(body)
+        envelope = json.loads(body, parse_float=_finite, parse_int=_whole, parse_constant=_finite)
     except ValueError as error:
         return _malformed(status, f"not JSON: {error}")
     if not isinstance(envelope, dict):
@@ -208,6 +208,18 @@ def _number_text(value: float) -> str:
     # Plain decimals: `repr` alone writes 1e-07, which the other implementations do not.
     # Adding zero turns -0.0 into 0.0.
     return format(Decimal(repr(number + 0.0)), "f").removesuffix(".0")
+
+
+def _finite(text: str) -> float:
+    number = float(text)
+    if not math.isfinite(number):
+        raise ValueError(f"number out of range: {text[:24]}")
+    return number
+
+
+def _whole(text: str) -> int:
+    _finite(text)
+    return int(text)
 
 
 def _malformed(status: int, message: str) -> ApiError:
