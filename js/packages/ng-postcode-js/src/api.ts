@@ -149,7 +149,8 @@ export function autocomplete(partial: string): Request<Autocomplete> {
  * Find the postcode of the nearest building, within 25 m unless `maxDistanceM`
  * says otherwise. The API clamps it to 250 m.
  *
- * Throws `RangeError` for a coordinate or distance that is not a finite number.
+ * Throws `RangeError` for a coordinate off the globe, or one or a distance that is not a
+ * finite number.
  */
 export function reverse(at: Coordinate, maxDistanceM?: number): Request<Reverse> {
   const params = around(at, "max_distance_m", maxDistanceM);
@@ -160,7 +161,8 @@ export function reverse(at: Coordinate, maxDistanceM?: number): Request<Reverse>
  * List buildings around a point, nearest first, within 300 m unless `radiusM`
  * says otherwise. Empty when nothing is in range.
  *
- * Throws `RangeError` for a coordinate or radius that is not a finite number.
+ * Throws `RangeError` for a coordinate off the globe, or one or a radius that is not a
+ * finite number.
  */
 export function nearby(at: Coordinate, radiusM?: number): Request<readonly NearbyUnit[]> {
   return { path: "/v1/search/nearby", params: around(at, "radius", radiusM), read: readNearby };
@@ -202,6 +204,9 @@ function around(at: Coordinate, key: string, metres?: number): Array<readonly [s
     ["lat", numberText(at.lat)],
     ["lng", numberText(at.lng)],
   ];
+  if (Math.abs(at.lat) > 90 || Math.abs(at.lng) > 180) {
+    throw new RangeError(`coordinate is off the globe: ${at.lat}, ${at.lng}`);
+  }
   return metres === undefined ? point : [...point, [key, numberText(metres)]];
 }
 

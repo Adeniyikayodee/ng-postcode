@@ -67,7 +67,8 @@ public final class Api {
      * otherwise. The API clamps it to 250 m.
      *
      * @param maxDistanceM may be {@code null}
-     * @throws IllegalArgumentException for a coordinate or distance that is not a finite number
+     * @throws IllegalArgumentException for a coordinate off the globe, or one or a distance that is not a
+     *     finite number
      */
     public static Request<Reverse> reverse(Coordinate at, Double maxDistanceM) {
         return new Request<>("/v1/search/reverse", around(at, "max_distance_m", maxDistanceM), Api::readReverse);
@@ -82,7 +83,8 @@ public final class Api {
      * otherwise. Empty when nothing is in range.
      *
      * @param radiusM may be {@code null}
-     * @throws IllegalArgumentException for a coordinate or radius that is not a finite number
+     * @throws IllegalArgumentException for a coordinate off the globe, or one or a radius that is not a
+     *     finite number
      */
     public static Request<List<NearbyUnit>> nearby(Coordinate at, Double radiusM) {
         return new Request<>("/v1/search/nearby", around(at, "radius", radiusM), Api::readNearby);
@@ -124,6 +126,9 @@ public final class Api {
 
     private static List<Map.Entry<String, String>> around(Coordinate at, String key, Double metres) {
         var query = new ArrayList<>(List.of(Map.entry("lat", numberText(at.lat())), Map.entry("lng", numberText(at.lng()))));
+        if (Math.abs(at.lat()) > 90 || Math.abs(at.lng()) > 180) {
+            throw new IllegalArgumentException("coordinate is off the globe: " + at.lat() + ", " + at.lng());
+        }
         if (metres != null) {
             query.add(Map.entry(key, numberText(metres)));
         }

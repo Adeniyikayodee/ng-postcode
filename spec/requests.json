@@ -18,7 +18,12 @@
     { "name": "reverse_negative_zero", "request": "reverse", "args": {"lat": -0.0, "lng": 5.2214}, "sends": {"path": "/v1/search/reverse", "query": [["lat", "0"], ["lng", "5.2214"]]} },
     { "name": "reverse_nan_latitude", "request": "reverse", "args": {"lat": "nan", "lng": 5.2214}, "sends": null },
     { "name": "nearby_infinite_longitude", "request": "nearby", "args": {"lat": 7.6211, "lng": "inf"}, "sends": null },
-    { "name": "reverse_infinite_distance", "request": "reverse", "args": {"lat": 7.6211, "lng": 5.2214, "metres": "-inf"}, "sends": null }
+    { "name": "reverse_infinite_distance", "request": "reverse", "args": {"lat": 7.6211, "lng": 5.2214, "metres": "-inf"}, "sends": null },
+    { "name": "reverse_at_the_pole_and_the_date_line", "request": "reverse", "args": {"lat": -90, "lng": 180}, "sends": {"path": "/v1/search/reverse", "query": [["lat", "-90"], ["lng", "180"]]} },
+    { "name": "reverse_latitude_too_far_north", "request": "reverse", "args": {"lat": 90.5, "lng": 5.2214}, "sends": null },
+    { "name": "nearby_latitude_too_far_south", "request": "nearby", "args": {"lat": -91, "lng": 5.2214}, "sends": null },
+    { "name": "reverse_longitude_too_far_east", "request": "reverse", "args": {"lat": 7.6211, "lng": 180.5}, "sends": null },
+    { "name": "nearby_longitude_too_far_west", "request": "nearby", "args": {"lat": 7.6211, "lng": -181}, "sends": null }
   ],
   "untyped_about": "Arguments of the wrong type, passed exactly as written. A language without static types must refuse each one at run time, so that text which was never validated cannot reach a paid lookup. Rust and Java cannot express them. parsed means the code is first built into a postcode.",
   "untyped": [
