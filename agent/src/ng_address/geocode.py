@@ -28,7 +28,9 @@ class GeocodeFailure:
 
 
 class Nominatim:
-    """Caches the last `CACHE_SIZE` answers and starts requests at least `min_interval_s` apart."""
+    """Caches the last `CACHE_SIZE` answers and starts requests at least `min_interval_s` apart.
+    A search that could not start within `max_wait_s` is refused, so a burst cannot book
+    the queue far ahead and leave later callers waiting for searches nobody wants."""
 
     def __init__(
         self,
@@ -37,12 +39,14 @@ class Nominatim:
         *,
         http: httpx.AsyncClient | None = None,
         min_interval_s: float = 1.0,
+        max_wait_s: float = 10.0,
     ) -> None:
         self._http = http if http is not None else httpx.AsyncClient(timeout=10.0)
         self._owns_http = http is None
         self._url = base_url.rstrip("/") + "/search"
         self._headers = {"User-Agent": user_agent}
         self._interval = min_interval_s
+        self._max_wait = max_wait_s
         self._last = float("-inf")
         self._cache: dict[str, Geocoded | None] = {}
 
@@ -51,8 +55,12 @@ class Nominatim:
         if key in self._cache:
             return self._cache[key]
         # The slot is taken before any await, so a slow answer holds up nobody else.
-        slot = self._last = max(time.monotonic(), self._last + self._interval)
-        await asyncio.sleep(max(0.0, slot - time.monotonic()))
+        now = time.monotonic()
+        slot = max(now, self._last + self._interval)
+        if slot - now > self._max_wait:
+            return GeocodeFailure("geocoder busy, try again shortly")
+        self._last = slot
+        await asyncio.sleep(slot - now)
         try:
             response = await self._http.get(self._url, params=_params(query), headers=self._headers)
         except httpx.HTTPError as error:
