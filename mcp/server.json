@@ -3,7 +3,7 @@
   "name": "io.github.Adeniyikayodee/ng-postcode",
   "title": "Nigeria Postcode",
   "description": "Validate, look up and resolve addresses to Nigeria's NIPOST digital postcodes (NDAPS).",
-  "version": "0.4.5",
+  "version": "0.5.0",
   "repository": {
     "url": "https://github.com/Adeniyikayodee/ng-postcode",
     "source": "github",
@@ -13,7 +13,7 @@
     {
       "registryType": "pypi",
       "identifier": "ng-postcode-mcp",
-      "version": "0.4.5",
+      "version": "0.5.0",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
