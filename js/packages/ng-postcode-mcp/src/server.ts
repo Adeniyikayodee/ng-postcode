@@ -8,14 +8,7 @@
 
 import { fromJsonSchema, McpServer } from "@modelcontextprotocol/server";
 import { Postcode, parse, parseLenient } from "ng-postcode-js";
-import {
-  ApiError,
-  autocomplete,
-  BASE_URL,
-  lookup,
-  type Reverse,
-  reverse,
-} from "ng-postcode-js/api";
+import { ApiError, autocomplete, BASE_URL, lookup, reverse } from "ng-postcode-js/api";
 import { Client, TransportError } from "ng-postcode-js/client";
 import contract from "./contract.generated.json" with { type: "json" };
 
@@ -30,7 +23,7 @@ const STATUS_HINTS: Record<number, string> = {
   403: "The key lacks the scope or access level for this request.",
   429: "NIPOST rate limit reached; wait before retrying.",
 };
-const LEVEL_2_FIELDS = ["state_name", "lga_name", "locality_name", "address"] as const;
+const LEVEL_1_FIELDS = ["postcode", "display", "distance_m", "confidence"];
 
 export interface Settings {
   readonly apiKey: string | undefined;
@@ -182,11 +175,17 @@ function checked(text: string): Postcode {
   throw new ToolError(`'${shown}' is not a valid postcode: ${code}.${maybe}`);
 }
 
-/** The location without the fields a level 2 key adds, unless the cap allows them. */
-function capped(location: Omit<Reverse, "coordinate">, maxLevel: number) {
+/**
+ * The location with only the unit's level 1 fields, unless the cap allows more. Any field
+ * the unit gains later is withheld until it is listed as level 1.
+ */
+function capped<T extends { unit: object | null }>(location: T, maxLevel: number): T {
   if (maxLevel >= 2 || !location.unit) return location;
-  const withheld = Object.fromEntries(LEVEL_2_FIELDS.map((field) => [field, null]));
-  return { ...location, unit: { ...location.unit, ...withheld } };
+  const shown = Object.entries(location.unit).map(([field, value]) => [
+    field,
+    LEVEL_1_FIELDS.includes(field) ? value : null,
+  ]);
+  return { ...location, unit: Object.fromEntries(shown) };
 }
 
 function unwrap<T>(result: T | ApiError | TransportError): T {
