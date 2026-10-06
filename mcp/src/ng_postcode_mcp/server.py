@@ -24,7 +24,8 @@ import httpx
 from mcp.server.mcpserver import Context, MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
-from ng_address import Landmark, Nominatim, ParsedAddress, Resolution, Resolver
+from ng_address import Landmark as AnyLandmark
+from ng_address import Nominatim, ParsedAddress, Resolution, Resolver
 from ng_address.geocode import PUBLIC_NOMINATIM
 from ng_postcode import Corrected, Postcode, parse, parse_lenient
 from ng_postcode.api import (
@@ -115,6 +116,12 @@ def settings_from_env(env: Mapping[str, str]) -> Settings | str:
         host=env.get("NG_POSTCODE_HOST", "").strip() or "127.0.0.1",
         port=int(raw_port),
     )
+
+
+class Landmark(AnyLandmark):
+    """A landmark as a caller may send it: the name has a limit."""
+
+    name: str = Field(max_length=120)
 
 
 class Segments(BaseModel):
@@ -255,7 +262,9 @@ def create_server(
     )
     @tidy
     def validate_postcode(
-        postcode: Annotated[str, Field(description="Code in any style, e.g. 'ek 01 a03 fk 01'.")],
+        postcode: Annotated[
+            str, Field(max_length=64, description="Code in any style, e.g. 'ek 01 a03 fk 01'.")
+        ],
     ) -> Validation:
         """Check a postcode's structure offline and return its canonical forms and segments.
 
@@ -271,7 +280,9 @@ def create_server(
     )
     @tidy
     async def lookup_postcode(
-        postcode: Annotated[str, Field(description="Code in any style, e.g. EK-01-A03-FK-01.")],
+        postcode: Annotated[
+            str, Field(max_length=64, description="Code in any style, e.g. EK-01-A03-FK-01.")
+        ],
         ctx: Context[State, Any],
         level: Annotated[
             int,
@@ -300,7 +311,8 @@ def create_server(
     @tidy
     async def autocomplete_postcode(
         partial: Annotated[
-            str, Field(min_length=1, description="The start of a code, e.g. 'EK 01 A'.")
+            str,
+            Field(min_length=1, max_length=32, description="The start of a code, e.g. 'EK 01 A'."),
         ],
         ctx: Context[State, Any],
     ) -> Completions:
@@ -345,17 +357,20 @@ def create_server(
     )
     @tidy
     async def resolve_address(
-        address: Annotated[str, Field(description="The address exactly as the user gave it.")],
+        address: Annotated[
+            str, Field(max_length=500, description="The address exactly as the user gave it.")
+        ],
         ctx: Context[State, Any],
         landmarks: Annotated[
             list[Landmark] | None,
             Field(
+                max_length=10,
                 description="Landmarks named in the address, each with how the address relates "
-                "to it. Use 'at' only when the address is the landmark itself."
+                "to it. Use 'at' only when the address is the landmark itself.",
             ),
         ] = None,
         geocode_queries: Annotated[
-            list[str] | None,
+            list[Annotated[str, Field(max_length=200)]] | None,
             Field(
                 max_length=3,
                 description="Up to three map search strings you derive from the address: named "
@@ -409,7 +424,7 @@ def reading(landmarks: list[Landmark] | None, queries: list[str] | None) -> Pars
     return ParsedAddress(
         house_number=None,
         street=None,
-        landmarks=landmarks or [],
+        landmarks=list(landmarks or []),
         locality=None,
         lga=None,
         state=None,

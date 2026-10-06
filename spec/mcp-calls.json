@@ -1,5 +1,5 @@
 {
-  "about": "Tool calls that need no network, and what both MCP servers must answer. result is the structured content. error is the text a refusal must end with, since each SDK puts its own words before it. Both servers run with a key and the default level cap of 1.",
+  "about": "Tool calls that need no network, and what both MCP servers must answer. result is the structured content. error is the text a refusal must end with, since each SDK puts its own words before it. refused means the call must fail, in whatever words the SDK uses. Both servers run with a key and the default level cap of 1.",
   "calls": [
     {
       "name": "validate_any_style",
@@ -119,6 +119,30 @@
         "postcode": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
       },
       "error": "'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA...' is not a valid postcode: expected 11 letters and digits, found 60."
+    },
+    {
+      "name": "validate_text_too_long",
+      "tool": "validate_postcode",
+      "arguments": {
+        "postcode": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      },
+      "refused": true
+    },
+    {
+      "name": "lookup_text_too_long",
+      "tool": "lookup_postcode",
+      "arguments": {
+        "postcode": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      },
+      "refused": true
+    },
+    {
+      "name": "autocomplete_text_too_long",
+      "tool": "autocomplete_postcode",
+      "arguments": {
+        "partial": "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE"
+      },
+      "refused": true
     }
   ]
 }
