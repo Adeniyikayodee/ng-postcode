@@ -23,8 +23,10 @@ jobs:
       - run: cargo test --locked --no-default-features
       - uses: taiki-e/install-action@f7e5d7c961414b23f5b25b2da9294395d08513ad # v2.87.26
         with:
-          tool: cargo-audit
+          tool: cargo-audit,cargo-semver-checks
       - run: cargo audit
+      - name: A breaking change comes with a version that says so
+        run: cargo semver-checks --all-features
       - name: The agent docs match the READMEs
         run: python3 scripts/llms_full.py --check
       - name: Every client tests the obligations in spec/client.json
