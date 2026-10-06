@@ -148,6 +148,8 @@ public record Postcode(String compact) implements Parsed, Comparable<Postcode> {
 
     /** Fills {@code kept} with the upper-case letters and digits, or says what stopped it. */
     private static ParseError collect(String text, StringBuilder kept) {
+        // Every character is checked, but no more than a postcode's worth is held.
+        int found = 0;
         int index = 0;
         for (int at = 0; at < text.length(); index++) {
             int point = text.codePointAt(at);
@@ -158,10 +160,12 @@ public record Postcode(String compact) implements Parsed, Comparable<Postcode> {
             if (!isAlphanumeric(point)) {
                 return new InvalidCharacter(Character.toString(point), index);
             }
-            // ASCII arithmetic, so no locale can change the result.
-            kept.append((char) (point >= 'a' ? point - 32 : point));
+            if (found++ < LENGTH) {
+                // ASCII arithmetic, so no locale can change the result.
+                kept.append((char) (point >= 'a' ? point - 32 : point));
+            }
         }
-        return kept.length() == LENGTH ? null : new WrongLength(kept.length());
+        return found == LENGTH ? null : new WrongLength(found);
     }
 
     private static ParseError validate(CharSequence compact) {
