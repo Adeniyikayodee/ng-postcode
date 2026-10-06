@@ -196,6 +196,14 @@ Observed on 3 October 2026:
 - An empty autocomplete query never gets a response, so the libraries refuse to send one.
 - `EK-01-A03-FK-01`, the example used throughout NIPOST's docs, is reported as not assigned.
 
+Observed on 6 October 2026, with a level 1 test key:
+
+- An empty autocomplete query is answered, with no suggestions. The libraries still refuse to send one.
+- `FC-03-B06-AG-12`, autocomplete, reverse geocoding and nearby search all return empty answers where [`spec/responses.json`](spec/responses.json) records data. `scripts/live_check.py` lists each difference.
+- A lookup level the API cannot read, or `0`, is answered at level 1.
+- A latitude outside -90 to 90 returns `500 internal`.
+- A request the load balancer rejects, such as a 5,000-character autocomplete query, returns `403` with an HTML body.
+
 ## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the shared spec, how to add a language, and the commit standards.
