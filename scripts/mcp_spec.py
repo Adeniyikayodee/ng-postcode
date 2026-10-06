@@ -2,7 +2,7 @@
 
     cd mcp && uv run --group dev python ../scripts/mcp_spec.py
 
-The Python server is the source; other implementations register tools from this
+The Python server is the source, run at the highest level cap so that every tool is listed; other implementations register tools from this
 file, and a test fails when it is out of date.
 """
 
@@ -22,7 +22,7 @@ TARGET = Path(__file__).resolve().parents[1] / "spec" / "mcp.json"
 
 
 async def contract() -> dict[str, Any]:
-    async with Client(create_server(Settings(api_key=None))) as client:
+    async with Client(create_server(Settings(api_key=None, max_level=5))) as client:
         tools = (await client.list_tools()).tools
     definitions = [t.model_dump(mode="json", by_alias=True, exclude_none=True) for t in tools]
     return {"instructions": INSTRUCTIONS, "tools": definitions}
