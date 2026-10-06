@@ -14,6 +14,7 @@ pub struct Client {
 }
 
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum Error {
     /// The request never produced a response: DNS, TLS, timeout and the like.
     Transport(ureq::Error),

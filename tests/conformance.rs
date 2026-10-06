@@ -42,6 +42,7 @@ fn error_json(error: &ParseError) -> Value {
         ParseError::Segment(segment) => {
             json!({ "kind": "segment", "segment": format!("{segment:?}").to_lowercase() })
         }
+        other => panic!("an error this suite does not know: {other}"),
     };
     json["message"] = error.to_string().into();
     json

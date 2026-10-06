@@ -19,6 +19,7 @@ fn outcome<T>(
         Ok(value) => ("ok", None, facts(value)),
         Err(ApiError::Rejected { code, .. }) => ("rejected", Some(code), Value::Null),
         Err(ApiError::Malformed { .. }) => ("malformed", None, Value::Null),
+        Err(other) => panic!("an error this suite does not know: {other}"),
     }
 }
 
