@@ -18,9 +18,9 @@ jobs:
           toolchain: stable
           components: clippy, rustfmt
       - run: cargo fmt --check
-      - run: cargo clippy --all-features --all-targets -- -D warnings
-      - run: cargo test --all-features
-      - run: cargo test --no-default-features
+      - run: cargo clippy --locked --all-features --all-targets -- -D warnings
+      - run: cargo test --locked --all-features
+      - run: cargo test --locked --no-default-features
       - name: The agent docs match the READMEs
         run: python3 scripts/llms_full.py --check
 

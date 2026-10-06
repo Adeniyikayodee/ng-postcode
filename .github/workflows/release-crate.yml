@@ -31,10 +31,10 @@ jobs:
       - name: Tag matches crate version
         run: test "v$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')" = "$GITHUB_REF_NAME"
       - run: cargo fmt --check
-      - run: cargo clippy --all-features --all-targets -- -D warnings
-      - run: cargo test --all-features
+      - run: cargo clippy --locked --all-features --all-targets -- -D warnings
+      - run: cargo test --locked --all-features
       - uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
         id: auth
-      - run: cargo publish --all-features
+      - run: cargo publish --locked --all-features
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
