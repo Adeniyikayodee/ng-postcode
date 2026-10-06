@@ -271,8 +271,8 @@ async def test_answers_the_shared_offline_calls(case: dict[str, Any]) -> None:
     seen: list[httpx.Request] = []
     result = await call(case["tool"], case["arguments"], seen=seen)
     assert seen == []
-    if "error" in case:
+    if "error" in case or case.get("refused"):
         assert result.is_error
-        assert text(result).endswith(case["error"])
+        assert text(result).endswith(case.get("error", ""))
     else:
         assert result.structured_content == case["result"]

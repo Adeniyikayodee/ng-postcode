@@ -10,6 +10,7 @@
         "properties": {
           "postcode": {
             "description": "Code in any style, e.g. 'ek 01 a03 fk 01'.",
+            "maxLength": 64,
             "title": "Postcode",
             "type": "string"
           }
@@ -159,6 +160,7 @@
         "properties": {
           "postcode": {
             "description": "Code in any style, e.g. EK-01-A03-FK-01.",
+            "maxLength": 64,
             "title": "Postcode",
             "type": "string"
           },
@@ -342,6 +344,7 @@
         "properties": {
           "partial": {
             "description": "The start of a code, e.g. 'EK 01 A'.",
+            "maxLength": 32,
             "minLength": 1,
             "title": "Partial",
             "type": "string"
@@ -678,8 +681,10 @@
         "$defs": {
           "Landmark": {
             "additionalProperties": false,
+            "description": "A landmark as a caller may send it: the name has a limit.",
             "properties": {
               "name": {
+                "maxLength": 120,
                 "title": "Name",
                 "type": "string"
               },
@@ -711,6 +716,7 @@
         "properties": {
           "address": {
             "description": "The address exactly as the user gave it.",
+            "maxLength": 500,
             "title": "Address",
             "type": "string"
           },
@@ -720,6 +726,7 @@
                 "items": {
                   "$ref": "#/$defs/Landmark"
                 },
+                "maxItems": 10,
                 "type": "array"
               },
               {
@@ -734,6 +741,7 @@
             "anyOf": [
               {
                 "items": {
+                  "maxLength": 200,
                   "type": "string"
                 },
                 "maxItems": 3,
