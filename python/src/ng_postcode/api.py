@@ -168,7 +168,8 @@ def reverse(at: Coordinate, max_distance_m: float | None = None) -> Request[Reve
     """Find the postcode of the nearest building, within 25 m unless `max_distance_m`
     says otherwise. The API clamps it to 250 m.
 
-    Raises `ValueError` for a coordinate or distance that is not a finite number.
+    Raises `ValueError` for a coordinate off the globe, or one or a distance that is not a
+    finite number.
     """
     return Request("/v1/search/reverse", _around(at, "max_distance_m", max_distance_m), _reverse)
 
@@ -177,7 +178,8 @@ def nearby(at: Coordinate, radius_m: float | None = None) -> Request[tuple[Nearb
     """List buildings around a point, nearest first, within 300 m unless `radius_m`
     says otherwise. Empty when nothing is in range.
 
-    Raises `ValueError` for a coordinate or radius that is not a finite number.
+    Raises `ValueError` for a coordinate off the globe, or one or a radius that is not a
+    finite number.
     """
     return Request("/v1/search/nearby", _around(at, "radius", radius_m), _nearby)
 
@@ -206,6 +208,8 @@ def decode(request: Request[T], status: int, body: str) -> T | ApiError:
 
 def _around(at: Coordinate, key: str, metres: float | None) -> Params:
     point = (("lat", _number_text(at.lat)), ("lng", _number_text(at.lng)))
+    if abs(at.lat) > 90 or abs(at.lng) > 180:
+        raise ValueError(f"coordinate is off the globe: {at.lat!r}, {at.lng!r}")
     return point if metres is None else (*point, (key, _number_text(metres)))
 
 

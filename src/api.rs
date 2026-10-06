@@ -43,6 +43,8 @@ pub enum InvalidRequest {
     EmptyQuery,
     /// The named coordinate or distance is not a finite number.
     NotFinite(&'static str),
+    /// The named coordinate is off the globe: latitude beyond 90, or longitude beyond 180.
+    OutOfRange(&'static str),
 }
 
 /// Resolves a postcode. Levels are cumulative from 1 (validity only) to 5,
@@ -93,15 +95,20 @@ fn around(
     key: &'static str,
     metres: Option<f64>,
 ) -> Result<Vec<(&'static str, String)>, InvalidRequest> {
-    [("lat", Some(at.lat)), ("lng", Some(at.lng)), (key, metres)]
-        .into_iter()
-        .filter_map(|(key, value)| Some((key, value?)))
-        .map(|(key, value)| match value.is_finite() {
-            // Adding zero writes -0.0 as "0", as the other implementations do.
-            true => Ok((key, (value + 0.0).to_string())),
-            false => Err(InvalidRequest::NotFinite(key)),
-        })
-        .collect()
+    [
+        ("lat", Some(at.lat), 90.0),
+        ("lng", Some(at.lng), 180.0),
+        (key, metres, f64::INFINITY),
+    ]
+    .into_iter()
+    .filter_map(|(key, value, limit)| Some((key, value?, limit)))
+    .map(|(key, value, limit)| match value {
+        value if !value.is_finite() => Err(InvalidRequest::NotFinite(key)),
+        value if value.abs() > limit => Err(InvalidRequest::OutOfRange(key)),
+        // Adding zero writes -0.0 as "0", as the other implementations do.
+        value => Ok((key, (value + 0.0).to_string())),
+    })
+    .collect()
 }
 
 impl<T> Request<T> {
@@ -315,6 +322,7 @@ impl fmt::Display for InvalidRequest {
             Self::Level(level) => write!(f, "level must be 1 to 5, got {level}"),
             Self::EmptyQuery => f.write_str("autocomplete text must not be empty"),
             Self::NotFinite(name) => write!(f, "{name} must be a finite number"),
+            Self::OutOfRange(name) => write!(f, "{name} is off the globe"),
         }
     }
 }
