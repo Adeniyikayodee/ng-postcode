@@ -97,7 +97,13 @@ def test_error_envelopes_and_bad_bodies_become_values() -> None:
     # What the live API answered on 2 October 2026 when called without a key.
     refused = '{"error":{"code":"auth_required","message":"an API key is required"}}'
     assert decode(request, 401, refused) == ApiError(401, "auth_required", "an API key is required")
-    for status, text in [(502, "<html>Bad Gateway</html>"), (200, "[]"), (200, '{"data": 1}')]:
+    deep = "[" * 100_000
+    for status, text in [
+        (502, "<html>Bad Gateway</html>"),
+        (200, "[]"),
+        (200, '{"data": 1}'),
+        (200, deep),
+    ]:
         error = decode(request, status, text)
         assert isinstance(error, ApiError)
         assert (error.status, error.code) == (status, "malformed_response")
