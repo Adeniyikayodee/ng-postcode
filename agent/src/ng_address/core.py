@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import re
 
-from ng_postcode import Postcode, Segment, parse
-from ng_postcode.api import Reverse
+from ng_postcode import Postcode, Segment, is_valid, parse
+from ng_postcode.api import NearestUnit, Reverse
 
 from .models import Geocoded, Landmark, Level, Method, ParsedAddress, Precision, Resolution
 
@@ -111,9 +111,15 @@ def from_typed(code: Postcode, assigned: bool | None, note: str) -> Resolution:
     )
 
 
-def from_location(found: Reverse) -> Resolution:
+def nearest(found: Reverse) -> NearestUnit | None:
+    """The nearest building, if NIPOST found one and its code is well formed."""
     unit = found.unit
-    if not found.found or unit is None:
+    return unit if found.found and unit is not None and is_valid(unit.postcode) else None
+
+
+def from_location(found: Reverse) -> Resolution:
+    unit = nearest(found)
+    if unit is None:
         return unresolved(
             "location",
             found.message or "NIPOST found no building within the search radius.",
@@ -149,8 +155,8 @@ def from_geocoded(
         return unresolved(
             "geocoded", f"Only placed as far as {place.label}, too broad for a postcode."
         )
-    unit = found.unit
-    if not found.found or unit is None:
+    unit = nearest(found)
+    if unit is None:
         return unresolved("geocoded", f"NIPOST found no building near {place.label}.")
     near = f"Nearest building to {place.label} is {unit.postcode}, {_far(unit.distance_m)} away."
     if place.precision == "street":
