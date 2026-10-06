@@ -2,7 +2,7 @@
 #![cfg(feature = "api")]
 
 use ng_postcode::api::{self, ApiError, Coordinate};
-use serde_json::Value;
+use serde_json::{json, Value};
 
 const CASES: &str = include_str!("../spec/tolerance.json");
 const HERE: Coordinate = Coordinate {
@@ -10,11 +10,15 @@ const HERE: Coordinate = Coordinate {
     lng: 5.2214,
 };
 
-fn outcome<T>(decoded: Result<T, ApiError>) -> (&'static str, Option<String>) {
+/// The outcome, the error code if rejected, and the facts a case may expect of the answer.
+fn outcome<T>(
+    decoded: Result<T, ApiError>,
+    facts: impl Fn(T) -> Value,
+) -> (&'static str, Option<String>, Value) {
     match decoded {
-        Ok(_) => ("ok", None),
-        Err(ApiError::Rejected { code, .. }) => ("rejected", Some(code)),
-        Err(ApiError::Malformed { .. }) => ("malformed", None),
+        Ok(value) => ("ok", None, facts(value)),
+        Err(ApiError::Rejected { code, .. }) => ("rejected", Some(code), Value::Null),
+        Err(ApiError::Malformed { .. }) => ("malformed", None, Value::Null),
     }
 }
 
@@ -30,10 +34,21 @@ fn every_case_reaches_the_shared_outcome() {
             None => case["body"].to_string(),
         };
         let found = match case["request"].as_str().expect("request") {
-            "lookup" => outcome(api::lookup(code, 1).unwrap().decode(status, &body)),
-            "autocomplete" => outcome(api::autocomplete("E").unwrap().decode(status, &body)),
-            "reverse" => outcome(api::reverse(HERE, None).unwrap().decode(status, &body)),
-            "nearby" => outcome(api::nearby(HERE, None).unwrap().decode(status, &body)),
+            "lookup" => outcome(api::lookup(code, 1).unwrap().decode(status, &body), |_| {
+                json!({})
+            }),
+            "autocomplete" => outcome(
+                api::autocomplete("E").unwrap().decode(status, &body),
+                |found| json!({ "count": found.suggestions.len() }),
+            ),
+            "reverse" => outcome(
+                api::reverse(HERE, None).unwrap().decode(status, &body),
+                |found| json!({ "unit": found.unit.is_some() }),
+            ),
+            "nearby" => outcome(
+                api::nearby(HERE, None).unwrap().decode(status, &body),
+                |units| json!({ "count": units.len() }),
+            ),
             other => panic!("{name}: unknown request {other}"),
         };
         let expected = (
@@ -41,5 +56,8 @@ fn every_case_reaches_the_shared_outcome() {
             case["code"].as_str().map(str::to_owned),
         );
         assert_eq!((found.0, found.1), expected, "{name}");
+        for (fact, value) in case["expect"].as_object().into_iter().flatten() {
+            assert_eq!(&found.2[fact], value, "{name}: {fact}");
+        }
     }
 }
