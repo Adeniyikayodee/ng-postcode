@@ -167,6 +167,11 @@ fn object<'a>(data: &'a Object, key: &str) -> Option<&'a Object> {
     data.get(key)?.as_object()
 }
 
+/// A unit or suggestion without its code is no answer, so it is dropped.
+fn coded(key: &'static str) -> impl Fn(&&Object) -> bool {
+    move |item| text(item, key).is_some_and(|code| !code.is_empty())
+}
+
 fn raw(data: &Object, key: &str) -> Option<Value> {
     data.get(key).filter(|value| !value.is_null()).cloned()
 }
@@ -215,6 +220,7 @@ fn read_autocomplete(data: &Value) -> Option<Autocomplete> {
             .into_iter()
             .flatten()
             .filter_map(Value::as_object)
+            .filter(coded("code"))
             .map(|item| Suggestion {
                 code: text(item, "code").unwrap_or_default(),
                 label: text(item, "label"),
@@ -233,16 +239,18 @@ fn read_reverse(data: &Value) -> Option<Reverse> {
             [lng, lat] => Some([lng.as_f64()?, lat.as_f64()?]),
             _ => None,
         }),
-        unit: object(data, "unit").map(|unit| NearestUnit {
-            postcode: text(unit, "postcode").unwrap_or_default(),
-            display: text(unit, "display").unwrap_or_default(),
-            distance_m: number(unit, "distance_m"),
-            confidence: text(unit, "confidence"),
-            state_name: text(unit, "state_name"),
-            lga_name: text(unit, "lga_name"),
-            locality_name: text(unit, "locality_name"),
-            address: text(unit, "address"),
-        }),
+        unit: object(data, "unit")
+            .filter(coded("postcode"))
+            .map(|unit| NearestUnit {
+                postcode: text(unit, "postcode").unwrap_or_default(),
+                display: text(unit, "display").unwrap_or_default(),
+                distance_m: number(unit, "distance_m"),
+                confidence: text(unit, "confidence"),
+                state_name: text(unit, "state_name"),
+                lga_name: text(unit, "lga_name"),
+                locality_name: text(unit, "locality_name"),
+                address: text(unit, "address"),
+            }),
         area: text(data, "area"),
         district: text(data, "district"),
         state: text(data, "state"),
@@ -256,6 +264,7 @@ fn read_nearby(data: &Value) -> Option<Vec<NearbyUnit>> {
     let units = data.as_array()?.iter().filter_map(Value::as_object);
     Some(
         units
+            .filter(coded("postcode"))
             .map(|unit| NearbyUnit {
                 postcode: text(unit, "postcode").unwrap_or_default(),
                 display: text(unit, "display").unwrap_or_default(),
@@ -534,10 +543,7 @@ mod tests {
 
         let body = r#"{"data":[{"postcode":null,"distance_m":3}]}"#;
         let units = nearby(HERE, None).unwrap().decode(200, body).unwrap();
-        assert_eq!(
-            (units[0].postcode.as_str(), units[0].distance_m),
-            ("", Some(3.0))
-        );
+        assert_eq!(units, []);
 
         let body = r#"{"data":{"found":true,"unit":{"postcode":"EK-01-A03-FK-01"}}}"#;
         let found = reverse(HERE, None).unwrap().decode(200, body).unwrap();

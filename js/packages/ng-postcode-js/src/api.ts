@@ -231,6 +231,11 @@ function isObject(value: unknown): value is Json {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/** A unit or suggestion without its code is no answer, so it is dropped. */
+function coded(key: string): (item: unknown) => item is Json {
+  return (item): item is Json => isObject(item) && Boolean(text(item, key));
+}
+
 function object(data: Json, key: string): Json | null {
   const value = data[key];
   return isObject(value) ? value : null;
@@ -247,7 +252,7 @@ function number(value: unknown): number | null {
 
 function readNearby(data: unknown): readonly NearbyUnit[] | undefined {
   if (!Array.isArray(data)) return undefined;
-  return data.filter(isObject).map((item) => ({
+  return data.filter(coded("postcode")).map((item) => ({
     postcode: text(item, "postcode") ?? "",
     display: text(item, "display") ?? "",
     distance_m: number(item.distance_m),
@@ -279,7 +284,7 @@ function readLookup(data: unknown): Lookup | undefined {
 function readAutocomplete(data: unknown): Autocomplete | undefined {
   if (!isObject(data)) return undefined;
   const items = Array.isArray(data.suggestions) ? data.suggestions : [];
-  const suggestions = items.filter(isObject).map((item) => ({
+  const suggestions = items.filter(coded("code")).map((item) => ({
     code: text(item, "code") ?? "",
     label: text(item, "label"),
   }));
@@ -289,7 +294,7 @@ function readAutocomplete(data: unknown): Autocomplete | undefined {
 
 function readReverse(data: unknown): Reverse | undefined {
   if (!isObject(data) || typeof data.found !== "boolean") return undefined;
-  const unit = object(data, "unit");
+  const unit = [object(data, "unit")].find(coded("postcode")) ?? null;
   return {
     found: data.found,
     coordinate: readCoordinate(data.coordinate),

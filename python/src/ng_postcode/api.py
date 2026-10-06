@@ -268,7 +268,7 @@ def _nearby(data: Any) -> tuple[NearbyUnit, ...] | None:
             distance_m=_number(item, "distance_m"),
         )
         for item in data
-        if isinstance(item, dict)
+        if isinstance(item, dict) and _text(item, "postcode")
     )
 
 
@@ -304,7 +304,7 @@ def _autocomplete(data: Any) -> Autocomplete | None:
     suggestions = tuple(
         Suggestion(code=_text(item, "code") or "", label=_text(item, "label"))
         for item in (items if isinstance(items, list) else [])
-        if isinstance(item, dict)
+        if isinstance(item, dict) and _text(item, "code")
     )
     segment = next((s for s in Segment if s.value == data.get("segment")), None)
     return Autocomplete(segment=segment, suggestions=suggestions)
@@ -314,6 +314,9 @@ def _reverse(data: Any) -> Reverse | None:
     if not isinstance(data, dict) or not isinstance(data.get("found"), bool):
         return None
     unit = _object(data, "unit")
+    # A unit without its code is no answer.
+    if unit is not None and not _text(unit, "postcode"):
+        unit = None
     return Reverse(
         found=data["found"],
         coordinate=_coordinate(data.get("coordinate")),
