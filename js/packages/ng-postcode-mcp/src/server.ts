@@ -178,7 +178,8 @@ function checked(text: string): Postcode {
   if (code instanceof Postcode) return code;
   const hint = suggestion(text);
   const maybe = hint ? ` Did you mean ${hint}? Confirm with the user first.` : "";
-  throw new ToolError(`'${text}' is not a valid postcode: ${code}.${maybe}`);
+  const shown = text.length <= 40 ? text : `${text.slice(0, 40)}...`;
+  throw new ToolError(`'${shown}' is not a valid postcode: ${code}.${maybe}`);
 }
 
 /** The location without the fields a level 2 key adds, unless the cap allows them. */
