@@ -16,10 +16,15 @@ pub struct Client {
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum Error {
-    /// The request never produced a response: DNS, TLS, timeout and the like.
-    Transport(ureq::Error),
+    Transport(TransportError),
     Api(ApiError),
 }
+
+/// The request never produced a response: DNS, TLS, timeout and the like.
+///
+/// Opaque, so the HTTP library behind it can change without breaking callers.
+#[derive(Debug)]
+pub struct TransportError(ureq::Error);
 
 impl Client {
     pub fn new(api_key: impl Into<String>) -> Self {
@@ -55,8 +60,9 @@ impl Client {
             .query
             .iter()
             .fold(call, |call, (key, value)| call.query(key, value))
-            .call()?;
-        let body = response.body_mut().read_to_string()?;
+            .call()
+            .map_err(failed)?;
+        let body = response.body_mut().read_to_string().map_err(failed)?;
         Ok(request.decode(response.status().as_u16(), &body)?)
     }
 }
@@ -72,9 +78,19 @@ fn agent(timeout: Duration) -> ureq::Agent {
         .into()
 }
 
-impl From<ureq::Error> for Error {
-    fn from(error: ureq::Error) -> Self {
-        Self::Transport(error)
+fn failed(error: ureq::Error) -> Error {
+    Error::Transport(TransportError(error))
+}
+
+impl fmt::Display for TransportError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl std::error::Error for TransportError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.0)
     }
 }
 
