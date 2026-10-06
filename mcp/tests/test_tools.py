@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import dataclasses
+import json
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -40,6 +42,13 @@ LOOKUP = {
     "recent_house_address": {"recent": "NTA ROAD, BACK OF FABIAN HOTEL, ADO EKITI"},
     "building_use_status": "residential",
 }
+
+
+CALLS_SPEC = Path(__file__).resolve().parents[2] / "spec" / "mcp-calls.json"
+# The shared calls live in the repository, not the sdist.
+CALLS: list[dict[str, Any]] = (
+    json.loads(CALLS_SPEC.read_text(encoding="utf-8"))["calls"] if CALLS_SPEC.exists() else []
+)
 
 
 @pytest.fixture
@@ -254,3 +263,16 @@ def test_a_level_the_key_lacks_gets_a_specific_hint() -> None:
     error = ApiError(403, "level_not_granted", "this key is granted up to lookup level 1")
     with pytest.raises(ToolError, match="request more access"):
         unwrap(error)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("case", CALLS, ids=[case["name"] for case in CALLS])
+async def test_answers_the_shared_offline_calls(case: dict[str, Any]) -> None:
+    seen: list[httpx.Request] = []
+    result = await call(case["tool"], case["arguments"], seen=seen)
+    assert seen == []
+    if "error" in case:
+        assert result.is_error
+        assert text(result).endswith(case["error"])
+    else:
+        assert result.structured_content == case["result"]

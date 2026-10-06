@@ -143,3 +143,25 @@ test("reads settings from the environment", () => {
     "NG_POSTCODE_MAX_LEVEL must be 1 to 5, got '9'",
   );
 });
+
+interface SharedCall {
+  name: string;
+  tool: string;
+  arguments: Record<string, unknown>;
+  result?: unknown;
+  error?: string;
+}
+const calls = new URL("../../../../spec/mcp-calls.json", import.meta.url);
+const shared: SharedCall[] = JSON.parse(readFileSync(calls, "utf8")).calls;
+
+test.each(shared)("shared call $name", async (c) => {
+  const seen: URL[] = [];
+  const result = await call(await connect({}, seen), c.tool, c.arguments);
+  expect(seen).toEqual([]);
+  if (c.error !== undefined) {
+    expect(result.isError).toBe(true);
+    expect(result.text.endsWith(c.error)).toBe(true);
+  } else {
+    expect(result.structuredContent).toEqual(c.result);
+  }
+});

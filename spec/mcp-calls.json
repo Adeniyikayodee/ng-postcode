@@ -1,0 +1,108 @@
+{
+  "about": "Tool calls that need no network, and what both MCP servers must answer. result is the structured content. error is the text a refusal must end with, since each SDK puts its own words before it. Both servers run with a key and the default level cap of 1.",
+  "calls": [
+    {
+      "name": "validate_any_style",
+      "tool": "validate_postcode",
+      "arguments": {
+        "postcode": "ek 01 a03 fk 01"
+      },
+      "result": {
+        "valid": true,
+        "postcode": "EK-01-A03-FK-01",
+        "compact": "EK01A03FK01",
+        "spaced": "EK 01 A03 FK 01",
+        "segments": {
+          "state": "EK",
+          "lga": "01",
+          "district": "A03",
+          "area": "FK",
+          "unit": "01"
+        },
+        "error": null,
+        "suggestion": null
+      }
+    },
+    {
+      "name": "validate_lookalikes",
+      "tool": "validate_postcode",
+      "arguments": {
+        "postcode": "EK-O1-A03-FK-0I"
+      },
+      "result": {
+        "valid": false,
+        "postcode": null,
+        "compact": null,
+        "spaced": null,
+        "segments": null,
+        "error": "invalid lga segment",
+        "suggestion": "EK-01-A03-FK-01"
+      }
+    },
+    {
+      "name": "validate_too_short",
+      "tool": "validate_postcode",
+      "arguments": {
+        "postcode": "EK-01-A03"
+      },
+      "result": {
+        "valid": false,
+        "postcode": null,
+        "compact": null,
+        "spaced": null,
+        "segments": null,
+        "error": "expected 11 letters and digits, found 7",
+        "suggestion": null
+      }
+    },
+    {
+      "name": "validate_stray_character",
+      "tool": "validate_postcode",
+      "arguments": {
+        "postcode": "EK_01-A03-FK-01"
+      },
+      "result": {
+        "valid": false,
+        "postcode": null,
+        "compact": null,
+        "spaced": null,
+        "segments": null,
+        "error": "invalid character '_' at index 2",
+        "suggestion": null
+      }
+    },
+    {
+      "name": "lookup_above_the_cap",
+      "tool": "lookup_postcode",
+      "arguments": {
+        "postcode": "EK-01-A03-FK-01",
+        "level": 2
+      },
+      "error": "Level 2 is above this server's cap of 1. Levels 2+ consume NIPOST credits; the user can raise NG_POSTCODE_MAX_LEVEL to allow it."
+    },
+    {
+      "name": "lookup_malformed_code",
+      "tool": "lookup_postcode",
+      "arguments": {
+        "postcode": "EK-01-A03"
+      },
+      "error": "'EK-01-A03' is not a valid postcode: expected 11 letters and digits, found 7."
+    },
+    {
+      "name": "lookup_lookalikes_are_not_corrected",
+      "tool": "lookup_postcode",
+      "arguments": {
+        "postcode": "EK-O1-A03-FK-0I"
+      },
+      "error": "'EK-O1-A03-FK-0I' is not a valid postcode: invalid lga segment. Did you mean EK-01-A03-FK-01? Confirm with the user first."
+    },
+    {
+      "name": "autocomplete_blank",
+      "tool": "autocomplete_postcode",
+      "arguments": {
+        "partial": "  "
+      },
+      "error": "Give at least the first characters of a postcode."
+    }
+  ]
+}

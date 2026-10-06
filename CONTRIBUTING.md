@@ -53,6 +53,7 @@ read them directly.
 | `responses.json` | Bodies captured from the live API, which all must decode |
 | `tolerance.json` | Bodies the API may one day send, and the outcome each must reach |
 | `mcp.json` | The MCP tools, generated from the Python server |
+| `mcp-calls.json` | Tool calls that need no network, and what both MCP servers must answer |
 
 A change in behaviour starts in `spec/`:
 
