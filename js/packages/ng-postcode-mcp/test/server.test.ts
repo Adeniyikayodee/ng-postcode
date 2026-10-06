@@ -50,9 +50,10 @@ test("the bundled contract is the shared one, and every tool matches it", async 
 
   const client = await connect();
   const { tools } = await client.listTools();
-  const expected = contract.tools.filter((tool) => tool.name !== "resolve_address");
-  expect(tools).toEqual(expected);
+  const absent = ["resolve_address", "lookup_postcode_details"];
+  expect(tools).toEqual(contract.tools.filter((tool) => !absent.includes(tool.name)));
   expect(client.getInstructions()).not.toContain("resolve_address");
+  expect(client.getInstructions()).not.toContain("lookup_postcode_details");
   expect(client.getInstructions()).toContain("validate_postcode is offline");
 });
 
@@ -71,11 +72,6 @@ test("looks up within the level cap and never corrects a code into a call", asyn
   expect(found.structuredContent).toMatchObject({ valid: true, status: "valid" });
   expect(String(seen[0])).toBe("https://api.test/v1/lookup?code=EK-01-A03-FK-01&level=1");
 
-  const capped = await call(client, "lookup_postcode", { postcode: "EK-01-A03-FK-01", level: 3 });
-  expect([capped.isError, capped.text]).toEqual([
-    true,
-    expect.stringContaining("above this server's cap"),
-  ]);
   const typo = await call(client, "lookup_postcode", { postcode: "EK-O1-A03-FK-01" });
   expect([typo.isError, typo.text]).toEqual([
     true,
@@ -83,6 +79,29 @@ test("looks up within the level cap and never corrects a code into a call", asyn
   ]);
   const range = await call(client, "lookup_postcode", { postcode: "EK-01-A03-FK-01", level: 9 });
   expect(range.isError).toBe(true);
+  expect(seen).toHaveLength(1);
+});
+
+test("paid lookups are a separate tool, offered only above the default cap", async () => {
+  const seen: URL[] = [];
+  const client = await connect({ maxLevel: 2 }, seen);
+  const { tools } = await client.listTools();
+  const paid = tools.filter((tool) => tool.name === "lookup_postcode_details");
+  expect(paid.map((tool) => tool.annotations)).toMatchObject([
+    { readOnlyHint: false, idempotentHint: false },
+  ]);
+  expect(client.getInstructions()).toContain("lookup_postcode_details");
+
+  const found = await call(client, "lookup_postcode_details", { postcode: "EK-01-A03-FK-01" });
+  expect(found.isError).toBeFalsy();
+  expect(String(seen[0])).toBe("https://api.test/v1/lookup?code=EK-01-A03-FK-01&level=2");
+
+  const above = { postcode: "EK-01-A03-FK-01", level: 3 };
+  const capped = await call(client, "lookup_postcode_details", above);
+  expect([capped.isError, capped.text]).toEqual([
+    true,
+    expect.stringContaining("above this server's cap"),
+  ]);
   expect(seen).toHaveLength(1);
 });
 
@@ -167,7 +186,9 @@ const shared: SharedCall[] = JSON.parse(readFileSync(calls, "utf8")).calls;
 
 test.each(shared)("shared call $name", async (c) => {
   const seen: URL[] = [];
-  const result = await call(await connect({}, seen), c.tool, c.arguments);
+  // A refusal may come back as an error result or, for a tool not offered, be thrown.
+  const refusal = { isError: true, text: "", structuredContent: undefined };
+  const result = await call(await connect({}, seen), c.tool, c.arguments).catch(() => refusal);
   expect(seen).toEqual([]);
   if (c.error !== undefined || c.refused) {
     expect(result.isError).toBe(true);

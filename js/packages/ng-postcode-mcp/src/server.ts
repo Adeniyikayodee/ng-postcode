@@ -68,7 +68,10 @@ export function createServer(settings: Settings): McpServer {
   const handlers: Record<string, Handler> = {
     validate_postcode: ({ postcode }) => validation(String(postcode)),
 
-    lookup_postcode: async ({ postcode, level = 1 }) => {
+    lookup_postcode: async ({ postcode }) =>
+      unwrap(await api().send(lookup(checked(String(postcode)), 1))),
+
+    lookup_postcode_details: async ({ postcode, level = 2 }) => {
       if (Number(level) > settings.maxLevel) {
         throw new ToolError(
           `Level ${level} is above this server's cap of ${settings.maxLevel}. Levels 2+ consume NIPOST credits; the user can raise NG_POSTCODE_MAX_LEVEL to allow it.`,
@@ -90,6 +93,9 @@ export function createServer(settings: Settings): McpServer {
       return capped(found, settings.maxLevel);
     },
   };
+
+  // Not offered at all under the default cap, so a model cannot spend by accident.
+  if (settings.maxLevel < 2) delete handlers.lookup_postcode_details;
 
   const server = new McpServer(
     { name: "ng-postcode", title: "Nigeria Postcode", version: VERSION },

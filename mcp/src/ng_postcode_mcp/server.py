@@ -51,9 +51,10 @@ INSTRUCTIONS = """\
 Tools for Nigeria's 11-character building postcode, e.g. EK-01-A03-FK-01 \
 (state, LGA, district, area, building unit).
 - validate_postcode is offline and free: use it first on any code a user typed.
-- lookup_postcode level 1 only confirms a code exists. Levels 2 and up add the \
-address and building details, consume NIPOST credits, and are capped by the \
-server's NG_POSTCODE_MAX_LEVEL.
+- lookup_postcode confirms a code is assigned to a building, and is free.
+- lookup_postcode_details adds the address and building details. Every call consumes \
+NIPOST credits, so use it only when the user asks for those details, and never repeat \
+a call without telling them. It is capped by the server's NG_POSTCODE_MAX_LEVEL.
 - resolve_address turns a described address into a code. It answers only as \
 precisely as its evidence allows: pass on its level and confidence, and ask the \
 user its question instead of guessing. A location pin is the most reliable input.
@@ -64,6 +65,10 @@ READ_ONLY_OFFLINE = ToolAnnotations(
     read_only_hint=True, idempotent_hint=True, open_world_hint=False
 )
 READ_ONLY_ONLINE = ToolAnnotations(read_only_hint=True, idempotent_hint=True, open_world_hint=True)
+# A paid call changes the account's balance, and a retry is charged again.
+PAID = ToolAnnotations(
+    read_only_hint=False, destructive_hint=False, idempotent_hint=False, open_world_hint=True
+)
 
 HINTS = {
     "auth_required": f"Supply a NIPOST API key from {KEY_URL}.",
@@ -250,7 +255,7 @@ def create_server(
     server: MCPServer[State] = MCPServer(
         name="ng-postcode",
         title="Nigeria Postcode",
-        instructions=INSTRUCTIONS,
+        instructions=instructions_for(settings.max_level),
         version=version("ng-postcode-mcp"),
         lifespan=lifespan,
     )
@@ -286,15 +291,36 @@ def create_server(
         ctx: Context[State, Any],
         level: Annotated[
             int,
-            Field(
-                ge=1,
-                le=5,
-                description="1: validity only (free). 2: adds the administrative and recent "
-                "house address. 3: adds building use. Levels 2+ consume NIPOST credits.",
-            ),
+            Field(ge=1, le=1, description="Always 1. Higher levels are lookup_postcode_details."),
         ] = 1,
     ) -> PostcodeDetails:
-        """Confirm a postcode is assigned and, at higher levels, return its address details."""
+        """Confirm a postcode is assigned to a building. Free.
+
+        For the address and building details, use lookup_postcode_details.
+        """
+        result = await api(ctx).send(lookup(checked(postcode), level))
+        return PostcodeDetails.model_validate(unwrap(result))
+
+    async def lookup_postcode_details(
+        postcode: Annotated[
+            str, Field(max_length=64, description="Code in any style, e.g. EK-01-A03-FK-01.")
+        ],
+        ctx: Context[State, Any],
+        level: Annotated[
+            int,
+            Field(
+                ge=2,
+                le=5,
+                description="2: the administrative and recent house address. 3: adds building "
+                "use. 4 and 5: add unstructured building information and geometry.",
+            ),
+        ] = 2,
+    ) -> PostcodeDetails:
+        """Return a postcode's address and building details. Every call consumes NIPOST credits.
+
+        Use it only when the user asks for these details, and do not repeat a call without
+        telling them.
+        """
         if level > settings.max_level:
             raise ToolError(
                 f"Level {level} is above this server's cap of {settings.max_level}. Levels 2+ "
@@ -302,6 +328,14 @@ def create_server(
             )
         result = await api(ctx).send(lookup(checked(postcode), level))
         return PostcodeDetails.model_validate(unwrap(result))
+
+    # Not offered at all under the default cap, so a model cannot spend by accident.
+    if settings.max_level >= 2:
+        server.tool(
+            title="Look up a postcode's address and building details",
+            annotations=PAID,
+            structured_output=True,
+        )(tidy(lookup_postcode_details))
 
     @server.tool(
         title="Autocomplete a Nigerian postcode",
@@ -408,6 +442,16 @@ def create_server(
         return await resolver.resolve(address, location, reading(landmarks, geocode_queries))
 
     return server
+
+
+def instructions_for(max_level: int) -> str:
+    """The instructions, without the line about a tool this cap does not offer."""
+    lines = INSTRUCTIONS.split("\n")
+    return "\n".join(
+        line
+        for line in lines
+        if max_level >= 2 or not line.startswith("- lookup_postcode_details ")
+    )
 
 
 def tidy(tool: F) -> F:

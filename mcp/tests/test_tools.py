@@ -102,6 +102,7 @@ def text(result: CallToolResult) -> str:
 async def test_lists_five_read_only_tools_with_schemas() -> None:
     async with Client(create_server(Settings(api_key=None))) as client:
         tools = {tool.name: tool for tool in (await client.list_tools()).tools}
+        instructions = client.instructions or ""
     assert set(tools) == {
         "validate_postcode",
         "lookup_postcode",
@@ -115,9 +116,25 @@ async def test_lists_five_read_only_tools_with_schemas() -> None:
         assert tool.description
         assert tool.output_schema is not None
     assert tools["validate_postcode"].annotations.open_world_hint is False  # type: ignore[union-attr]
-    level = tools["lookup_postcode"].input_schema["properties"]["level"]
-    assert (level["minimum"], level["maximum"], level["default"]) == (1, 5, 1)
+    assert "lookup_postcode_details" not in instructions
     assert "ctx" not in tools["lookup_postcode"].input_schema["properties"]
+
+
+@pytest.mark.anyio
+async def test_a_tool_that_can_spend_is_never_marked_read_only_or_safe_to_retry() -> None:
+    async with Client(create_server(Settings(api_key=None, max_level=5))) as client:
+        tools = (await client.list_tools()).tools
+        instructions = client.instructions or ""
+    paid = [
+        tool
+        for tool in tools
+        if tool.input_schema["properties"].get("level", {}).get("maximum", 1) > 1
+    ]
+    assert [tool.name for tool in paid] == ["lookup_postcode_details"]
+    for tool in paid:
+        assert tool.annotations is not None
+        assert (tool.annotations.read_only_hint, tool.annotations.idempotent_hint) == (False, False)
+    assert "lookup_postcode_details" in instructions
 
 
 @pytest.mark.anyio
@@ -141,7 +158,7 @@ async def test_validate_suggests_but_does_not_apply_fixes() -> None:
 async def test_lookup_returns_the_address_within_the_cap() -> None:
     seen: list[httpx.Request] = []
     result = await call(
-        "lookup_postcode", {"postcode": "ek01a03fk01", "level": 2}, max_level=2, seen=seen
+        "lookup_postcode_details", {"postcode": "ek01a03fk01"}, max_level=2, seen=seen
     )
     assert not result.is_error, text(result)
     assert result.structured_content["administrative_address"]["zone"] == "SOUTH WEST"
@@ -151,7 +168,8 @@ async def test_lookup_returns_the_address_within_the_cap() -> None:
 @pytest.mark.anyio
 async def test_lookup_refuses_paid_levels_above_the_cap_without_calling_the_api() -> None:
     seen: list[httpx.Request] = []
-    result = await call("lookup_postcode", {"postcode": "EK-01-A03-FK-01", "level": 3}, seen=seen)
+    above = {"postcode": "EK-01-A03-FK-01", "level": 3}
+    result = await call("lookup_postcode_details", above, max_level=2, seen=seen)
     assert result.is_error
     assert "NG_POSTCODE_MAX_LEVEL" in text(result)
     assert seen == []

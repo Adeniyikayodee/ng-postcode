@@ -46,7 +46,11 @@
     },
     {
       "name": "lookup_postcode",
-      "description": "Confirm a postcode is assigned and, at higher levels, return its address details."
+      "description": "Confirm a postcode is assigned to a building. Free."
+    },
+    {
+      "name": "lookup_postcode_details",
+      "description": "Return a postcode's address and building details. Every call consumes NIPOST credits."
     },
     {
       "name": "autocomplete_postcode",

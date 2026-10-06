@@ -543,12 +543,13 @@ Built on the [`ng-postcode`](https://pypi.org/project/ng-postcode/) and [`ng-add
 | Tool | What it does | Needs a key | Cost |
 | --- | --- | --- | --- |
 | `validate_postcode` | Checks structure offline; returns canonical forms, segments and a suggested fix for look-alike characters | No | Free |
-| `lookup_postcode` | Confirms a code is assigned; level 2 adds the address, level 3 building use | Yes | Level 1 free, 2+ uses credits |
+| `lookup_postcode` | Confirms a code is assigned to a building | Yes | Free |
+| `lookup_postcode_details` | Adds the address (level 2), building use (level 3) and more. Offered only when `NG_POSTCODE_MAX_LEVEL` is 2 or more | Yes | Uses credits on every call |
 | `autocomplete_postcode` | Suggests the next segment of a partly typed code | Yes | Free tier |
 | `find_postcode_at_location` | Returns the postcode of the nearest building to a coordinate | Yes | Free tier |
 | `resolve_address` | Turns a described address ("back of Fabian Hotel, off NTA Road") or a location pin into a postcode, only as precisely as the evidence allows | Yes, plus a geocoder for text | Free tier |
 
-All tools are read-only. Errors come back as messages the model can act on, such as a missing key or an exhausted credit balance.
+Every tool is read-only except `lookup_postcode_details`, which spends credits. Errors come back as messages the model can act on, such as a missing key or an exhausted credit balance.
 
 ### How `resolve_address` answers
 
@@ -631,7 +632,8 @@ To host the server for other people, leave `NG_POSTCODE_API_KEY` unset so every 
 ## Safety
 
 - The key is read from the environment or the `X-NIPOST-API-Key` header, never from tool arguments, and never appears in results or logs.
-- Lookups default to level 1, which is free. A model cannot spend credits unless you raise `NG_POSTCODE_MAX_LEVEL`.
+- `lookup_postcode` is always level 1, which is free. The paid tool, `lookup_postcode_details`, does not exist for the model unless you raise `NG_POSTCODE_MAX_LEVEL`.
+- The paid tool is not marked read-only or safe to retry, so a client that approves read-only tools on its own will still ask before spending.
 - A mistyped code is never corrected and sent to the API silently. The server returns the suggestion and asks the model to confirm it with the user.
 - Levels 2 and up return house addresses. Treat them as personal data under the Nigeria Data Protection Act.
 - `resolve_address` sends the search strings to the geocoder you configure. With a third-party geocoder, that shares address text with it.
@@ -675,11 +677,12 @@ Get an API key from the [NIPOST developer dashboard](https://dashboard.postcode.
 | Tool | What it does | Needs a key | Cost |
 | --- | --- | --- | --- |
 | `validate_postcode` | Checks structure offline; returns canonical forms, segments and a suggested fix for look-alike characters | No | Free |
-| `lookup_postcode` | Confirms a code is assigned; level 2 adds the address, level 3 building use | Yes | Level 1 free, 2+ uses credits |
+| `lookup_postcode` | Confirms a code is assigned to a building | Yes | Free |
+| `lookup_postcode_details` | Adds the address (level 2), building use (level 3) and more. Offered only when `NG_POSTCODE_MAX_LEVEL` is 2 or more | Yes | Uses credits on every call |
 | `autocomplete_postcode` | Suggests the next segment of a partly typed code | Yes | Free tier |
 | `find_postcode_at_location` | Returns the postcode of the nearest building to a coordinate | Yes | Free tier |
 
-All tools are read-only. Errors come back as messages the model can act on.
+Every tool is read-only except `lookup_postcode_details`, which spends credits. Errors come back as messages the model can act on.
 
 ## Configuration
 
@@ -691,7 +694,8 @@ All tools are read-only. Errors come back as messages the model can act on.
 
 ## Safety
 
-- Lookups default to level 1, which is free. A model cannot spend credits unless you raise `NG_POSTCODE_MAX_LEVEL`.
+- `lookup_postcode` is always level 1, which is free. The paid tool, `lookup_postcode_details`, does not exist for the model unless you raise `NG_POSTCODE_MAX_LEVEL`.
+- The paid tool is not marked read-only or safe to retry, so a client that approves read-only tools on its own will still ask before spending.
 - A mistyped code is never corrected and sent to the API silently. The server returns the suggestion and asks the model to confirm it with the user.
 - Names and house addresses are withheld from location results unless the cap is 2 or more. Treat them as personal data under the Nigeria Data Protection Act.
 - The key is never sent to another host: the client refuses redirects.

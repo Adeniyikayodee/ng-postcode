@@ -32,7 +32,8 @@
   },
   "tools": [
     { "name": "validate_postcode", "description": "Check a postcode's structure offline and return its canonical forms and segments." },
-    { "name": "lookup_postcode", "description": "Confirm a postcode is assigned and, at higher levels, return its address details." },
+    { "name": "lookup_postcode", "description": "Confirm a postcode is assigned to a building. Free." },
+    { "name": "lookup_postcode_details", "description": "Return a postcode's address and building details. Every call consumes NIPOST credits." },
     { "name": "autocomplete_postcode", "description": "Suggest completions for the next segment of a partly typed postcode." },
     { "name": "find_postcode_at_location", "description": "Return the postcode of the nearest building to a coordinate in Nigeria." },
     { "name": "resolve_address", "description": "Turn a described Nigerian address into a postcode, only as precisely as the evidence allows." }

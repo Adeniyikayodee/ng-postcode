@@ -72,13 +72,12 @@
       }
     },
     {
-      "name": "lookup_above_the_cap",
-      "tool": "lookup_postcode",
+      "name": "details_are_not_offered_under_the_default_cap",
+      "tool": "lookup_postcode_details",
       "arguments": {
-        "postcode": "EK-01-A03-FK-01",
-        "level": 2
+        "postcode": "EK-01-A03-FK-01"
       },
-      "error": "Level 2 is above this server's cap of 1. Levels 2+ consume NIPOST credits; the user can raise NG_POSTCODE_MAX_LEVEL to allow it."
+      "refused": true
     },
     {
       "name": "lookup_malformed_code",
@@ -141,6 +140,15 @@
       "tool": "autocomplete_postcode",
       "arguments": {
         "partial": "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE"
+      },
+      "refused": true
+    },
+    {
+      "name": "lookup_no_longer_takes_a_paid_level",
+      "tool": "lookup_postcode",
+      "arguments": {
+        "postcode": "EK-01-A03-FK-01",
+        "level": 2
       },
       "refused": true
     }

@@ -76,7 +76,7 @@ async def test_the_shared_contract_matches_this_server() -> None:
     shared = ROOT.parent / "spec" / "mcp.json"
     if not shared.exists():  # the contract lives in the repository, not the sdist
         return
-    async with Client(create_server(Settings(api_key=None))) as client:
+    async with Client(create_server(Settings(api_key=None, max_level=5))) as client:
         tools = (await client.list_tools()).tools
     live = [t.model_dump(mode="json", by_alias=True, exclude_none=True) for t in tools]
     recorded: dict[str, Any] = json.loads(shared.read_text(encoding="utf-8"))

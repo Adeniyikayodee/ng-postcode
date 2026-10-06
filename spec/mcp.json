@@ -1,5 +1,5 @@
 {
-  "instructions": "Tools for Nigeria's 11-character building postcode, e.g. EK-01-A03-FK-01 (state, LGA, district, area, building unit).\n- validate_postcode is offline and free: use it first on any code a user typed.\n- lookup_postcode level 1 only confirms a code exists. Levels 2 and up add the address and building details, consume NIPOST credits, and are capped by the server's NG_POSTCODE_MAX_LEVEL.\n- resolve_address turns a described address into a code. It answers only as precisely as its evidence allows: pass on its level and confidence, and ask the user its question instead of guessing. A location pin is the most reliable input.\n- Never substitute a suggested correction without confirming it with the user.\n- Addresses returned are personal data: use them only for the user's request.",
+  "instructions": "Tools for Nigeria's 11-character building postcode, e.g. EK-01-A03-FK-01 (state, LGA, district, area, building unit).\n- validate_postcode is offline and free: use it first on any code a user typed.\n- lookup_postcode confirms a code is assigned to a building, and is free.\n- lookup_postcode_details adds the address and building details. Every call consumes NIPOST credits, so use it only when the user asks for those details, and never repeat a call without telling them. It is capped by the server's NG_POSTCODE_MAX_LEVEL.\n- resolve_address turns a described address into a code. It answers only as precisely as its evidence allows: pass on its level and confidence, and ask the user its question instead of guessing. A location pin is the most reliable input.\n- Never substitute a suggested correction without confirming it with the user.\n- Addresses returned are personal data: use them only for the user's request.",
   "tools": [
     {
       "name": "validate_postcode",
@@ -154,7 +154,7 @@
     {
       "name": "lookup_postcode",
       "title": "Look up a Nigerian postcode",
-      "description": "Confirm a postcode is assigned and, at higher levels, return its address details.",
+      "description": "Confirm a postcode is assigned to a building. Free.\n\nFor the address and building details, use lookup_postcode_details.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -166,8 +166,8 @@
           },
           "level": {
             "default": 1,
-            "description": "1: validity only (free). 2: adds the administrative and recent house address. 3: adds building use. Levels 2+ consume NIPOST credits.",
-            "maximum": 5,
+            "description": "Always 1. Higher levels are lookup_postcode_details.",
+            "maximum": 1,
             "minimum": 1,
             "title": "Level",
             "type": "integer"
@@ -332,6 +332,191 @@
       "annotations": {
         "readOnlyHint": true,
         "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "lookup_postcode_details",
+      "title": "Look up a postcode's address and building details",
+      "description": "Return a postcode's address and building details. Every call consumes NIPOST credits.\n\nUse it only when the user asks for these details, and do not repeat a call without\ntelling them.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "postcode": {
+            "description": "Code in any style, e.g. EK-01-A03-FK-01.",
+            "maxLength": 64,
+            "title": "Postcode",
+            "type": "string"
+          },
+          "level": {
+            "default": 2,
+            "description": "2: the administrative and recent house address. 3: adds building use. 4 and 5: add unstructured building information and geometry.",
+            "maximum": 5,
+            "minimum": 2,
+            "title": "Level",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "postcode"
+        ],
+        "title": "lookup_postcode_detailsArguments"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Address": {
+            "properties": {
+              "state_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "State Name"
+              },
+              "lga_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Lga Name"
+              },
+              "locality_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Locality Name"
+              },
+              "zone": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Geopolitical zone, e.g. SOUTH WEST.",
+                "title": "Zone"
+              }
+            },
+            "required": [
+              "state_name",
+              "lga_name",
+              "locality_name",
+              "zone"
+            ],
+            "title": "Address",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "postcode": {
+            "title": "Postcode",
+            "type": "string"
+          },
+          "valid": {
+            "description": "Whether the code is assigned to a building.",
+            "title": "Valid",
+            "type": "boolean"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "valid, not_found, or invalid for a malformed code.",
+            "title": "Status"
+          },
+          "verified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Verified"
+          },
+          "administrative_address": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Address"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Level 2 and up."
+          },
+          "recent_house_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Level 2 and up. Personal data.",
+            "title": "Recent House Address"
+          },
+          "building_use_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Level 3 and up, e.g. residential.",
+            "title": "Building Use Status"
+          },
+          "other_building_info": {
+            "default": null,
+            "description": "Level 4 and up, unstructured.",
+            "title": "Other Building Info"
+          },
+          "point_geometry": {
+            "default": null,
+            "description": "Level 5, unstructured.",
+            "title": "Point Geometry"
+          }
+        },
+        "required": [
+          "postcode",
+          "valid",
+          "administrative_address",
+          "recent_house_address",
+          "building_use_status"
+        ],
+        "title": "PostcodeDetails",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
         "openWorldHint": true
       }
     },
