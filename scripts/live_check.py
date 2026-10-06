@@ -4,8 +4,9 @@
 
 Reads the key from NG_POSTCODE_API_KEY, or from the file ~/.nipost_key. Makes a
 handful of free-tier calls (level 1 lookups, autocomplete, reverse, nearby) and
-reports, for each, whether the library decodes the real response and which
-fields differ from the documented ones. Pass --paid to add one level 2 lookup,
+reports, for each, whether the library decodes the real response, which fields
+differ from the documented ones, and whether the answer still matches the one
+recorded in spec/responses.json. Pass --paid to add one level 2 lookup,
 which consumes credits. The key is never printed.
 """
 
@@ -43,6 +44,10 @@ from ng_postcode.api import (
 ADO_EKITI = Coordinate(lat=7.6211, lng=5.2214)
 DOCUMENTED = ("EK01A03FK01", "LA11W06TC10", "FC03B06AG12")
 UNASSIGNED = "ZZ99Z99ZZ99"
+RECORDED: dict[str, Any] = json.loads(
+    (Path(__file__).resolve().parents[1] / "spec" / "responses.json").read_text(encoding="utf-8")
+)
+changed: list[str] = []
 
 # Keys the library reads at each level of a response, beyond its dataclass fields.
 EXTRA_KEYS = {Lookup: {"recent_house_address"}, Reverse: {"coordinate"}}
@@ -75,7 +80,13 @@ def unmodelled(data: Any, model: type) -> list[str]:
     return sorted(extra + nested)
 
 
-def check(http: httpx.Client, label: str, request: Request[Any], model: type | None) -> bool:
+def check(
+    http: httpx.Client,
+    label: str,
+    request: Request[Any],
+    model: type | None,
+    recorded: str | None = None,
+) -> bool:
     response = http.get(BASE_URL + request.path, params=request.params)
     limits = {k: v for k, v in response.headers.items() if k.lower().startswith("x-ratelimit")}
     print(f"\n{label}\n  GET {request.path} {dict(request.params)} -> HTTP {response.status_code} {limits}")
@@ -84,6 +95,10 @@ def check(http: httpx.Client, label: str, request: Request[Any], model: type | N
     except ValueError:
         print(f"  not JSON: {response.text[:200]!r}")
         return False
+    if recorded and body != RECORDED[recorded]["body"]:
+        changed.append(label)
+        print(f"  differs from {recorded} in spec/responses.json:")
+        print(f"    recorded: {json.dumps(RECORDED[recorded]['body'], ensure_ascii=False)[:300]}")
     decoded = decode(request, response.status_code, response.text)
     if isinstance(decoded, ApiError):
         print(f"  library: ApiError {decoded}")
@@ -106,22 +121,26 @@ def main() -> None:
     print(f"Using a {kind.strip('_')} key against {BASE_URL}")
     with httpx.Client(headers={"X-API-Key": key}, timeout=20.0) as http:
         print(f"healthz -> HTTP {http.get(BASE_URL + '/healthz').status_code}")
+        answers = dict(zip(DOCUMENTED, ("lookup_not_found", None, "lookup_valid"), strict=True))
         results = [
-            check(http, f"lookup level 1, documented code {code}", lookup(Postcode(code), 1), Lookup)
-            for code in DOCUMENTED
+            check(http, f"lookup level 1, documented code {code}", lookup(Postcode(code), 1), Lookup, was)
+            for code, was in answers.items()
         ]
         results += [
             check(http, "lookup level 1, unassigned code", lookup(Postcode(UNASSIGNED), 1), Lookup),
-            check(http, "autocomplete 'EK'", autocomplete("EK"), Autocomplete),
+            check(http, "autocomplete 'E'", autocomplete("E"), Autocomplete, "autocomplete_state"),
             check(http, "autocomplete 'EK 01 A'", autocomplete("EK 01 A"), Autocomplete),
+            check(http, "reverse, central Ado Ekiti", reverse(ADO_EKITI), Reverse, "reverse_found"),
             check(http, "reverse, central Ado Ekiti, 250 m", reverse(ADO_EKITI, 250), Reverse),
-            check(http, "nearby, central Ado Ekiti", nearby(ADO_EKITI, 300), NearbyUnit),
+            check(http, "nearby, Ado Ekiti", nearby(ADO_EKITI, 300), NearbyUnit, "nearby_found"),
         ]
         if "--paid" in sys.argv:
             results.append(
                 check(http, "lookup level 2 (uses credits)", lookup(Postcode(DOCUMENTED[0]), 2), Lookup)
             )
     print(f"\n{sum(results)} of {len(results)} calls decoded by the library.")
+    if changed:
+        print(f"{len(changed)} answers differ from the recorded ones: {', '.join(changed)}.")
 
 
 if __name__ == "__main__":
