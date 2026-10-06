@@ -382,11 +382,13 @@ source = { editable = "." }
 
 [package.optional-dependencies]
 client = [
+    { name = "anyio" },
     { name = "httpx" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "anyio" },
     { name = "httpx" },
     { name = "mypy" },
     { name = "pytest" },
@@ -394,11 +396,15 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "httpx", marker = "extra == 'client'", specifier = ">=0.27" }]
+requires-dist = [
+    { name = "anyio", marker = "extra == 'client'", specifier = ">=3" },
+    { name = "httpx", marker = "extra == 'client'", specifier = ">=0.27" },
+]
 provides-extras = ["client"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "anyio", specifier = ">=3" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "mypy", specifier = ">=1.13" },
     { name = "pytest", specifier = ">=8" },
