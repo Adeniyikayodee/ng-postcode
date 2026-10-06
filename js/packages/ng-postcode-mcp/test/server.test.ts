@@ -144,6 +144,16 @@ test("reads settings from the environment", () => {
   );
 });
 
+test("a proxy error page is not blamed on the key", async () => {
+  const page = (async () =>
+    new Response("<html>403 Forbidden</html>", { status: 403 })) as typeof fetch;
+  const client = await connect({ fetch: page });
+  const refused = await call(client, "autocomplete_postcode", { partial: "E" });
+  expect(refused.isError).toBe(true);
+  expect(refused.text).toContain("malformed_response (403)");
+  expect(refused.text).not.toContain("key");
+});
+
 interface SharedCall {
   name: string;
   tool: string;

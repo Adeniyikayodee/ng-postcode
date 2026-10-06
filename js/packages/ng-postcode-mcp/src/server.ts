@@ -193,7 +193,9 @@ function unwrap<T>(result: T | ApiError | TransportError): T {
     throw new ToolError(`Could not reach the NIPOST API: ${result}`);
   }
   if (result instanceof ApiError) {
-    const hint = HINTS[result.code] ?? STATUS_HINTS[result.status] ?? "";
+    // A status hint is for an answer NIPOST wrote, not for a proxy's error page.
+    const answered = result.code !== "malformed_response";
+    const hint = HINTS[result.code] ?? (answered ? STATUS_HINTS[result.status] : undefined) ?? "";
     throw new ToolError(`NIPOST API error ${result}. ${hint}`.trim());
   }
   return result;

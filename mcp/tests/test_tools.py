@@ -288,6 +288,14 @@ def test_a_level_the_key_lacks_gets_a_specific_hint() -> None:
         unwrap(error)
 
 
+def test_a_proxy_error_page_is_not_blamed_on_the_key() -> None:
+    page = api.decode(api.autocomplete("E"), 403, "<html>403 Forbidden</html>")
+    with pytest.raises(ToolError) as refused:
+        unwrap(page)
+    assert "malformed_response (403)" in str(refused.value)
+    assert "key" not in str(refused.value)
+
+
 @pytest.mark.anyio
 @pytest.mark.parametrize("case", CALLS, ids=[case["name"] for case in CALLS])
 async def test_answers_the_shared_offline_calls(case: dict[str, Any]) -> None:
