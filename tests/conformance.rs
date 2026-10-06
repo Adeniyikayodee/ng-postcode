@@ -34,7 +34,7 @@ fn segment(name: &str) -> Segment {
 }
 
 fn error_json(error: &ParseError) -> Value {
-    match error {
+    let mut json = match error {
         ParseError::Length { found } => json!({ "kind": "length", "found": found }),
         ParseError::InvalidCharacter { ch, index } => {
             json!({ "kind": "invalid_character", "char": ch.to_string(), "index": index })
@@ -42,7 +42,9 @@ fn error_json(error: &ParseError) -> Value {
         ParseError::Segment(segment) => {
             json!({ "kind": "segment", "segment": format!("{segment:?}").to_lowercase() })
         }
-    }
+    };
+    json["message"] = error.to_string().into();
+    json
 }
 
 #[test]

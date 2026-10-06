@@ -32,12 +32,15 @@ const HERE: Coordinate = { lat: 7.6211, lng: 5.2214 };
 
 function outcome(result: unknown): Case {
   if (result instanceof Postcode) return { canonical: String(result) };
-  if (result instanceof WrongLength) return { error: { kind: "length", found: result.found } };
+  const message = String(result);
+  if (result instanceof WrongLength)
+    return { error: { kind: "length", found: result.found, message } };
   if (result instanceof InvalidCharacter) {
-    return { error: { kind: "invalid_character", char: result.char, index: result.index } };
+    const { char, index } = result;
+    return { error: { kind: "invalid_character", char, index, message } };
   }
   if (result instanceof InvalidSegment)
-    return { error: { kind: "segment", segment: result.segment } };
+    return { error: { kind: "segment", segment: result.segment, message } };
   const { postcode, corrections } = result as { postcode: Postcode; corrections: number };
   return { canonical: String(postcode), corrections };
 }

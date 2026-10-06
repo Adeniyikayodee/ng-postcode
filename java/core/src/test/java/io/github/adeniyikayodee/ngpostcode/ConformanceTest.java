@@ -50,13 +50,18 @@ class ConformanceTest {
         } else if (result instanceof Corrected fixed) {
             value = Map.of("canonical", fixed.postcode().toString(), "corrections", fixed.corrections());
         } else if (result instanceof WrongLength error) {
-            value = Map.of("error", Map.of("kind", "length", "found", error.found()));
+            value = Map.of("error", Map.of("kind", "length", "found", error.found(), "message", error.toString()));
         } else if (result instanceof InvalidCharacter error) {
             value = Map.of(
-                    "error", Map.of("kind", "invalid_character", "char", error.character(), "index", error.index()));
+                    "error",
+                    Map.of(
+                            "kind", "invalid_character",
+                            "char", error.character(),
+                            "index", error.index(),
+                            "message", error.toString()));
         } else {
             String segment = ((InvalidSegment) result).segment().toString();
-            value = Map.of("error", Map.of("kind", "segment", "segment", segment));
+            value = Map.of("error", Map.of("kind", "segment", "segment", segment, "message", result.toString()));
         }
         return JSON.valueToTree(value);
     }

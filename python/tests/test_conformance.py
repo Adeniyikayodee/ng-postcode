@@ -36,11 +36,12 @@ def outcome(result: Postcode | Corrected | ParseError) -> dict[str, Any]:
         case Corrected(postcode, corrections):
             return {"canonical": str(postcode), "corrections": corrections}
         case WrongLength(found):
-            return {"error": {"kind": "length", "found": found}}
+            error: dict[str, Any] = {"kind": "length", "found": found}
         case InvalidCharacter(char, index):
-            return {"error": {"kind": "invalid_character", "char": char, "index": index}}
+            error = {"kind": "invalid_character", "char": char, "index": index}
         case InvalidSegment(segment):
-            return {"error": {"kind": "segment", "segment": segment.value}}
+            error = {"kind": "segment", "segment": segment.value}
+    return {"error": error | {"message": str(result)}}
 
 
 def expected(case: dict[str, Any]) -> dict[str, Any]:
