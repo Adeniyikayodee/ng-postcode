@@ -1,0 +1,8 @@
+{
+  "name": "ng-postcode-smithery-publish",
+  "private": true,
+  "description": "Pins the Smithery CLI that the release workflow runs.",
+  "devDependencies": {
+    "@smithery/cli": "4.11.1"
+  }
+}
