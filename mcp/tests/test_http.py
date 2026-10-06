@@ -8,6 +8,7 @@ import subprocess
 import sys
 import time
 
+import httpx
 import pytest
 from mcp import Client
 
@@ -43,7 +44,15 @@ async def test_serves_over_http() -> None:
         wait_until_listening(port)
         async with Client(f"http://127.0.0.1:{port}/mcp") as client:
             result = await client.call_tool("validate_postcode", {"postcode": "LA11W06TC10"})
+        hello = httpx.post(
+            f"http://127.0.0.1:{port}/mcp",
+            headers={"Accept": "application/json, text/event-stream"},
+            json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"},
+        )
     finally:
         server.terminate()
         server.wait(timeout=10)
     assert result.structured_content["postcode"] == "LA-11-W06-TC-10"
+    # No session is opened, so a caller cannot pile them up.
+    assert hello.status_code == 200
+    assert "mcp-session-id" not in hello.headers
