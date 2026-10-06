@@ -54,6 +54,7 @@ read them directly.
 | `tolerance.json` | Bodies the API may one day send, and the outcome each must reach |
 | `client.json` | What every HTTP client must do, such as refusing redirects. A check fails when a client's tests do not name each one |
 | `mcp.json` | The MCP tools, generated from the Python server |
+| `mcp-calls.json` | Tool calls that need no network, and what both MCP servers must answer |
 
 A change in behaviour starts in `spec/`:
 
