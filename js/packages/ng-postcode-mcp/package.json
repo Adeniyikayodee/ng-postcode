@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.3.0",
-    "ng-postcode-js": "^0.2.0"
+    "ng-postcode-js": "^0.3.0"
   },
   "engines": {
     "node": ">=22.12"
