@@ -533,7 +533,9 @@ def unwrap(result: T | ApiError | TransportError) -> T:
     if isinstance(result, TransportError):
         raise ToolError(f"Could not reach the NIPOST API: {result}")
     if isinstance(result, ApiError):
-        hint = HINTS.get(result.code) or STATUS_HINTS.get(result.status, "")
+        # A status hint is for an answer NIPOST wrote, not for a proxy's error page.
+        answered = result.code != "malformed_response"
+        hint = HINTS.get(result.code) or (STATUS_HINTS.get(result.status, "") if answered else "")
         raise ToolError(f"NIPOST API error {result}. {hint}".strip())
     return result
 
