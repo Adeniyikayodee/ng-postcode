@@ -147,7 +147,7 @@ export function createServer(settings: Settings): McpServer {
   return server;
 }
 
-export const VERSION = "0.2.0";
+export const VERSION = "0.3.0";
 
 /** The shared instructions, without the lines about tools this server does not have. */
 function instructionsFor(tools: readonly string[]): string {
