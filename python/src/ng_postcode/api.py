@@ -178,7 +178,7 @@ def decode(request: Request[T], status: int, body: str) -> T | ApiError:
     """Decode the response to `request` from its status and body."""
     try:
         envelope = json.loads(body, parse_float=_finite, parse_int=_whole, parse_constant=_finite)
-    except ValueError as error:
+    except (ValueError, RecursionError) as error:
         return _malformed(status, f"not JSON: {error}")
     if not isinstance(envelope, dict):
         return _malformed(status, "expected a JSON object")
