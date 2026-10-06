@@ -200,15 +200,25 @@ impl Segment {
 }
 
 fn collect(input: &str) -> Result<[u8; LEN], ParseError> {
-    let bytes = input
-        .char_indices()
-        .filter(|&(_, ch)| ch != ' ' && ch != '-')
-        .map(|(index, ch)| match ch.is_ascii_alphanumeric() {
-            true => Ok(ch.to_ascii_uppercase() as u8),
-            false => Err(ParseError::InvalidCharacter { ch, index }),
-        })
-        .collect::<Result<Vec<u8>, _>>()?;
-    <[u8; LEN]>::try_from(bytes).map_err(|bytes| ParseError::Length { found: bytes.len() })
+    // Every character is checked, but only a postcode's worth is held: no allocation.
+    let mut bytes = [0; LEN];
+    let mut found = 0;
+    for (index, ch) in input.char_indices() {
+        if ch == ' ' || ch == '-' {
+            continue;
+        }
+        if !ch.is_ascii_alphanumeric() {
+            return Err(ParseError::InvalidCharacter { ch, index });
+        }
+        if let Some(slot) = bytes.get_mut(found) {
+            *slot = ch.to_ascii_uppercase() as u8;
+        }
+        found += 1;
+    }
+    match found {
+        LEN => Ok(bytes),
+        _ => Err(ParseError::Length { found }),
+    }
 }
 
 fn validate(bytes: [u8; LEN]) -> Result<[u8; LEN], ParseError> {
