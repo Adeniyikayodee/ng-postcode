@@ -47,6 +47,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 KEY_URL = "https://dashboard.postcode.gov.ng"
 KEY_HEADER = "x-nipost-api-key"
 MAX_KEY_LENGTH = 256
+LOOPBACK = frozenset({"127.0.0.1", "localhost", "::1"})
 
 INSTRUCTIONS = """\
 Tools for Nigeria's 11-character building postcode, e.g. EK-01-A03-FK-01 \
@@ -119,15 +120,23 @@ def settings_from_env(env: Mapping[str, str]) -> Settings | str:
     raw_port = env.get("NG_POSTCODE_PORT", "8000").strip()
     if not (raw_port.isdecimal() and 0 < int(raw_port) < 65536):
         return f"NG_POSTCODE_PORT must be 1 to 65535, got {raw_port!r}"
+    api_key = env.get("NG_POSTCODE_API_KEY", "").strip() or None
+    host = env.get("NG_POSTCODE_HOST", "").strip() or "127.0.0.1"
+    shared = env.get("NG_POSTCODE_ALLOW_SHARED_KEY", "").strip() == "1"
+    if transport == "http" and api_key and host not in LOOPBACK and not shared:
+        return (
+            f"NG_POSTCODE_API_KEY on {host} lets anyone who can reach the server use the key: "
+            "unset it so each caller sends their own, or set NG_POSTCODE_ALLOW_SHARED_KEY=1"
+        )
     return Settings(
-        api_key=env.get("NG_POSTCODE_API_KEY", "").strip() or None,
+        api_key=api_key,
         max_level=int(raw_level),
         max_paid_calls=int(raw_paid),
         base_url=env.get("NG_POSTCODE_BASE_URL", "").strip() or BASE_URL,
         geocoder_url=geocoder_url,
         geocoder_contact=geocoder_contact,
         transport="http" if transport == "http" else "stdio",
-        host=env.get("NG_POSTCODE_HOST", "").strip() or "127.0.0.1",
+        host=host,
         port=int(raw_port),
     )
 
