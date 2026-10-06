@@ -71,7 +71,7 @@ fn reverse() {
     assert_eq!(unit.address, None);
     assert_eq!(found.area.as_deref(), Some("EK-01-A29-KR"));
     assert_eq!(found.depth.as_deref(), Some("unit"));
-    assert_eq!(found.coordinate, Some([5.2214, 7.6211]));
+    assert_eq!(found.coordinate, Some(HERE));
     assert_eq!(found.radius_m, Some(25.0));
 
     let nothing = live(
