@@ -45,6 +45,29 @@ def test_api_and_network_failures_are_values() -> None:
         assert client.send(lookup(CODE)) == TransportError("connection refused")
 
 
+# spec/client.json: refuses_redirects
+def test_a_redirect_is_not_followed_even_by_a_client_that_would() -> None:
+    hosts: list[str] = []
+
+    def elsewhere(request: httpx.Request) -> httpx.Response:
+        hosts.append(request.url.host)
+        return httpx.Response(302, headers={"Location": "https://elsewhere.example/v1/lookup"})
+
+    transport = httpx.MockTransport(elsewhere)
+    with Client("key", http=httpx.Client(transport=transport, follow_redirects=True)) as client:
+        refused = client.send(lookup(CODE))
+
+    async def run() -> Lookup | ApiError | TransportError:
+        http = httpx.AsyncClient(transport=transport, follow_redirects=True)
+        async with AsyncClient("key", http=http) as client:
+            return await client.send(lookup(CODE))
+
+    for result in (refused, asyncio.run(run())):
+        assert isinstance(result, ApiError)
+        assert (result.status, result.code) == (302, "malformed_response")
+    assert hosts == ["api.postcode.gov.ng"] * 2
+
+
 def test_only_closes_the_http_client_it_created() -> None:
     http = httpx.Client(transport=httpx.MockTransport(api))
     with Client("key", http=http):
