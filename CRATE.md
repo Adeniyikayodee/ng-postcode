@@ -11,11 +11,11 @@ Part of the [ng-postcode project](https://github.com/Adeniyikayodee/ng-postcode)
 
 An 11-character code in five segments: state, LGA, district, area, building unit.
 
-| Style | Example |
-| --- | --- |
-| Canonical | `EK-01-A03-FK-01` |
-| Display | `EK 01 A03 FK 01` |
-| Compact | `EK01A03FK01` |
+| Form | Example | Use it to |
+| --- | --- | --- |
+| Canonical | `EK-01-A03-FK-01` | Write a code and pass it between systems |
+| Spaced | `EK 01 A03 FK 01` | Show a code to people |
+| Compact | `EK01A03FK01` | Store and compare codes |
 
 Compact form as a regular expression: `^[A-Z]{2}(0[1-9]|[1-9][0-9])[A-Z0-9]{3}[A-Z]{2}(0[1-9]|[1-9][0-9])$`
 
