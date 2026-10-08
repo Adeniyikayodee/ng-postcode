@@ -14,6 +14,7 @@ TARGET = ROOT / "docs" / "llms-full.txt"
 SOURCES = [
     "docs/llms.txt",
     "README.md",
+    "docs/api-differences.md",
     "python/README.md",
     "CRATE.md",
     "js/packages/ng-postcode-js/README.md",
