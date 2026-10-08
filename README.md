@@ -152,27 +152,7 @@ Input may be hyphenated, spaced or compact, in either case. The compact form mat
 - The NIPOST API needs a key for every endpoint, from the [developer dashboard](https://dashboard.postcode.gov.ng). Offline validation needs nothing.
 - The API layer is tested against responses captured from the live API with a level 1 key, kept in [`spec/responses.json`](spec/responses.json). Run [`scripts/live_check.py`](scripts/live_check.py) with your own key to repeat the comparison. Lookup levels 2 and up need a higher-access key and are tested only against NIPOST's documented examples.
 - The resolver and the `resolve_address` tool are pre-release. They work against the live API, but their accuracy on real addresses is unmeasured. Described addresses need a geocoder you run or pay for; text alone rarely identifies a building, so ask users for a location pin when the exact building matters.
-
-### Where the live API differs from its docs
-
-Observed on 3 October 2026:
-
-- Every endpoint needs a key, including search, assembly and level 1 lookup, which the docs describe as public.
-- Lookup also returns `status` (`valid`, `not_found`, `invalid`) and `verified`. A malformed code is answered with HTTP 200 and `status: invalid`.
-- Autocomplete suggestions carry only `code`, the value of the next segment. The documented `label` is not sent.
-- Reverse geocoding also returns `depth`.
-- Nearby search, which the docs leave unspecified, returns a list of `postcode`, `display` and `distance_m`, nearest first.
-- Asking for a level the key lacks returns `403 level_not_granted`.
-- An empty autocomplete query never gets a response, so the libraries refuse to send one.
-- `EK-01-A03-FK-01`, the example used throughout NIPOST's docs, is reported as not assigned.
-
-Observed on 6 October 2026, with a level 1 test key:
-
-- An empty autocomplete query is answered, with no suggestions. The libraries still refuse to send one.
-- `FC-03-B06-AG-12`, autocomplete, reverse geocoding and nearby search all return empty answers where [`spec/responses.json`](spec/responses.json) records data. `scripts/live_check.py` lists each difference.
-- A lookup level the API cannot read, or `0`, is answered at level 1.
-- A latitude outside -90 to 90 returns `500 internal`.
-- A request the load balancer rejects, such as a 5,000-character autocomplete query, returns `403` with an HTML body.
+- Where the live API differs from NIPOST's documentation is recorded, with the date of each observation, in [`docs/api-differences.md`](docs/api-differences.md).
 
 ## Development
 
