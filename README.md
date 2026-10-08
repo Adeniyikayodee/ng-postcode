@@ -114,6 +114,12 @@ Reference: https://adeniyikayodee.github.io/ng-postcode/llms.txt
 | Area | `FK` | 2 letters |
 | Building unit | `01` | 2 digits, 01 to 99 |
 
+| Form | Example | Use it to |
+| --- | --- | --- |
+| Canonical | `EK-01-A03-FK-01` | Write a code and pass it between systems |
+| Spaced | `EK 01 A03 FK 01` | Show a code to people |
+| Compact | `EK01A03FK01` | Store and compare codes |
+
 Input may be hyphenated, spaced or compact, in either case. The compact form matches `^[A-Z]{2}(0[1-9]|[1-9][0-9])[A-Z0-9]{3}[A-Z]{2}(0[1-9]|[1-9][0-9])$`. A well-formed code is not necessarily assigned to a building; only the NIPOST API can confirm that.
 
 ## Passing a postcode between systems
