@@ -59,11 +59,17 @@ A well-formed code is not necessarily assigned to a building. Only the NIPOST AP
 
 ```python
 from ng_postcode import Postcode
-from ng_postcode.api import lookup
-from ng_postcode.client import Client  # pip install "ng-postcode[client]"
+from ng_postcode.api import ApiError, lookup
+from ng_postcode.client import Client, TransportError  # pip install "ng-postcode[client]"
 
 with Client(api_key="nipost_live_...") as client:
     found = client.send(lookup(Postcode("FC03B06AG12"), level=1))
+
+match found:
+    case ApiError() | TransportError():
+        print(found)                      # e.g. "invalid_api_key (401): ..."
+    case _:
+        print(found.valid, found.status)  # True valid
 ```
 
 ```rust
@@ -73,7 +79,7 @@ let client = Client::new(std::env::var("NG_POSTCODE_API_KEY")?);
 let found = client.send(&api::lookup("FC-03-B06-AG-12".parse()?, 1)?)?;
 ```
 
-The API layer also covers autocomplete, reverse geocoding and nearby search.
+Level 1 confirms a code is assigned. Levels 2 and up return address details and consume credits. The API layer also covers autocomplete, reverse geocoding and nearby search.
 
 ## Use it from an AI assistant
 
