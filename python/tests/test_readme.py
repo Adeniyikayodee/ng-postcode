@@ -13,7 +13,9 @@ EXAMPLES = re.findall(r"```python\n(.*?)```", README.read_text(encoding="utf-8")
 
 
 def nipost(request: httpx.Request) -> httpx.Response:
-    return httpx.Response(200, json={"data": {"postcode": "EK-01-A03-FK-01", "valid": True}})
+    return httpx.Response(
+        200, json={"data": {"postcode": "FC-03-B06-AG-12", "valid": True, "status": "valid"}}
+    )
 
 
 def test_the_readme_has_examples() -> None:
