@@ -35,6 +35,8 @@ A postcode has 11 characters in five segments, written `EK-01-A03-FK-01`: state,
 
 Each package has its own README with full usage.
 
+Two names are easy to get wrong. On npm the library is `ng-postcode-js`, because `ng-postcode` there is another project. `ng-address-resolver` is imported as `ng_address`.
+
 For online stores, [ng-postcode-woocommerce](https://github.com/Adeniyikayodee/ng-postcode-woocommerce) is a WooCommerce plugin built on the same rules and the same shared test cases: it checks and tidies the postcode at checkout, finds it from the customer's location, and makes shipping zones match on postcode prefixes.
 
 ## Quick start
