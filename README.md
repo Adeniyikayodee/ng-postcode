@@ -11,6 +11,16 @@ Developer tools for Nigeria's National Digital Alphanumeric Postcode System (NDA
 
 A postcode has 11 characters in five segments, written `EK-01-A03-FK-01`: state, LGA, district, area and building unit.
 
+## Start here
+
+| To | Use |
+| --- | --- |
+| Check, tidy, or format a code someone typed | The library for your language. It works offline, with no key. |
+| Confirm a code is assigned to a building | The same library's API client, with a key from the [NIPOST developer dashboard](https://dashboard.postcode.gov.ng) |
+| Give an AI assistant postcode tools | `ng-postcode-mcp` |
+| Find the postcode for a described address or a location pin | `ng-address-resolver`, or the `resolve_address` tool of the Python MCP server (both pre-release) |
+| Take postcodes at a WooCommerce checkout | [ng-postcode-woocommerce](https://github.com/Adeniyikayodee/ng-postcode-woocommerce) |
+
 ## Packages
 
 | Package | What it does | Install | Source |
