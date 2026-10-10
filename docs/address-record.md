@@ -92,4 +92,15 @@ UPU's standard for address data is S42, International postal address components 
 | `country` | Country |
 | `lga` | none shown |
 
-The full list of S42 elements and their codes is in UPU's Technical Standards Manual. ISO 19160-4, Addressing, Part 4: International postal address components and template language, covers the same ground. Both documents are sold, and this project has read neither, so the table above goes only as far as UPU's public overview does.
+The full list of S42 elements and their codes is in UPU's Technical Standards Manual, which is sold and which this project has not read. The table above goes only as far as UPU's public overview does.
+
+### ISO 19160-4
+
+[ISO 19160-4:2023](https://www.iso.org/standard/83470.html), Addressing, Part 4: International postal address components and template language, is the ISO standard for the same subject. Its text is sold, so the points below come from its published abstract alone.
+
+- **Three levels of component:** elements, such as an organization name or a postcode; constructs, which group elements; and segments, which group constructs by function. `postcode.code` is an element in these terms.
+- **Sub-elements for levels of administrative region:** the standard lets one element occur at several levels. `state` and `lga` are two levels of administrative region in Nigeria, so they fit that mechanism.
+- **No fixed lengths or value ranges:** the standard sets neither for any component, so nothing in it restricts a postcode to six digits.
+- **Templates:** each country's rendering rules are written as a template that software can process. A template for Nigeria would carry the line order shown under Post above.
+
+The element codes are in the body of the standard, so this page gives no code-by-code mapping.
