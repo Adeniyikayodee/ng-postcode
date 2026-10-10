@@ -80,6 +80,10 @@ def parsed(*landmarks: tuple[str, Relation]) -> ParsedAddress:
         ("EK-O1-A03-FK-01", None),  # look-alikes are never corrected silently
         ("Plot EK0101A03FK019", None),  # embedded in a longer token
         ("back of Fabian Hotel, Ado Ekiti", None),
+        # Spaced words can read as a code; one written as a code wins, wherever it stands.
+        ("No 12 Oba St 45", "NO-12-OBA-ST-45"),
+        ("Flat 2B, No 12 Oba St 45, EK-01-A03-FK-01", "EK-01-A03-FK-01"),
+        ("at 12 abc EK-01-A03-FK-01", "EK-01-A03-FK-01"),
     ],
 )
 def test_finds_only_well_formed_typed_postcodes(text: str, expected: str | None) -> None:

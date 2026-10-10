@@ -32,17 +32,19 @@ _LEVEL_SEGMENT = {
     "lga": Segment.LGA,
 }
 
+# A lookahead, so that words which read as a code cannot swallow the start of a real one.
 _CANDIDATE = re.compile(
     r"(?<![A-Za-z0-9])"
-    r"[A-Za-z]{2}[ -]?\d{2}[ -]?[A-Za-z0-9]{3}[ -]?[A-Za-z]{2}[ -]?\d{2}"
-    r"(?![A-Za-z0-9])"
+    r"(?=([A-Za-z]{2}[ -]?\d{2}[ -]?[A-Za-z0-9]{3}[ -]?[A-Za-z]{2}[ -]?\d{2})(?![A-Za-z0-9]))"
 )
 
 
 def find_typed_postcode(text: str) -> Postcode | None:
-    """The first well-formed postcode written in the text. Look-alikes are not corrected."""
-    codes = (parse(match.group()) for match in _CANDIDATE.finditer(text))
-    return next((code for code in codes if isinstance(code, Postcode)), None)
+    """The first well-formed postcode written in the text, one written as a code before one
+    that may be spaced words. Look-alikes are not corrected."""
+    found = (parse(match.group(1)) for match in _CANDIDATE.finditer(text))
+    codes = [code for code in found if isinstance(code, Postcode)]
+    return next((code for code in codes if written_as_code(text, code)), next(iter(codes), None))
 
 
 def written_as_code(text: str, code: Postcode) -> bool:
