@@ -83,6 +83,13 @@ test("calls fetch without a receiver, as browsers and Workers require", async ()
   expect(receiver).toBeUndefined();
 });
 
+test.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, "5"])(
+  "a timeout of %j is refused",
+  (timeoutMs) => {
+    expect(() => new Client("secret", { timeoutMs: timeoutMs as number })).toThrow(RangeError);
+  },
+);
+
 // spec/client.json: caps_the_body
 test("a body over the cap is refused without being read in full", async () => {
   let served = 0;
