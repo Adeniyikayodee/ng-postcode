@@ -139,6 +139,16 @@ class ClientTest {
         assertEquals("secret", seen.get(0).getRequestHeaders().getFirst("X-API-Key"));
     }
 
+    @Test
+    void theBodyIsReadAsUtf8WhateverTheHeaderSays() throws IOException {
+        Client client = clientFor(exchange -> {
+            exchange.getResponseHeaders().add("Content-Type", "application/json; charset=iso-8859-1");
+            reply(exchange, 404, "{\"error\": {\"code\": \"not_found\", \"message\": \"\u1eb9\u0301\"}}");
+        });
+        var failed = assertInstanceOf(Result.Failed.class, client.send(Api.lookup(CODE)));
+        assertEquals(new ApiError(404, "not_found", "\u1eb9\u0301"), failed.failure());
+    }
+
     // spec/client.json: ignores_a_trailing_slash
     @Test
     void aTrailingSlashOnTheBaseUrlIsIgnored() throws IOException {
