@@ -17,6 +17,11 @@ updates:
     directory: /java
     schedule:
       interval: weekly
+    ignore:
+      # Maven 3.10 stages a file that central-publishing-maven-plugin 0.11.0 leaves in the
+      # bundle, and Central then refuses it. The `java` CI job checks the bundle.
+      - dependency-name: org.apache.maven:apache-maven
+        versions: [">=3.10"]
   - package-ecosystem: uv
     directories: [/python, /mcp, /agent]
     schedule:
