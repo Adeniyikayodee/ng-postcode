@@ -1,5 +1,5 @@
 {
-  "about": "Synthetic bodies the live API has not sent but may. A number no float can hold makes the body malformed. Every implementation must reach the same outcome: ok, rejected (with the given code) or malformed. Only the field that carries the answer is strict (valid, found, or the list itself); any other field of the wrong type is read as absent. A unit or suggestion without its code is no answer, so it is dropped. A case may also expect facts about what was decoded: count (units or suggestions) and unit (whether a reverse answer has one).",
+  "about": "Synthetic bodies the live API has not sent but may. A number no float can hold makes the body malformed, and so does text with a lone surrogate. Every implementation must reach the same outcome: ok, rejected (with the given code) or malformed. Only the field that carries the answer is strict (valid, found, or the list itself); any other field of the wrong type is read as absent. A unit or suggestion without its code is no answer, so it is dropped. A case may also expect facts about what was decoded: count (units or suggestions) and unit (whether a reverse answer has one).",
   "cases": [
     { "name": "extra_envelope_key", "request": "lookup", "status": 200, "body": {"data": {"postcode": "FC-03-B06-AG-12", "valid": true}, "meta": {"request_id": "r1"}}, "outcome": "ok" },
     { "name": "unknown_data_field", "request": "lookup", "status": 200, "body": {"data": {"postcode": "FC-03-B06-AG-12", "valid": true, "tier": "gold"}}, "outcome": "ok" },
@@ -36,6 +36,9 @@
     { "name": "not_json", "request": "lookup", "status": 502, "text": "<html>Bad Gateway</html>", "outcome": "malformed" },
     { "name": "number_too_large_for_a_float", "request": "nearby", "status": 200, "text": "{\"data\":[{\"postcode\":\"FC-03-B06-AG-12\",\"distance_m\":1e400}]}", "outcome": "malformed" },
     { "name": "integer_too_large_for_a_float", "request": "nearby", "status": 200, "text": "{\"data\":[{\"postcode\":\"FC-03-B06-AG-12\",\"distance_m\":10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}]}", "outcome": "malformed" },
-    { "name": "number_that_is_not_one", "request": "nearby", "status": 200, "text": "{\"data\":[{\"postcode\":\"FC-03-B06-AG-12\",\"distance_m\":NaN}]}", "outcome": "malformed" }
+    { "name": "number_that_is_not_one", "request": "nearby", "status": 200, "text": "{\"data\":[{\"postcode\":\"FC-03-B06-AG-12\",\"distance_m\":NaN}]}", "outcome": "malformed" },
+    { "name": "lone_surrogate_in_text", "request": "lookup", "status": 200, "text": "{\"data\":{\"postcode\":\"FC-03-B06-AG-12\",\"valid\":true,\"display\":\"\\ud83d\"}}", "outcome": "malformed" },
+    { "name": "lone_surrogate_in_a_key", "request": "lookup", "status": 200, "text": "{\"data\":{\"postcode\":\"FC-03-B06-AG-12\",\"valid\":true,\"\\udc00\":1}}", "outcome": "malformed" },
+    { "name": "surrogate_pair_in_text", "request": "lookup", "status": 200, "text": "{\"data\":{\"postcode\":\"FC-03-B06-AG-12\",\"valid\":true,\"display\":\"\\ud83d\\ude00\"}}", "outcome": "ok" }
   ]
 }
