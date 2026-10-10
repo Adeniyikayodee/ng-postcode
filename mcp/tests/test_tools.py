@@ -316,6 +316,12 @@ def test_a_server_key_is_not_shared_on_a_public_address_by_accident() -> None:
     assert isinstance(settings_from_env({"NG_POSTCODE_PORT": "0"}), str)
 
 
+@pytest.mark.parametrize("key", ["SECRET\nPART2", "SECRET PART2", "SÉCRET", "k" * 257])
+def test_an_unusable_server_key_is_refused_at_startup_without_being_echoed(key: str) -> None:
+    refused = settings_from_env({"NG_POSTCODE_API_KEY": key})
+    assert refused == "NG_POSTCODE_API_KEY does not hold a usable NIPOST API key"
+
+
 def test_settings_from_env() -> None:
     assert settings_from_env({}) == Settings(api_key=None)
     assert settings_from_env({"NG_POSTCODE_API_KEY": " k ", "NG_POSTCODE_MAX_LEVEL": "3"}) == (
