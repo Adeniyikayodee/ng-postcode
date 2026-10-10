@@ -111,6 +111,10 @@ When one system or AI agent hands a location to another, send it as a postcode r
 
 For a whole address, wrap the reference in an [address record](address-record.md). It adds the names and lines that other formats need, and maps onto ISO 20022, FHIR, schema.org, and vCard.
 
+## Group records by place
+
+Every building in a district shares the start of its code, so counting records by state, LGA, district, or area is an ordinary group-by with no map. See [Group records by place](group-by-place.md) for Python, pandas, Polars, and SQL.
+
 ## The format
 
 | Segment | Example | Shape |

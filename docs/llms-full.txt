@@ -26,6 +26,7 @@ Since 1 October 2026 a Nigerian building's postcode is this 11-character code. A
 - [ng-address-resolver](https://pypi.org/project/ng-address-resolver/): `pip install ng-address-resolver`. Resolves free-text Nigerian addresses to postcodes, only as precisely as the evidence allows. Pre-release.
 - [WooCommerce plugin](https://github.com/Adeniyikayodee/ng-postcode-woocommerce): checks and tidies the postcode at checkout, finds it from the customer's location, and makes shipping zones match on postcode prefixes.
 - [SQL](https://github.com/Adeniyikayodee/ng-postcode/tree/main/sql): the postcode as a PostgreSQL domain and DuckDB macros, with `ng_postcode_parse`, `ng_postcode_format`, and `ng_postcode_truncate` for grouping by state, LGA, district, or area.
+- [Group records by place](https://adeniyikayodee.github.io/ng-postcode/group-by-place): count or select records by state, LGA, district, or area by cutting each code to a prefix with `truncate`.
 
 ## Docs
 
