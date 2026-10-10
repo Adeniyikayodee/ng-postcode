@@ -102,6 +102,11 @@ class Settings:
     port: int = 8000
 
 
+def usable_key(key: str) -> bool:
+    """Whether an HTTP header can carry the key. The key is never quoted in a refusal."""
+    return key.isascii() and key.isprintable() and " " not in key and len(key) <= MAX_KEY_LENGTH
+
+
 def settings_from_env(env: Mapping[str, str]) -> Settings | str:
     """Read settings from the environment, or describe what is wrong with them."""
     raw_level = env.get("NG_POSTCODE_MAX_LEVEL", "1").strip()
@@ -121,6 +126,8 @@ def settings_from_env(env: Mapping[str, str]) -> Settings | str:
     if not (raw_port.isdecimal() and 0 < int(raw_port) < 65536):
         return f"NG_POSTCODE_PORT must be 1 to 65535, got {raw_port!r}"
     api_key = env.get("NG_POSTCODE_API_KEY", "").strip() or None
+    if api_key and not usable_key(api_key):
+        return "NG_POSTCODE_API_KEY does not hold a usable NIPOST API key"
     host = env.get("NG_POSTCODE_HOST", "").strip() or "127.0.0.1"
     shared = env.get("NG_POSTCODE_ALLOW_SHARED_KEY", "").strip() == "1"
     if transport == "http" and api_key and host not in LOOPBACK and not shared:
@@ -589,7 +596,7 @@ def nipost_for(ctx: Context[State, Any]) -> AsyncClient | None:
     key = next(sent, "").strip()
     if not key:
         return state.nipost
-    if not (key.isascii() and key.isprintable() and " " not in key and len(key) <= MAX_KEY_LENGTH):
+    if not usable_key(key):
         raise ToolError("The X-NIPOST-API-Key header does not hold a usable NIPOST API key.")
     return AsyncClient(key, base_url=state.base_url, http=state.http)
 
