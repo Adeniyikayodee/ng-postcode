@@ -17,15 +17,18 @@ from mcp.types import CallToolResult, TextContent
 from ng_postcode import api
 from ng_postcode.api import ApiError
 from pydantic import BaseModel
+from starlette.testclient import TestClient
 
 from ng_postcode_mcp import Settings, create_server, settings_from_env
 from ng_postcode_mcp.server import (
+    HTTP,
     Address,
     Completion,
     Location,
     NearestBuilding,
     PostcodeDetails,
     capped,
+    transport_security,
     unwrap,
 )
 
@@ -317,9 +320,11 @@ def test_a_server_key_is_not_shared_on_a_public_address_by_accident() -> None:
     refused = settings_from_env(keyed)
     assert isinstance(refused, str)
     assert "NG_POSTCODE_ALLOW_SHARED_KEY" in refused
+    shared = keyed | {"NG_POSTCODE_ALLOW_SHARED_KEY": "1"}
+    assert "NG_POSTCODE_ALLOWED_HOSTS" in str(settings_from_env(shared))
     for allowed in (
         public,
-        keyed | {"NG_POSTCODE_ALLOW_SHARED_KEY": "1"},
+        shared | {"NG_POSTCODE_ALLOWED_HOSTS": "mcp.example"},
         keyed | {"NG_POSTCODE_HOST": "localhost"},
         keyed | {"NG_POSTCODE_TRANSPORT": "stdio"},
     ):
@@ -347,6 +352,45 @@ def test_reads_the_shared_environments(case: dict[str, Any]) -> None:
     else:
         assert isinstance(settings, Settings)
         assert {name: getattr(settings, name) for name in case["settings"]} == case["settings"]
+
+
+def test_a_shared_key_on_a_public_address_answers_only_to_its_own_names() -> None:
+    settings = settings_from_env(
+        {
+            "NG_POSTCODE_TRANSPORT": "http",
+            "NG_POSTCODE_HOST": "0.0.0.0",
+            "NG_POSTCODE_API_KEY": "k",
+            "NG_POSTCODE_ALLOW_SHARED_KEY": "1",
+            "NG_POSTCODE_ALLOWED_HOSTS": "mcp.example, 10.0.0.5",
+        }
+    )
+    assert isinstance(settings, Settings)
+    app = create_server(settings).streamable_http_app(
+        host=settings.host, transport_security=transport_security(settings), **HTTP
+    )
+    hello = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2025-06-18",
+            "capabilities": {},
+            "clientInfo": {"name": "test", "version": "0"},
+        },
+    }
+
+    with TestClient(app) as http:
+
+        def status(host: str, origin: str | None = None) -> int:
+            headers = {"Host": host, "Accept": "application/json, text/event-stream"}
+            return http.post(
+                "/mcp", json=hello, headers=headers | ({"Origin": origin} if origin else {})
+            ).status_code
+
+        assert status("evil.example") == 421
+        assert status("mcp.example", "http://evil.example") == 403
+        assert status("mcp.example:8443", "https://mcp.example:8443") == 200
+        assert status("10.0.0.5") == 200
 
 
 def test_settings_from_env() -> None:

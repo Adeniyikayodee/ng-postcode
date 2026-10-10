@@ -85,6 +85,7 @@ Most clients take this entry in their MCP settings:
 | `NG_POSTCODE_TRANSPORT` | `stdio` | `http` serves streamable HTTP at `/mcp` instead. |
 | `NG_POSTCODE_HOST`, `NG_POSTCODE_PORT` | `127.0.0.1`, `8000` | Where the HTTP transport listens. |
 | `NG_POSTCODE_ALLOW_SHARED_KEY` | unset | `1` lets the HTTP transport start with a server key on a public address. Without it, that combination is refused. |
+| `NG_POSTCODE_ALLOWED_HOSTS` | unset | Host names the HTTP transport answers to, separated by commas, such as `mcp.example.com`. Required with a server key on a public address, so that a web page cannot reach the key through DNS rebinding. |
 
 The public Nominatim at `https://nominatim.openstreetmap.org` allows light personal use only; a service whose main job is geocoding must run its own instance. Map data © OpenStreetMap contributors.
 
@@ -97,7 +98,7 @@ docker build -t ng-postcode-mcp . && docker run --rm -i ng-postcode-mcp   # from
 
 Over HTTP a caller can send its own NIPOST key in the `X-NIPOST-API-Key` header, and that key is used for that caller's requests only. A caller that sends none uses the server's key, if `NG_POSTCODE_API_KEY` is set.
 
-To host the server for other people, leave `NG_POSTCODE_API_KEY` unset so every caller brings a key, and serve it over HTTPS so the header is encrypted. Callers are trusting the host with their key, and all of them share the host's geocoder, which answers one search a second. Validation still works without any key. If you do set a server key, anyone who can reach the server spends its credits, so keep it on loopback or behind your own authentication. The server refuses to start with a key on a public address unless you set `NG_POSTCODE_ALLOW_SHARED_KEY=1`. `NG_POSTCODE_MAX_LEVEL` caps every caller either way, and `NG_POSTCODE_MAX_PAID_CALLS` caps what the server's own key can spend.
+To host the server for other people, leave `NG_POSTCODE_API_KEY` unset so every caller brings a key, and serve it over HTTPS so the header is encrypted. Callers are trusting the host with their key, and all of them share the host's geocoder, which answers one search a second. Validation still works without any key. If you do set a server key, anyone who can reach the server spends its credits, so keep it on loopback or behind your own authentication. The server refuses to start with a key on a public address unless you set `NG_POSTCODE_ALLOW_SHARED_KEY=1` and name the hosts it answers to in `NG_POSTCODE_ALLOWED_HOSTS`. `NG_POSTCODE_MAX_LEVEL` caps every caller either way, and `NG_POSTCODE_MAX_PAID_CALLS` caps what the server's own key can spend.
 
 ## Safety
 
