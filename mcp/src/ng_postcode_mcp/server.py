@@ -321,7 +321,12 @@ def create_server(
         ctx: Context[State, Any],
         level: Annotated[
             int,
-            Field(ge=1, le=1, description="Always 1. Higher levels are lookup_postcode_details."),
+            Field(
+                ge=1,
+                le=1,
+                strict=True,
+                description="Always 1. Higher levels are lookup_postcode_details.",
+            ),
         ] = 1,
     ) -> PostcodeDetails:
         """Confirm a postcode is assigned to a building. Free.
@@ -341,6 +346,7 @@ def create_server(
             Field(
                 ge=2,
                 le=5,
+                strict=True,
                 description="2: the administrative and recent house address. 3: adds building "
                 "use. 4 and 5: add unstructured building information and geometry.",
             ),
@@ -402,15 +408,26 @@ def create_server(
     @tidy
     async def find_postcode_at_location(
         latitude: Annotated[
-            float, Field(ge=-90, le=90, description="Latitude in decimal degrees, e.g. 7.6211.")
+            float,
+            Field(
+                ge=-90, le=90, strict=True, description="Latitude in decimal degrees, e.g. 7.6211."
+            ),
         ],
         longitude: Annotated[
-            float, Field(ge=-180, le=180, description="Longitude in decimal degrees, e.g. 5.2214.")
+            float,
+            Field(
+                ge=-180,
+                le=180,
+                strict=True,
+                description="Longitude in decimal degrees, e.g. 5.2214.",
+            ),
         ],
         ctx: Context[State, Any],
         max_distance_m: Annotated[
             float | None,
-            Field(ge=0, le=250, description="Search radius in metres. Defaults to 25."),
+            Field(
+                ge=0, le=250, strict=True, description="Search radius in metres. Defaults to 25."
+            ),
         ] = None,
     ) -> Location:
         """Return the postcode of the nearest building to a coordinate in Nigeria.
@@ -452,11 +469,21 @@ def create_server(
         ] = None,
         latitude: Annotated[
             float | None,
-            Field(ge=-90, le=90, description="Latitude of a location pin the user shared."),
+            Field(
+                ge=-90,
+                le=90,
+                strict=True,
+                description="Latitude of a location pin the user shared.",
+            ),
         ] = None,
         longitude: Annotated[
             float | None,
-            Field(ge=-180, le=180, description="Longitude of that pin. Give it with latitude."),
+            Field(
+                ge=-180,
+                le=180,
+                strict=True,
+                description="Longitude of that pin. Give it with latitude.",
+            ),
         ] = None,
     ) -> Resolution:
         """Turn a described Nigerian address into a postcode, only as precisely as the

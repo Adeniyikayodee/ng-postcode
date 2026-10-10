@@ -151,6 +151,43 @@
         "level": 2
       },
       "refused": true
+    },
+    {
+      "name": "location_latitude_as_a_boolean",
+      "tool": "find_postcode_at_location",
+      "arguments": {
+        "latitude": true,
+        "longitude": 5.2214
+      },
+      "refused": true
+    },
+    {
+      "name": "location_longitude_as_text",
+      "tool": "find_postcode_at_location",
+      "arguments": {
+        "latitude": 7.6211,
+        "longitude": "5.2214"
+      },
+      "refused": true
+    },
+    {
+      "name": "location_distance_as_text",
+      "tool": "find_postcode_at_location",
+      "arguments": {
+        "latitude": 7.6211,
+        "longitude": 5.2214,
+        "max_distance_m": "25"
+      },
+      "refused": true
+    },
+    {
+      "name": "lookup_level_as_text",
+      "tool": "lookup_postcode",
+      "arguments": {
+        "postcode": "EK-01-A03-FK-01",
+        "level": "1"
+      },
+      "refused": true
     }
   ]
 }
