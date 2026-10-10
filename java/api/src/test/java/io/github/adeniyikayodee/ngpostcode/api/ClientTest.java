@@ -98,6 +98,27 @@ class ClientTest {
         assertInstanceOf(TransportError.class, failed.failure());
     }
 
+    // spec/client.json: refuses_an_unusable_key
+    @Test
+    void anUnusableKeyIsRefusedWithoutBeingEchoed() throws IOException {
+        clientFor(exchange -> reply(exchange, 200, "{}"));
+        String base = "http://127.0.0.1:" + server.getAddress().getPort();
+        for (String key : List.of("se\ncret", "se cret", "s\u00e9cret", "", " \n")) {
+            var failed = assertInstanceOf(Result.Failed.class, new Client(key, base).send(Api.lookup(CODE)));
+            assertEquals(new TransportError("unusable API key"), failed.failure());
+        }
+        assertEquals(0, seen.size());
+        assertThrows(NullPointerException.class, () -> new Client(null));
+    }
+
+    @Test
+    void whitespaceAroundAKeyIsDropped() throws IOException {
+        clientFor(exchange -> reply(exchange, 200, "{\"data\": {\"postcode\": \"FC-03-B06-AG-12\", \"valid\": true}}"));
+        String base = "http://127.0.0.1:" + server.getAddress().getPort();
+        assertInstanceOf(Result.Ok.class, new Client(" secret\n", base).send(Api.lookup(CODE)));
+        assertEquals("secret", seen.get(0).getRequestHeaders().getFirst("X-API-Key"));
+    }
+
     // spec/client.json: failures_are_values
     @Test
     void aSilentServerTimesOutAsAValueWithoutTheKey() throws IOException {
