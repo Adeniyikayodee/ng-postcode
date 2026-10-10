@@ -115,6 +115,41 @@
         "NG_POSTCODE_API_KEY": "S\u00c9CRET"
       },
       "refused": true
+    },
+    {
+      "name": "base_url_with_a_bad_port",
+      "env": {
+        "NG_POSTCODE_BASE_URL": "http://localhost:abc"
+      },
+      "refused": true
+    },
+    {
+      "name": "base_url_with_an_open_bracket",
+      "env": {
+        "NG_POSTCODE_BASE_URL": "http://[::1"
+      },
+      "refused": true
+    },
+    {
+      "name": "base_url_without_a_scheme",
+      "env": {
+        "NG_POSTCODE_BASE_URL": "api.example"
+      },
+      "refused": true
+    },
+    {
+      "name": "base_url_that_is_not_http",
+      "env": {
+        "NG_POSTCODE_BASE_URL": "ftp://api.example"
+      },
+      "refused": true
+    },
+    {
+      "name": "base_url_without_a_host",
+      "env": {
+        "NG_POSTCODE_BASE_URL": "https://"
+      },
+      "refused": true
     }
   ]
 }

@@ -106,6 +106,15 @@ def usable_key(key: str) -> bool:
     return key.isascii() and key.isprintable() and " " not in key and len(key) <= MAX_KEY_LENGTH
 
 
+def is_http(url: str) -> bool:
+    """Whether `url` is one a request can be sent to."""
+    try:
+        parts = httpx.URL(url)
+    except httpx.InvalidURL:
+        return False
+    return parts.scheme in ("http", "https") and bool(parts.host)
+
+
 def settings_from_env(env: Mapping[str, str]) -> Settings | str:
     """Read settings from the environment, or describe what is wrong with them."""
 
@@ -139,11 +148,14 @@ def settings_from_env(env: Mapping[str, str]) -> Settings | str:
             f"NG_POSTCODE_API_KEY on {host} lets anyone who can reach the server use the key: "
             "unset it so each caller sends their own, or set NG_POSTCODE_ALLOW_SHARED_KEY=1"
         )
+    base_url = read("NG_POSTCODE_BASE_URL", BASE_URL)
+    if not is_http(base_url):
+        return "NG_POSTCODE_BASE_URL must be an http or https URL"
     return Settings(
         api_key=api_key,
         max_level=int(raw_level),
         max_paid_calls=int(raw_paid),
-        base_url=read("NG_POSTCODE_BASE_URL", BASE_URL),
+        base_url=base_url,
         geocoder_url=geocoder_url,
         geocoder_contact=geocoder_contact,
         transport="http" if transport == "http" else "stdio",
