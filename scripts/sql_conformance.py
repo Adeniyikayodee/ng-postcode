@@ -4,12 +4,14 @@
     python3 scripts/sql_conformance.py duckdb     # needs the duckdb package
 
 SQL has no error values, so a rejected input is NULL. Each case becomes one expression that
-is true when the SQL agrees with the spec.
+is true when the SQL agrees with the spec. For PostgreSQL, the examples in `sql/README.md` are
+run as well.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -67,6 +69,12 @@ def version(engine: str) -> str:
     return re.search(r"^-- Version (\S+)$", header, re.MULTILINE)[1]
 
 
+def readme() -> str:
+    """The SQL in `sql/README.md`, in order: its examples must run as written."""
+    text = (ROOT / "sql" / "README.md").read_text(encoding="utf-8")
+    return "\n".join(re.findall(r"```sql\n(.*?)```", text, re.DOTALL))
+
+
 def postgres(expressions: list[str]) -> list[bool]:
     script = (ROOT / "sql" / "postgres.sql").read_text(encoding="utf-8")
     # In a transaction that is rolled back, so the database is left as it was found.
@@ -80,6 +88,15 @@ def postgres(expressions: list[str]) -> list[bool]:
     )
     if run.returncode != 0:
         sys.exit(run.stderr)
+    examples = subprocess.run(
+        ["psql", "-X", "-q", "-At", "-v", "ON_ERROR_STOP=1", "-o", os.devnull],
+        input=f"BEGIN;\n{script}\n{readme()}\nROLLBACK;\n",
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if examples.returncode != 0:
+        sys.exit("sql/README.md does not run as written:\n" + examples.stderr)
     return [line == "t" for line in run.stdout.splitlines()]
 
 
