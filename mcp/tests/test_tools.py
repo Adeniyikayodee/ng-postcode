@@ -195,6 +195,17 @@ async def test_paid_lookups_stop_at_the_ceiling_but_a_callers_own_key_does_not()
 
 
 @pytest.mark.anyio
+async def test_a_lookup_nipost_turned_away_does_not_count_towards_the_ceiling() -> None:
+    http = httpx.AsyncClient(transport=httpx.MockTransport(nipost([])))
+    settings = Settings(api_key="revoked", max_level=2, max_paid_calls=2)
+    code = {"postcode": "EK-01-A03-FK-01"}
+    async with Client(create_server(settings, http=http)) as client:
+        results = [await client.call_tool("lookup_postcode_details", code) for _ in range(3)]
+    await http.aclose()
+    assert all("invalid_api_key" in text(result) for result in results)
+
+
+@pytest.mark.anyio
 async def test_lookup_never_autocorrects_before_spending() -> None:
     seen: list[httpx.Request] = []
     result = await call("lookup_postcode", {"postcode": "EK-O1-A03-FK-01"}, seen=seen)

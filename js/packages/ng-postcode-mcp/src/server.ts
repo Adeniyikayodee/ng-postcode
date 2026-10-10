@@ -93,13 +93,16 @@ export function createServer(settings: Settings): McpServer {
         );
       }
       const [client, code] = [api(), checked(String(postcode))];
-      paid += 1;
-      if (paid > maxPaidCalls) {
+      if (paid >= maxPaidCalls) {
         throw new ToolError(
           `This server has made its ${maxPaidCalls} paid lookups. The user can raise NG_POSTCODE_MAX_PAID_CALLS, or restart the server, to allow more.`,
         );
       }
-      return unwrap(await client.send(lookup(code, Number(level))));
+      // Counted before the call, so that calls made together cannot pass the ceiling.
+      paid += 1;
+      const result = await client.send(lookup(code, Number(level)));
+      if (!reachedBilling(result)) paid -= 1;
+      return unwrap(result);
     },
 
     autocomplete_postcode: async ({ partial }) => {
@@ -214,6 +217,12 @@ function capped<T extends { unit: object | null }>(location: T, maxLevel: number
     LEVEL_1_FIELDS.includes(field) ? value : null,
   ]);
   return { ...location, unit: Object.fromEntries(shown) };
+}
+
+/** False for a call NIPOST never saw, or turned away at the door for its key. */
+function reachedBilling(result: unknown): boolean {
+  if (result instanceof ApiError) return result.status !== 401 && result.status !== 403;
+  return !(result instanceof TransportError);
 }
 
 function unwrap<T>(result: T | ApiError | TransportError): T {
