@@ -28,3 +28,13 @@ def test_an_example_runs(example: str, monkeypatch: pytest.MonkeyPatch) -> None:
     stub = httpx.MockTransport(nipost)
     monkeypatch.setattr(httpx, "Client", lambda **options: real(transport=stub, **options))
     exec(compile(example, str(README), "exec"), {})
+
+
+GROUPING = Path(__file__).resolve().parents[2] / "docs" / "group-by-place.md"
+
+
+@pytest.mark.skipif(not GROUPING.exists(), reason="the page lives in the repository, not the sdist")
+def test_the_grouping_page_example_runs(capsys: pytest.CaptureFixture[str]) -> None:
+    page = GROUPING.read_text(encoding="utf-8")
+    exec(compile(re.findall(r"```python\n(.*?)```", page, re.DOTALL)[0], str(GROUPING), "exec"), {})
+    assert "'EK-01-A03': 2" in capsys.readouterr().out
