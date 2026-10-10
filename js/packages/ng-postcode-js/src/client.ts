@@ -51,8 +51,9 @@ export class Client {
       for (const [key, value] of request.params) url.searchParams.append(key, value);
       const response = await send(url, {
         headers: { "X-API-Key": this.#apiKey },
-        // A redirect would carry the key to another host, so it is refused.
-        redirect: "error",
+        // A redirect would carry the key to another host, so it is not followed. It comes
+        // back as the answer, which decodes as malformed, as in the other implementations.
+        redirect: "manual",
         signal: AbortSignal.timeout(this.#timeoutMs),
       });
       const body = await text(response);
