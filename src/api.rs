@@ -139,6 +139,9 @@ impl<T> Request<T> {
         // hide the `error` beside it, and keys beside the two are ignored.
         let envelope: Value =
             serde_json::from_str(body).map_err(|error| malformed(&error.to_string()))?;
+        if !finite(&envelope) {
+            return Err(malformed("number out of range"));
+        }
         let envelope = envelope
             .as_object()
             .ok_or_else(|| malformed("expected a JSON object"))?;
@@ -162,6 +165,17 @@ impl<T> Request<T> {
 // makes to one field cannot fail the whole response.
 
 type Object = Map<String, Value>;
+
+/// serde_json refuses a number no float can hold, unless another crate in the build turns
+/// on its `arbitrary_precision` feature. This holds either way.
+fn finite(value: &Value) -> bool {
+    match value {
+        Value::Number(number) => number.as_f64().is_some_and(f64::is_finite),
+        Value::Array(items) => items.iter().all(finite),
+        Value::Object(fields) => fields.values().all(finite),
+        _ => true,
+    }
+}
 
 fn text(data: &Object, key: &str) -> Option<String> {
     data.get(key)?.as_str().map(str::to_owned)
