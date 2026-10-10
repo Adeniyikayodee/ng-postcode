@@ -33,7 +33,7 @@ Since 1 October 2026 a Nigerian building's postcode is this 11-character code. A
 - [Java README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/java/README.md)
 - [MCP server README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/mcp/README.md): per-client setup and configuration
 - [Resolver README](https://github.com/Adeniyikayodee/ng-postcode/blob/main/agent/README.md)
-- [Where the live API differs from its docs](https://github.com/Adeniyikayodee/ng-postcode/blob/main/docs/api-differences.md)
+- [Integration notes for the NIPOST API](https://github.com/Adeniyikayodee/ng-postcode/blob/main/docs/api-differences.md)
 
 ## Optional
 

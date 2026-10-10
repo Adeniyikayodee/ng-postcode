@@ -142,7 +142,7 @@ Input may be hyphenated, spaced or compact, in either case. The compact form mat
 - The NIPOST API needs a key for every endpoint, from the [developer dashboard](https://dashboard.postcode.gov.ng). Offline validation needs nothing.
 - The API layer is tested against responses captured from the live API with a level 1 key, kept in [`spec/responses.json`](spec/responses.json). Run [`scripts/live_check.py`](scripts/live_check.py) with your own key to repeat the comparison. Lookup levels 2 and up need a higher-access key and are tested only against NIPOST's documented examples.
 - The resolver and the `resolve_address` tool are pre-release. They work against the live API, but their accuracy on real addresses is unmeasured. Described addresses need a geocoder you run or pay for; text alone rarely identifies a building, so ask users for a location pin when the exact building matters.
-- Where the live API differs from NIPOST's documentation is recorded, with the date of each observation, in [`docs/api-differences.md`](docs/api-differences.md).
+- Notes for integrators on how the live API behaves, each with the date it was observed, are in [`docs/api-differences.md`](docs/api-differences.md).
 
 ## Development
 
