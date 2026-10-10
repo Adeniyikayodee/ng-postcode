@@ -39,6 +39,7 @@ _SPANS = {
     Segment.AREA: range(7, 9),
     Segment.UNIT: range(9, 11),
 }
+_ENDS = {span.stop: segment for segment, span in _SPANS.items()}
 _ALPHA = frozenset({Segment.STATE, Segment.AREA})
 _NUMERIC = frozenset({Segment.LGA, Segment.UNIT})
 
@@ -51,6 +52,16 @@ class WrongLength:
 
     def __str__(self) -> str:
         return f"expected {LENGTH} letters and digits, found {self.found}"
+
+
+@dataclass(frozen=True, slots=True)
+class WrongPrefixLength:
+    """The input did not end where a segment does: after 2, 4, 7, 9 or 11 letters and digits."""
+
+    found: int
+
+    def __str__(self) -> str:
+        return f"expected 2, 4, 7, 9 or 11 letters and digits, found {self.found}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,7 +85,7 @@ class InvalidSegment:
         return f"invalid {self.segment.value} segment"
 
 
-ParseError: TypeAlias = WrongLength | InvalidCharacter | InvalidSegment
+ParseError: TypeAlias = WrongLength | WrongPrefixLength | InvalidCharacter | InvalidSegment
 
 
 @dataclass(frozen=True, slots=True, order=True)
@@ -128,8 +139,51 @@ class Postcode:
 
     def prefix(self, through: Segment) -> str:
         """The hyphenated code down to `through`: `prefix(Segment.AREA)` is `EK-01-A03-FK`."""
-        order = list(Segment)
-        return "-".join(self.segment(s) for s in order[: order.index(through) + 1])
+        return str(self.truncate(through))
+
+    def truncate(self, through: Segment) -> Prefix:
+        """The code cut off after `through`, as a value: `truncate(Segment.AREA)` is the
+        area this building is in."""
+        return Prefix(self.compact[: _SPANS[through].stop])
+
+
+@dataclass(frozen=True, slots=True, order=True)
+class Prefix:
+    """A postcode cut off after one of its segments, such as the district `EK-01-A03`.
+
+    It names every code that starts with it, so it serves to group or select codes by
+    state, LGA, district or area. A whole code is the narrowest prefix. Build one with
+    `parse_prefix` or `Postcode.truncate`; an unchecked string raises `ValueError`.
+    """
+
+    compact: str
+
+    def __post_init__(self) -> None:
+        through = _ENDS.get(len(self.compact))
+        clean = _scan(self.compact) == (self.compact, len(self.compact))
+        if through is None or not clean or _validate(self.compact, through) is not None:
+            raise ValueError(f"not a compact upper-case prefix: {self.compact!r}")
+
+    def __str__(self) -> str:
+        return "-".join(_part(self.compact, s) for s in _through(self.through))
+
+    def __repr__(self) -> str:
+        return f"Prefix('{self.compact}')"
+
+    @property
+    def through(self) -> Segment:
+        """The last segment the prefix holds."""
+        return _ENDS[len(self.compact)]
+
+    @property
+    def parent(self) -> Prefix | None:
+        """The prefix one segment shorter, or None for a state."""
+        wider = _through(self.through)[:-1]
+        return Prefix(self.compact[: _SPANS[wider[-1]].stop]) if wider else None
+
+    def contains(self, code: Postcode) -> bool:
+        """Whether `code` starts with this prefix."""
+        return code.compact.startswith(self.compact)
 
 
 @dataclass(frozen=True, slots=True)
@@ -177,6 +231,24 @@ def parse_lenient(text: str) -> Corrected | ParseError:
     return Corrected(Postcode(fixed), sum(a != b for a, b in zip(raw, fixed, strict=True)))
 
 
+def parse_prefix(text: str) -> Prefix | ParseError:
+    """Parse a hyphenated, spaced or compact prefix in either case.
+
+    >>> parse_prefix("ek 01 a03")
+    Prefix('EK01A03')
+    >>> str(parse_prefix("EK-0"))
+    'expected 2, 4, 7, 9 or 11 letters and digits, found 3'
+    """
+    scanned = _scan(text)
+    if isinstance(scanned, InvalidCharacter):
+        return scanned
+    compact, found = scanned
+    through = _ENDS.get(found)
+    if through is None:
+        return WrongPrefixLength(found=found)
+    return _validate(compact, through) or Prefix(compact)
+
+
 def from_segments(
     state: str, lga: str, district: str, area: str, unit: str
 ) -> Postcode | ParseError:
@@ -199,6 +271,15 @@ def is_valid(text: str) -> bool:
 
 
 def _collect(text: str) -> str | ParseError:
+    scanned = _scan(text)
+    if isinstance(scanned, InvalidCharacter):
+        return scanned
+    compact, found = scanned
+    return compact if found == LENGTH else WrongLength(found=found)
+
+
+def _scan(text: str) -> tuple[str, int] | InvalidCharacter:
+    """The letters and digits of `text` in upper case, and how many there were."""
     # Every character is checked, but no more than a postcode's worth is held, so the
     # memory used does not grow with the input.
     kept: list[str] = []
@@ -211,7 +292,13 @@ def _collect(text: str) -> str | ParseError:
         if found < LENGTH:
             kept.append(char)
         found += 1
-    return "".join(kept).upper() if found == LENGTH else WrongLength(found=found)
+    return "".join(kept).upper(), found
+
+
+def _through(last: Segment) -> list[Segment]:
+    """The segments from the state down to `last`."""
+    order = list(Segment)
+    return order[: order.index(last) + 1]
 
 
 def _part(compact: str, segment: Segment) -> str:
@@ -219,8 +306,9 @@ def _part(compact: str, segment: Segment) -> str:
     return compact[span.start : span.stop]
 
 
-def _validate(compact: str) -> InvalidSegment | None:
-    return next((InvalidSegment(s) for s in Segment if not _accepts(s, _part(compact, s))), None)
+def _validate(compact: str, through: Segment = Segment.UNIT) -> InvalidSegment | None:
+    bad = (s for s in _through(through) if not _accepts(s, _part(compact, s)))
+    return next((InvalidSegment(s) for s in bad), None)
 
 
 def _accepts(segment: Segment, text: str) -> bool:

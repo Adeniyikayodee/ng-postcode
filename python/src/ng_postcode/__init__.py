@@ -21,12 +21,15 @@ from ._postcode import (
     InvalidSegment,
     ParseError,
     Postcode,
+    Prefix,
     Segment,
     WrongLength,
+    WrongPrefixLength,
     from_segments,
     is_valid,
     parse,
     parse_lenient,
+    parse_prefix,
 )
 
 __all__ = [
@@ -35,10 +38,13 @@ __all__ = [
     "InvalidSegment",
     "ParseError",
     "Postcode",
+    "Prefix",
     "Segment",
     "WrongLength",
+    "WrongPrefixLength",
     "from_segments",
     "is_valid",
     "parse",
     "parse_lenient",
+    "parse_prefix",
 ]
