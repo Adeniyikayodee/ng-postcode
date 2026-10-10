@@ -8,6 +8,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -46,13 +47,18 @@ public final class Client {
         if (http.followRedirects() != HttpClient.Redirect.NEVER) {
             throw new IllegalArgumentException("the HttpClient must not follow redirects");
         }
-        this.apiKey = apiKey;
+        // Surrounding whitespace, as read from a file, is dropped.
+        this.apiKey = Objects.requireNonNull(apiKey, "apiKey").strip();
         this.baseUrl = baseUrl;
         this.http = http;
         this.timeout = timeout;
     }
 
     public <T> Result<T> send(Request<T> request) {
+        // A key no header can hold is refused here, as the JDK would quote it in its error.
+        if (!apiKey.matches("[\\x21-\\x7e]+")) {
+            return new Result.Failed<>(new TransportError("unusable API key"));
+        }
         String query = request.query().stream()
                 .map(pair -> encode(pair.getKey()) + "=" + encode(pair.getValue()))
                 .collect(Collectors.joining("&"));
