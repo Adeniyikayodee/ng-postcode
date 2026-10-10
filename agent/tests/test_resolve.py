@@ -143,6 +143,16 @@ async def test_falls_through_queries_to_the_street() -> None:
 
 
 @pytest.mark.anyio
+async def test_a_blank_address_is_not_searched_and_a_long_one_is_cut() -> None:
+    geocode = FakeGeocoder({})
+    resolver = Resolver(nipost=nipost(), geocoder=geocode)
+    assert (await resolver.resolve(" \n")).status == "unresolved"
+    assert geocode.searched == []
+    await resolver.resolve("a" * 100_000)
+    assert geocode.searched == ["a" * 200]
+
+
+@pytest.mark.anyio
 async def test_nothing_found_uses_claudes_question() -> None:
     resolver = Resolver(
         nipost=nipost(),
