@@ -17,10 +17,13 @@ import {
   InvalidCharacter,
   InvalidSegment,
   Postcode,
+  Prefix,
   parse,
   parseLenient,
+  parsePrefix,
   type Segment,
   WrongLength,
+  WrongPrefixLength,
 } from "../src/postcode.js";
 
 type Case = any;
@@ -31,8 +34,10 @@ const CODE = parse("FC03B06AG12") as Postcode;
 const HERE: Coordinate = { lat: 7.6211, lng: 5.2214 };
 
 function outcome(result: unknown): Case {
-  if (result instanceof Postcode) return { canonical: String(result) };
+  if (result instanceof Postcode || result instanceof Prefix) return { canonical: String(result) };
   const message = String(result);
+  if (result instanceof WrongPrefixLength)
+    return { error: { kind: "prefix_length", found: result.found, message } };
   if (result instanceof WrongLength)
     return { error: { kind: "length", found: result.found, message } };
   if (result instanceof InvalidCharacter) {
@@ -72,6 +77,40 @@ test.each(vectors.from_segments as Case[])("from segments $segments", (c) => {
 
 test.each(vectors.prefix as Case[])("prefix $input through $through", (c) => {
   expect((parse(c.input) as Postcode).prefix(c.through as Segment)).toBe(c.prefix);
+});
+
+test.each(vectors.parse_prefix.valid as Case[])("parse prefix valid $input", (c) => {
+  const prefix = parsePrefix(c.input) as Prefix;
+  expect([String(prefix), prefix.compact, prefix.through]).toEqual([
+    c.canonical,
+    c.compact,
+    c.through,
+  ]);
+  expect(JSON.stringify(prefix)).toBe(JSON.stringify(c.canonical));
+});
+
+test.each(vectors.parse_prefix.invalid as Case[])("parse prefix invalid $input", (c) => {
+  expect(outcome(parsePrefix(c.input))).toEqual(expected(c));
+});
+
+test.each(vectors.prefix_contains as Case[])("$prefix contains $code", (c) => {
+  const [prefix, code] = [parsePrefix(c.prefix) as Prefix, parse(c.code) as Postcode];
+  expect(prefix.contains(code)).toBe(c.contains);
+  expect(code.truncate(prefix.through).compact === prefix.compact).toBe(c.contains);
+});
+
+test.each(vectors.prefix_parent as Case[])("parent of $prefix", (c) => {
+  const parent = (parsePrefix(c.prefix) as Prefix).parent;
+  expect(parent && String(parent)).toBe(c.parent);
+});
+
+test("a Prefix cannot be built or changed outside the module", () => {
+  const build = Prefix as unknown as new (...args: unknown[]) => Prefix;
+  expect(() => new build("EK01")).toThrow(TypeError);
+  const prefix = parsePrefix("EK-01") as Prefix;
+  expect(() => Object.assign(prefix, { compact: "x" })).toThrow(TypeError);
+  expect(Prefix.is(prefix)).toBe(true);
+  expect(Prefix.is(Object.create(Prefix.prototype))).toBe(false);
 });
 
 function build(kind: string, args: Case): Request<unknown> {

@@ -27,6 +27,15 @@ export class WrongLength {
   }
 }
 
+/** The input did not end where a segment does: after 2, 4, 7, 9 or 11 letters and digits. */
+export class WrongPrefixLength {
+  constructor(readonly found: number) {}
+
+  toString(): string {
+    return `expected 2, 4, 7, 9 or 11 letters and digits, found ${this.found}`;
+  }
+}
+
 /** The input held something other than letters, digits, spaces and hyphens. */
 export class InvalidCharacter {
   constructor(
@@ -48,7 +57,7 @@ export class InvalidSegment {
   }
 }
 
-export type ParseError = WrongLength | InvalidCharacter | InvalidSegment;
+export type ParseError = WrongLength | WrongPrefixLength | InvalidCharacter | InvalidSegment;
 
 /** Held only here, so nothing outside this module can build a `Postcode` unchecked. */
 const CHECKED: unique symbol = Symbol("checked");
@@ -120,9 +129,67 @@ export class Postcode {
 
   /** The hyphenated code down to `through`: `prefix("area")` is `EK-01-A03-FK`. */
   prefix(through: Segment): string {
-    return SEGMENTS.slice(0, SEGMENTS.indexOf(known(through)) + 1)
-      .map((segment) => this.segment(segment))
+    return String(this.truncate(through));
+  }
+
+  /** The code cut off after `through`, as a value: `truncate("area")` is the area this building is in. */
+  truncate(through: Segment): Prefix {
+    return new Prefix(CHECKED, this.compact.slice(0, SPANS[known(through)][1]));
+  }
+}
+
+/**
+ * A postcode cut off after one of its segments, such as the district `EK-01-A03`.
+ *
+ * It names every code that starts with it, so it serves to group or select codes by
+ * state, LGA, district or area. A whole code is the narrowest prefix. Build one with
+ * `parsePrefix` or `Postcode.truncate`.
+ */
+export class Prefix {
+  readonly #compact: string;
+
+  /** @internal Callers use `parsePrefix`: only this module holds the key. */
+  constructor(key: typeof CHECKED, compact: string) {
+    if (key !== CHECKED) throw new TypeError("build a Prefix with parsePrefix()");
+    this.#compact = compact;
+    Object.freeze(this);
+  }
+
+  /** Whether `value` came from `parsePrefix` or `truncate`. */
+  static is(value: unknown): value is Prefix {
+    return typeof value === "object" && value !== null && #compact in value;
+  }
+
+  /** The form to store and compare, `EK01A03`. */
+  get compact(): string {
+    return this.#compact;
+  }
+
+  /** The last segment the prefix holds. */
+  get through(): Segment {
+    return SEGMENTS.find((segment) => SPANS[segment][1] === this.#compact.length) as Segment;
+  }
+
+  /** The prefix one segment shorter, or null for a state. */
+  get parent(): Prefix | null {
+    const wider = SEGMENTS[SEGMENTS.indexOf(this.through) - 1];
+    return wider ? new Prefix(CHECKED, this.#compact.slice(0, SPANS[wider][1])) : null;
+  }
+
+  /** Whether `code` starts with this prefix. */
+  contains(code: Postcode): boolean {
+    return code.compact.startsWith(this.#compact);
+  }
+
+  /** The hyphenated form, `EK-01-A03`. */
+  toString(): string {
+    return SEGMENTS.slice(0, SEGMENTS.indexOf(this.through) + 1)
+      .map((segment) => part(this.#compact, segment))
       .join("-");
+  }
+
+  toJSON(): string {
+    return this.toString();
   }
 }
 
@@ -156,6 +223,16 @@ export function parseLenient(text: string): Corrected | ParseError {
   if (error) return error;
   const corrections = [...raw].filter((char, index) => char !== fixed[index]).length;
   return { postcode: new Postcode(CHECKED, fixed), corrections };
+}
+
+/** Parse a hyphenated, spaced or compact prefix in either case. */
+export function parsePrefix(text: string): Prefix | ParseError {
+  const scanned = scan(text);
+  if (scanned instanceof InvalidCharacter) return scanned;
+  const [compact, found] = scanned;
+  const through = SEGMENTS.find((segment) => SPANS[segment][1] === found);
+  if (!through) return new WrongPrefixLength(found);
+  return validate(compact, through) ?? new Prefix(CHECKED, compact);
 }
 
 /** Build a code from its segments, zero-filling the LGA and unit. */
@@ -194,6 +271,14 @@ function isAsciiAlphanumeric(char: string): boolean {
 }
 
 function collect(text: string): string | ParseError {
+  const scanned = scan(text);
+  if (scanned instanceof InvalidCharacter) return scanned;
+  const [compact, found] = scanned;
+  return found === LENGTH ? compact : new WrongLength(found);
+}
+
+/** The letters and digits of `text` in upper case, and how many there were. */
+function scan(text: string): [string, number] | InvalidCharacter {
   // Every character is checked, but no more than a postcode's worth is held.
   let kept = "";
   let found = 0;
@@ -206,7 +291,7 @@ function collect(text: string): string | ParseError {
     }
     index += 1;
   }
-  return found === LENGTH ? kept.toUpperCase() : new WrongLength(found);
+  return [kept.toUpperCase(), found];
 }
 
 /** Untyped callers can pass any name: "Area" would otherwise give an empty prefix. */
@@ -220,8 +305,10 @@ function part(compact: string, segment: Segment): string {
   return compact.slice(start, end);
 }
 
-function validate(compact: string): InvalidSegment | undefined {
-  const bad = SEGMENTS.find((segment) => !accepts(segment, part(compact, segment)));
+function validate(compact: string, through: Segment = "unit"): InvalidSegment | undefined {
+  const bad = SEGMENTS.slice(0, SEGMENTS.indexOf(through) + 1).find(
+    (segment) => !accepts(segment, part(compact, segment)),
+  );
   return bad ? new InvalidSegment(bad) : undefined;
 }
 
