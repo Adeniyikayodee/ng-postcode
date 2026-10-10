@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -82,6 +83,25 @@ class ClientTest {
                 () -> new Client("secret", Api.BASE_URL, HttpClient.newBuilder()
                         .followRedirects(HttpClient.Redirect.NORMAL)
                         .build()));
+    }
+
+    // spec/client.json: caps_the_body
+    @Test
+    void aBodyOverTheCapIsRefusedWithoutBeingReadInFull() throws IOException {
+        var served = new java.util.concurrent.atomic.AtomicLong();
+        Client client = clientFor(exchange -> {
+            exchange.sendResponseHeaders(200, 0);
+            try (var out = exchange.getResponseBody()) {
+                while (served.addAndGet(65536) < 64_000_000) {
+                    out.write(new byte[65536]);
+                }
+            } catch (IOException closed) {
+                // The client hung up, as it should.
+            }
+        });
+        var failed = assertInstanceOf(Result.Failed.class, client.send(Api.lookup(CODE)));
+        assertEquals(new TransportError("response too large"), failed.failure());
+        assertTrue(served.get() < 64_000_000);
     }
 
     // spec/client.json: times_out_a_stalled_body

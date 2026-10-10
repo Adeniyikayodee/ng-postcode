@@ -4,6 +4,9 @@ import { type ApiError, BASE_URL, decode, type Request } from "./api.js";
 
 export const TIMEOUT_MS = 10_000;
 
+/** Bytes of a response read before it is refused. Real answers are a few thousand. */
+export const MAX_BODY_BYTES = 1_000_000;
+
 /** The request never produced a response: DNS, TLS, timeout and the like. */
 export class TransportError {
   constructor(readonly reason: string) {}
@@ -49,11 +52,29 @@ export class Client {
         redirect: "error",
         signal: AbortSignal.timeout(this.#timeoutMs),
       });
-      return decode(request, response.status, await response.text());
+      const body = await text(response);
+      if (body === undefined) return new TransportError("response too large");
+      return decode(request, response.status, body);
     } catch (error) {
       return new TransportError(reason(error));
     }
   }
+}
+
+/** The body as text, or undefined once it passes the cap, without reading the rest. */
+async function text(response: Response): Promise<string | undefined> {
+  const reader = response.body?.getReader();
+  const decoder = new TextDecoder();
+  let [body, size] = ["", 0];
+  for (let part = await reader?.read(); part && !part.done; part = await reader?.read()) {
+    size += part.value.byteLength;
+    if (size > MAX_BODY_BYTES) {
+      await reader?.cancel();
+      return undefined;
+    }
+    body += decoder.decode(part.value, { stream: true });
+  }
+  return body + decoder.decode();
 }
 
 function reason(error: unknown): string {

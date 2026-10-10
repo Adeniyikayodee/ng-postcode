@@ -7,6 +7,9 @@ use crate::api::{ApiError, Request, BASE_URL};
 
 const TIMEOUT: Duration = Duration::from_secs(10);
 
+/// Bytes of a response read before it is refused. Real answers are a few thousand.
+const MAX_BODY_BYTES: u64 = 1_000_000;
+
 pub struct Client {
     agent: ureq::Agent,
     base_url: String,
@@ -74,7 +77,12 @@ impl Client {
             .fold(call, |call, (key, value)| call.query(key, value))
             .call()
             .map_err(failed)?;
-        let body = response.body_mut().read_to_string().map_err(failed)?;
+        let body = response
+            .body_mut()
+            .with_config()
+            .limit(MAX_BODY_BYTES)
+            .read_to_string()
+            .map_err(failed)?;
         Ok(request.decode(response.status().as_u16(), &body)?)
     }
 }

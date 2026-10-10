@@ -1,15 +1,22 @@
 package io.github.adeniyikayodee.ngpostcode.api;
 
 import io.github.adeniyikayodee.ngpostcode.api.Failure.TransportError;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
@@ -18,6 +25,9 @@ import java.util.stream.Collectors;
 public final class Client {
 
     public static final Duration TIMEOUT = Duration.ofSeconds(10);
+
+    /** Bytes of a response read before it is refused. Real answers are a few thousand. */
+    public static final int MAX_BODY_BYTES = 1_000_000;
 
     private final String apiKey;
     private final String baseUrl;
@@ -69,7 +79,7 @@ public final class Client {
                 .build();
         // The request timeout stops at the response headers before Java 26, so a body that
         // stalls would hang. The deadline here covers the whole exchange.
-        var pending = http.sendAsync(call, HttpResponse.BodyHandlers.ofString());
+        var pending = http.sendAsync(call, unused -> new Capped());
         try {
             HttpResponse<String> response = pending.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
             return Api.decode(request, response.statusCode(), response.body());
@@ -82,6 +92,47 @@ public final class Client {
             pending.cancel(true);
             Thread.currentThread().interrupt();
             return failed(error);
+        }
+    }
+
+    /** Collects the body as UTF-8, and fails once it passes the cap without reading the rest. */
+    private static final class Capped implements HttpResponse.BodySubscriber<String> {
+        private final CompletableFuture<String> body = new CompletableFuture<>();
+        private final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        private Flow.Subscription subscription;
+
+        @Override
+        public CompletionStage<String> getBody() {
+            return body;
+        }
+
+        @Override
+        public void onSubscribe(Flow.Subscription subscription) {
+            this.subscription = subscription;
+            subscription.request(Long.MAX_VALUE);
+        }
+
+        @Override
+        public void onNext(List<ByteBuffer> parts) {
+            for (ByteBuffer part : parts) {
+                byte[] chunk = new byte[part.remaining()];
+                part.get(chunk);
+                bytes.writeBytes(chunk);
+            }
+            if (bytes.size() > MAX_BODY_BYTES) {
+                subscription.cancel();
+                body.completeExceptionally(new IOException("response too large"));
+            }
+        }
+
+        @Override
+        public void onError(Throwable error) {
+            body.completeExceptionally(error);
+        }
+
+        @Override
+        public void onComplete() {
+            body.complete(bytes.toString(StandardCharsets.UTF_8));
         }
     }
 
