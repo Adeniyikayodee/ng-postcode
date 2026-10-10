@@ -137,6 +137,9 @@ public final class Api {
         }
         if (metres != null) {
             query.add(Map.entry(key, numberText(metres)));
+            if (metres < 0) {
+                throw new IllegalArgumentException("distance is negative: " + metres);
+            }
         }
         return query;
     }

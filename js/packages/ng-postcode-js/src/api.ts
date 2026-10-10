@@ -221,7 +221,10 @@ function around(at: Coordinate, key: string, metres?: number): Array<readonly [s
   if (Math.abs(at.lat) > 90 || Math.abs(at.lng) > 180) {
     throw new RangeError(`coordinate is off the globe: ${at.lat}, ${at.lng}`);
   }
-  return metres === undefined ? point : [...point, [key, numberText(metres)]];
+  if (metres === undefined) return point;
+  const distance = numberText(metres);
+  if (metres < 0) throw new RangeError(`distance is negative: ${metres}`);
+  return [...point, [key, distance]];
 }
 
 function numberText(value: number): string {
