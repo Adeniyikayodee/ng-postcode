@@ -36,6 +36,9 @@ export class Client {
     this.#baseUrl = options.baseUrl ?? BASE_URL;
     this.#fetch = options.fetch ?? globalThis.fetch;
     this.#timeoutMs = options.timeoutMs ?? TIMEOUT_MS;
+    if (!(this.#timeoutMs > 0 && Number.isFinite(this.#timeoutMs))) {
+      throw new RangeError(`timeoutMs must be a positive number, got ${this.#timeoutMs}`);
+    }
   }
 
   async send<T>(request: Request<T>): Promise<T | ApiError | TransportError> {
