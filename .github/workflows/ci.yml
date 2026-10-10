@@ -109,6 +109,17 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: maven
       - run: ./mvnw -B verify
+      - name: The release bundle holds only what Maven Central accepts
+        if: matrix.java == '17'
+        run: |
+          # Staged and bundled as a release is, unsigned, with the upload aimed at nothing.
+          server='<server><id>central</id><username>none</username><password>none</password></server>'
+          echo "<settings><servers>$server</servers></settings>" > "$RUNNER_TEMP/settings.xml"
+          ./mvnw -B -q -s "$RUNNER_TEMP/settings.xml" -Prelease -DskipTests -Dgpg.skip=true \
+            -DcentralBaseUrl=http://127.0.0.1:9 deploy > /dev/null 2>&1 || true
+          test -f target/central-publishing/central-bundle.zip
+          version=$(./mvnw -q help:evaluate -Dexpression=project.version -DforceStdout)
+          ! unzip -Z1 target/central-publishing/central-bundle.zip | grep -v "/$version/"
 
   docker:
     runs-on: ubuntu-latest
