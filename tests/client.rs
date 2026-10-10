@@ -88,3 +88,51 @@ fn an_unreachable_host_is_a_value_without_the_key() {
     assert!(matches!(failed, Error::Transport(_)));
     assert!(!format!("{failed} {failed:?}").contains("secret"));
 }
+
+// spec/client.json: refuses_an_unusable_key
+#[test]
+fn an_unusable_key_is_refused_without_being_echoed() {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let code: ng_postcode::Postcode = "FC-03-B06-AG-12".parse().unwrap();
+
+    for key in ["se\ncret", "se cret", "s\u{e9}cret", "", " \n"] {
+        let failed = Client::new(key)
+            .with_base_url(&base)
+            .send(&api::lookup(code, 1).unwrap())
+            .unwrap_err();
+        assert!(matches!(failed, Error::Transport(_)));
+        assert_eq!(failed.to_string(), "unusable API key");
+        assert!(!format!("{failed:?}").contains("cret"));
+    }
+    assert!(listener.accept().is_err());
+}
+
+#[test]
+fn whitespace_around_a_key_is_dropped() {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let seen = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let lines = BufReader::new(stream.try_clone().unwrap()).lines();
+        let head: Vec<String> = lines
+            .map(Result::unwrap)
+            .take_while(|line| !line.is_empty())
+            .collect();
+        stream
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}")
+            .unwrap();
+        head
+    });
+
+    let code = "FC-03-B06-AG-12".parse().unwrap();
+    let _ = Client::new(" secret\n")
+        .with_base_url(base)
+        .send(&api::lookup(code, 1).unwrap());
+
+    let head = seen.join().unwrap();
+    assert!(head
+        .iter()
+        .any(|line| line.to_lowercase() == "x-api-key: secret"));
+}
