@@ -109,6 +109,8 @@ When one system or AI agent hands a location to another, send it as a postcode r
 
 `level` is one of `state`, `lga`, `district`, `area` or `building`, and `code` is the hyphenated code down to that level. Add `assigned` and `checked_at` after confirming a building code with NIPOST. The receiver can validate the reference against the [JSON Schema](schemas/postcode-reference.schema.json) and re-check the code itself. A resolved or partial answer from `resolve_address` already has this shape.
 
+For a whole address, wrap the reference in an [address record](address-record.md). It adds the names and lines that other formats need, and maps onto ISO 20022, FHIR, schema.org, and vCard.
+
 ## The format
 
 | Segment | Example | Shape |
