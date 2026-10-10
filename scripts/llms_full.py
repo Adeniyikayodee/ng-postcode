@@ -23,6 +23,7 @@ SOURCES = [
     "mcp/README.md",
     "js/packages/ng-postcode-mcp/README.md",
     "agent/README.md",
+    "sql/README.md",
 ]
 
 
