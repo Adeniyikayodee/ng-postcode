@@ -134,6 +134,14 @@ public record Postcode(String compact) implements Parsed, Comparable<Postcode> {
         return joined(through, "-");
     }
 
+    /**
+     * The code cut off after {@code through}, as a value: {@code truncate(AREA)} is the area this
+     * building is in.
+     */
+    public Prefix truncate(Segment through) {
+        return new Prefix(compact.substring(0, through.end));
+    }
+
     @Override
     public int compareTo(Postcode other) {
         return compact.compareTo(other.compact);
@@ -148,7 +156,20 @@ public record Postcode(String compact) implements Parsed, Comparable<Postcode> {
 
     /** Fills {@code kept} with the upper-case letters and digits, or says what stopped it. */
     private static ParseError collect(String text, StringBuilder kept) {
+        Scan scan = scan(text);
+        kept.append(scan.kept());
+        if (scan.error() != null) {
+            return scan.error();
+        }
+        return scan.found() == LENGTH ? null : new WrongLength(scan.found());
+    }
+
+    /** The upper-case letters and digits of a text and how many there were, or what stopped it. */
+    record Scan(String kept, int found, InvalidCharacter error) {}
+
+    static Scan scan(String text) {
         // Every character is checked, but no more than a postcode's worth is held.
+        var kept = new StringBuilder();
         int found = 0;
         int index = 0;
         for (int at = 0; at < text.length(); index++) {
@@ -158,18 +179,22 @@ public record Postcode(String compact) implements Parsed, Comparable<Postcode> {
                 continue;
             }
             if (!isAlphanumeric(point)) {
-                return new InvalidCharacter(Character.toString(point), index);
+                return new Scan(kept.toString(), found, new InvalidCharacter(Character.toString(point), index));
             }
             if (found++ < LENGTH) {
                 // ASCII arithmetic, so no locale can change the result.
                 kept.append((char) (point >= 'a' ? point - 32 : point));
             }
         }
-        return found == LENGTH ? null : new WrongLength(found);
+        return new Scan(kept.toString(), found, null);
     }
 
     private static ParseError validate(CharSequence compact) {
-        for (Segment segment : Segment.values()) {
+        return validate(compact, Segment.UNIT);
+    }
+
+    static ParseError validate(CharSequence compact, Segment through) {
+        for (Segment segment : Arrays.copyOf(Segment.values(), through.ordinal() + 1)) {
             CharSequence part = compact.subSequence(segment.start, segment.end);
             boolean accepted = switch (segment) {
                 case STATE, AREA -> part.chars().allMatch(Postcode::isUpper);

@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.adeniyikayodee.ngpostcode.ParseError.InvalidCharacter;
 import io.github.adeniyikayodee.ngpostcode.ParseError.InvalidSegment;
 import io.github.adeniyikayodee.ngpostcode.ParseError.WrongLength;
+import io.github.adeniyikayodee.ngpostcode.ParseError.WrongPrefixLength;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Locale;
@@ -45,8 +46,11 @@ class ConformanceTest {
 
     private static JsonNode outcome(Object result) {
         Object value;
-        if (result instanceof Postcode code) {
-            value = Map.of("canonical", code.toString());
+        if (result instanceof Postcode || result instanceof Prefix) {
+            value = Map.of("canonical", result.toString());
+        } else if (result instanceof WrongPrefixLength error) {
+            value = Map.of(
+                    "error", Map.of("kind", "prefix_length", "found", error.found(), "message", error.toString()));
         } else if (result instanceof Corrected fixed) {
             value = Map.of("canonical", fixed.postcode().toString(), "corrections", fixed.corrections());
         } else if (result instanceof WrongLength error) {
@@ -109,6 +113,51 @@ class ConformanceTest {
             Segment through = Segment.valueOf(c.get("through").asText().toUpperCase(Locale.ROOT));
             assertEquals(c.get("prefix").asText(), code.prefix(through));
         }));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> parsesValidPrefixes() {
+        return cases(CASES.at("/parse_prefix/valid")).map(c -> dynamicTest(name(c), () -> {
+            Prefix prefix = (Prefix) Prefix.parse(c.get("input").asText());
+            assertEquals(c.get("canonical").asText(), prefix.toString());
+            assertEquals(c.get("compact").asText(), prefix.compact());
+            assertEquals(c.get("through").asText(), prefix.through().toString());
+        }));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> rejectsInvalidPrefixes() {
+        return cases(CASES.at("/parse_prefix/invalid"))
+                .map(c -> dynamicTest(name(c), () -> assertEquals(
+                        expected(c), outcome(Prefix.parse(c.get("input").asText())))));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> prefixesContainTheirCodes() {
+        return cases(CASES.get("prefix_contains")).map(c -> dynamicTest(c.get("prefix").asText(), () -> {
+            Prefix prefix = (Prefix) Prefix.parse(c.get("prefix").asText());
+            Postcode code = (Postcode) Postcode.parse(c.get("code").asText());
+            assertEquals(c.get("contains").asBoolean(), prefix.contains(code));
+            assertEquals(c.get("contains").asBoolean(), code.truncate(prefix.through()).equals(prefix));
+        }));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> prefixesHaveParents() {
+        return cases(CASES.get("prefix_parent")).map(c -> dynamicTest(c.get("prefix").asText(), () -> {
+            Prefix prefix = (Prefix) Prefix.parse(c.get("prefix").asText());
+            assertEquals(
+                    c.get("parent").asText(null),
+                    prefix.parent().map(Prefix::toString).orElse(null));
+        }));
+    }
+
+    @Test
+    void aPrefixRefusesAnUncheckedString() {
+        assertEquals("EK-01", new Prefix("EK01").toString());
+        for (String bad : new String[] {"", "E", "ek", "EK-01", "EK00", "E1", "EK01A03FK011"}) {
+            assertThrows(IllegalArgumentException.class, () -> new Prefix(bad));
+        }
     }
 
     @Test
