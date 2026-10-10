@@ -383,7 +383,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-`api` covers lookup, autocomplete, reverse geocoding and nearby search. Each function returns a `Request` value, or `InvalidRequest` for one the API cannot answer, such as an empty autocomplete or a coordinate that is not finite, and `Request::decode` turns a status and body into a typed result, so the `api` feature alone works with any HTTP client, sync or async. The `client` feature adds a small blocking one.
+`api` covers lookup, autocomplete, reverse geocoding and nearby search. Each function returns a `Request` value, or `InvalidRequest` for one the API cannot answer, such as an empty autocomplete or a coordinate that is not finite, and `Request::decode` turns a status and body into a typed result, so the `api` feature alone works with any HTTP client, sync or async. The `client` feature adds a small blocking one, built on `ureq`. If your program installs a `log` logger at trace level, `ureq` writes each request's bytes to it, the key among them.
 
 ## Features
 
