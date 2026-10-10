@@ -61,7 +61,7 @@ NESTED: dict[type, dict[str, type]] = {
 def api_key() -> str | None:
     key = os.environ.get("NG_POSTCODE_API_KEY", "").strip()
     file = Path.home() / ".nipost_key"
-    return key or (file.read_text().strip() if file.exists() else None)
+    return key or (file.read_text().strip() if file.exists() else "") or None
 
 
 def unmodelled(data: Any, model: type) -> list[str]:
