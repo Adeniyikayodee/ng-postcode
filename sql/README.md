@@ -7,6 +7,8 @@ psql -f sql/postgres.sql          # PostgreSQL, tested on 14 and 17
 duckdb my.db < sql/duckdb.sql     # DuckDB, tested on 1.5
 ```
 
+Each numbered version of the two files is attached to a [GitHub release](https://github.com/Adeniyikayodee/ng-postcode/releases) tagged `sql-v`, so you can pin the copy you load.
+
 ## Store and check
 
 ```sql
