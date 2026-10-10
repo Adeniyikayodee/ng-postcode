@@ -1,0 +1,37 @@
+name: Release SQL files
+
+# Push a tag such as sql-v1.0.0. Nothing is published to a registry: the two files are
+# attached to a GitHub release, so that a database can be loaded from a pinned copy.
+on:
+  push:
+    tags: ["sql-v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Tag is on main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - name: Tag matches the version in both files
+        run: |
+          for file in sql/postgres.sql sql/duckdb.sql; do
+            test "sql-v$(sed -n 's/^-- Version //p' "$file")" = "$GITHUB_REF_NAME"
+          done
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - name: Both files agree with spec/vectors.json
+        run: |
+          sudo systemctl start postgresql.service
+          sudo -u postgres createuser --superuser "$USER"
+          PGDATABASE=postgres python3 scripts/sql_conformance.py postgres
+          uv run --no-project --with duckdb==1.5.5 python scripts/sql_conformance.py duckdb
+      - run: gh release create "$GITHUB_REF_NAME" sql/postgres.sql sql/duckdb.sql --title "SQL files ${GITHUB_REF_NAME#sql-v}" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
