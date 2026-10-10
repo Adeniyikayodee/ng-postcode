@@ -42,7 +42,7 @@ The core needs no model. Install `ng-address-resolver[claude]` to let the CLI an
 | Variable | Purpose |
 | --- | --- |
 | Anthropic credentials | Needs the `claude` extra. Read by the Anthropic SDK (`ANTHROPIC_API_KEY` or an `ant auth login` profile). Without them the raw text is searched instead. |
-| `NG_POSTCODE_API_KEY` | NIPOST API key. Without it no postcode can be returned. |
+| `NG_POSTCODE_API_KEY` | NIPOST API key. Without it the only postcode returned is one written in the address as a code, unconfirmed and at medium confidence. |
 | `NG_GEOCODER_URL` | A Nominatim server, ideally your own. |
 | `NG_GEOCODER_CONTACT` | A URL or email sent in the User-Agent to identify you. Required for the public Nominatim. |
 | `NG_ADDRESS_MODEL` | Claude model. Defaults to `claude-opus-5-5`. |
