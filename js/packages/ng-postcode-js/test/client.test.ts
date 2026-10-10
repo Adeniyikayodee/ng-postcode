@@ -83,6 +83,20 @@ test("calls fetch without a receiver, as browsers and Workers require", async ()
   expect(receiver).toBeUndefined();
 });
 
+// spec/client.json: caps_the_body
+test("a body over the cap is refused without being read in full", async () => {
+  let served = 0;
+  const flood = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      served += 65536;
+      controller.enqueue(new Uint8Array(65536).fill(32));
+    },
+  });
+  const refused = await client(() => new Response(flood)).send(lookup(CODE));
+  expect(refused).toEqual(new TransportError("response too large"));
+  expect(served).toBeLessThan(4_000_000);
+});
+
 // spec/client.json: times_out_a_stalled_body
 test("a body that stalls times out", async () => {
   const server = createServer((_, response) => {

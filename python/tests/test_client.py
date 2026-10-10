@@ -99,6 +99,33 @@ def test_a_redirect_is_not_followed_even_by_a_client_that_would() -> None:
     assert hosts == ["api.postcode.gov.ng"] * 2
 
 
+# spec/client.json: caps_the_body
+def test_a_body_over_the_cap_is_refused_without_being_read_in_full() -> None:
+    served = 0
+
+    class Flood(httpx.SyncByteStream, httpx.AsyncByteStream):
+        def __iter__(self) -> Iterator[bytes]:
+            nonlocal served
+            while True:
+                served += 65536
+                yield b" " * 65536
+
+        async def __aiter__(self) -> AsyncIterator[bytes]:
+            for chunk in self:
+                yield chunk
+
+    transport = httpx.MockTransport(lambda _: httpx.Response(200, stream=Flood()))
+    with Client("key", http=httpx.Client(transport=transport)) as client:
+        refused = client.send(lookup(CODE))
+
+    async def run() -> Lookup | ApiError | TransportError:
+        async with AsyncClient("key", http=httpx.AsyncClient(transport=transport)) as client:
+            return await client.send(lookup(CODE))
+
+    assert refused == asyncio.run(run()) == TransportError("response too large")
+    assert served < 4_000_000
+
+
 # spec/client.json: times_out_a_stalled_body
 def test_a_body_that_drips_is_cut_off_at_the_deadline() -> None:
     class Drip(httpx.SyncByteStream, httpx.AsyncByteStream):
