@@ -87,6 +87,12 @@ fn an_unreachable_host_is_a_value_without_the_key() {
 
     assert!(matches!(failed, Error::Transport(_)));
     assert!(!format!("{failed} {failed:?}").contains("secret"));
+
+    let forever = Client::new("secret")
+        .with_base_url(format!("http://{closed}"))
+        .with_timeout(Duration::MAX)
+        .send(&api::lookup(code, 1).unwrap());
+    assert!(matches!(forever, Err(Error::Transport(_))));
 }
 
 // spec/client.json: refuses_an_unusable_key
