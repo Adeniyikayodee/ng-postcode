@@ -91,6 +91,14 @@ def test_finds_only_well_formed_typed_postcodes(text: str, expected: str | None)
     assert (str(code) if code else None) == expected
 
 
+def test_a_negative_distance_is_read_as_unknown() -> None:
+    pinned = from_location(found(-400.0))
+    assert (pinned.status, pinned.level) == ("partial", "area")
+    assert "unknown distance" in pinned.evidence[0]
+    searched = from_geocoded(found(-400.0), place("building"), None, True)
+    assert (searched.status, searched.level) == ("partial", "area")
+
+
 def test_precision_follows_nominatim_ranks() -> None:
     assert [precision_of(r) for r in (30, 28, 27, 26, 20, 0)] == [
         "building",

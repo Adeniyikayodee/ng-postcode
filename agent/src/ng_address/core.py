@@ -8,6 +8,7 @@ road is not any house on it.
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 
 from ng_postcode import Postcode, Segment, is_valid, parse
 from ng_postcode.api import NearestUnit, Reverse
@@ -116,9 +117,13 @@ def from_typed(code: Postcode, assigned: bool | None, note: str) -> Resolution:
 
 
 def nearest(found: Reverse) -> NearestUnit | None:
-    """The nearest building, if NIPOST found one and its code is well formed."""
+    """The nearest building, if NIPOST found one and its code is well formed. A distance
+    below zero is read as unknown, so that it cannot pass for a close match."""
     unit = found.unit
-    return unit if found.found and unit is not None and is_valid(unit.postcode) else None
+    if not found.found or unit is None or not is_valid(unit.postcode):
+        return None
+    known = unit.distance_m is None or unit.distance_m >= 0
+    return unit if known else replace(unit, distance_m=None)
 
 
 def from_location(found: Reverse) -> Resolution:
