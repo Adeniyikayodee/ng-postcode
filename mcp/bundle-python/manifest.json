@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "ng-postcode",
   "display_name": "Nigeria Postcode",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Validate, look up and resolve addresses to Nigeria's NIPOST digital postcodes (NDAPS).",
   "long_description": "Tools for Nigeria's 11-character building postcode, such as EK-01-A03-FK-01. Validation runs offline and needs no key. Lookup, autocomplete, reverse geocoding and address resolution call the postcode.gov.ng API with your own NIPOST key.",
   "author": {
