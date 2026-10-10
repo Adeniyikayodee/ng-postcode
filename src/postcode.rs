@@ -242,7 +242,7 @@ impl FromStr for Postcode {
 /// The canonical hyphenated form, `EK-01-A03-FK-01`.
 impl fmt::Display for Postcode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.prefix(Unit))
+        f.pad(&self.prefix(Unit))
     }
 }
 
@@ -254,7 +254,7 @@ impl fmt::Debug for Postcode {
 
 impl fmt::Display for Segment {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
+        f.pad(match self {
             State => "state",
             Lga => "lga",
             District => "district",
@@ -331,6 +331,8 @@ mod tests {
         let code = parsed("ek01a03fk01");
         assert_eq!(code.as_str(), "EK01A03FK01");
         assert_eq!(code.to_string(), "EK-01-A03-FK-01");
+        assert_eq!(format!("[{code:>17}]"), "[  EK-01-A03-FK-01]");
+        assert_eq!(format!("[{:<6}]", Area), "[area  ]");
         assert_eq!(code.to_spaced(), "EK 01 A03 FK 01");
         assert_eq!(format!("{code:?}"), "Postcode(EK-01-A03-FK-01)");
     }
