@@ -47,19 +47,25 @@ class Nominatim:
         self._interval = min_interval_s
         self._max_wait = max_wait_s
         self._last = float("-inf")
+        self._queue = asyncio.Lock()
+        self._waiting = 0
         self._cache: dict[str, Geocoded | None] = {}
 
     async def __call__(self, query: str) -> Geocoded | GeocodeFailure | None:
         key = " ".join(query.casefold().split())
         if key in self._cache:
             return self._cache[key]
-        # The slot is taken before any await, so a slow answer holds up nobody else.
-        now = time.monotonic()
-        slot = max(now, self._last + self._interval)
-        if slot - now > self._max_wait:
+        if self._waiting * self._interval > self._max_wait:
             return GeocodeFailure("geocoder busy, try again shortly")
-        self._last = slot
-        await asyncio.sleep(slot - now)
+        # Searches queue for their turn to start, and a cancelled one leaves the queue. The
+        # turn ends before the request is sent, so a slow answer holds up nobody else.
+        self._waiting += 1
+        try:
+            async with self._queue:
+                await asyncio.sleep(self._last + self._interval - time.monotonic())
+                self._last = time.monotonic()
+        finally:
+            self._waiting -= 1
         try:
             response = await self._http.get(self._url, params=_params(query), headers=self._headers)
         except httpx.HTTPError as error:

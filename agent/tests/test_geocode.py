@@ -125,6 +125,22 @@ async def test_a_burst_is_refused_instead_of_booking_the_queue_ahead() -> None:
 
 
 @pytest.mark.anyio
+async def test_a_cancelled_search_gives_up_its_place_in_the_queue() -> None:
+    http = httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(200, json=[])))
+    geocoder = Nominatim(
+        "https://geo.example", "test", http=http, min_interval_s=0.05, max_wait_s=0.1
+    )
+    waiting = [asyncio.create_task(geocoder(f"place {n}")) for n in range(3)]
+    await asyncio.sleep(0)
+    for task in waiting[1:]:
+        task.cancel()
+    await asyncio.gather(*waiting, return_exceptions=True)
+    start = time.monotonic()
+    assert await geocoder("after") is None
+    assert time.monotonic() - start < 0.1
+
+
+@pytest.mark.anyio
 async def test_failures_are_values() -> None:
     def down(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("refused", request=request)
