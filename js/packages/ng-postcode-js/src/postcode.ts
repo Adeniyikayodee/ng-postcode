@@ -237,6 +237,7 @@ function unconfuse(segment: Segment, text: string): string {
 }
 
 function pad(segment: Segment, value: string): string | InvalidSegment {
+  if (typeof value !== "string") return new InvalidSegment(segment);
   const text = trimWhiteSpace(value);
   const [start, end] = SPANS[segment];
   const width = end - start;
