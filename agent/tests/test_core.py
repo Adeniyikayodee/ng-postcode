@@ -202,6 +202,10 @@ def test_landmark_for_matches_the_successful_query() -> None:
     )
     assert landmark_for("NTA Road, Ado Ekiti", address) is None
     assert landmark_for("anything", None) is None
+    banks = parsed(("", "at"), ("Bank", "at"), ("First Bank", "opposite"))
+    assert landmark_for("First Bank, Ado Ekiti", banks) == Landmark(
+        name="First Bank", relation="opposite"
+    )
 
 
 def test_a_building_is_the_place_only_on_positive_evidence() -> None:
