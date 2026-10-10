@@ -1,5 +1,5 @@
 {
-  "about": "Conformance cases every ng-postcode implementation must pass. Errors: length {found}, invalid_character {char, index}, segment {segment}, each with the message every implementation prints for it.",
+  "about": "Conformance cases every ng-postcode implementation must pass. Errors: length {found}, prefix_length {found}, invalid_character {char, index}, segment {segment}, each with the message every implementation prints for it. A prefix is a code cut off after one of its segments; it contains every code that starts with it, and its parent is the prefix one segment shorter.",
   "parse": {
     "valid": [
       { "input": "EK-01-A03-FK-01", "canonical": "EK-01-A03-FK-01", "compact": "EK01A03FK01", "spaced": "EK 01 A03 FK 01" },
@@ -75,5 +75,36 @@
     { "input": "LA-11-W06-TC-10", "through": "district", "prefix": "LA-11-W06" },
     { "input": "LA-11-W06-TC-10", "through": "area", "prefix": "LA-11-W06-TC" },
     { "input": "LA-11-W06-TC-10", "through": "unit", "prefix": "LA-11-W06-TC-10" }
+  ],
+  "parse_prefix": {
+    "valid": [
+      { "input": "EK", "canonical": "EK", "compact": "EK", "through": "state" },
+      { "input": "ek 01", "canonical": "EK-01", "compact": "EK01", "through": "lga" },
+      { "input": "EK-01-A03", "canonical": "EK-01-A03", "compact": "EK01A03", "through": "district" },
+      { "input": "ek01a03fk", "canonical": "EK-01-A03-FK", "compact": "EK01A03FK", "through": "area" },
+      { "input": "EK-01-A03-FK-01", "canonical": "EK-01-A03-FK-01", "compact": "EK01A03FK01", "through": "unit" }
+    ],
+    "invalid": [
+      { "input": "", "error": { "kind": "prefix_length", "found": 0, "message": "expected 2, 4, 7, 9 or 11 letters and digits, found 0" } },
+      { "input": "E", "error": { "kind": "prefix_length", "found": 1, "message": "expected 2, 4, 7, 9 or 11 letters and digits, found 1" } },
+      { "input": "EK-0", "error": { "kind": "prefix_length", "found": 3, "message": "expected 2, 4, 7, 9 or 11 letters and digits, found 3" } },
+      { "input": "EK-01-A03-FK-011", "error": { "kind": "prefix_length", "found": 12, "message": "expected 2, 4, 7, 9 or 11 letters and digits, found 12" } },
+      { "input": "E1", "error": { "kind": "segment", "segment": "state", "message": "invalid state segment" } },
+      { "input": "EK-00", "error": { "kind": "segment", "segment": "lga", "message": "invalid lga segment" } },
+      { "input": "EK-01-A03-F1", "error": { "kind": "segment", "segment": "area", "message": "invalid area segment" } },
+      { "input": "EK_01", "error": { "kind": "invalid_character", "char": "_", "index": 2, "message": "invalid character '_' at index 2" } }
+    ]
+  },
+  "prefix_contains": [
+    { "prefix": "EK", "code": "EK-01-A03-FK-01", "contains": true },
+    { "prefix": "EK-01-A03", "code": "EK-01-A03-FK-01", "contains": true },
+    { "prefix": "EK-01-A03-FK-01", "code": "EK-01-A03-FK-01", "contains": true },
+    { "prefix": "EK-01-A04", "code": "EK-01-A03-FK-01", "contains": false }
+  ],
+  "prefix_parent": [
+    { "prefix": "EK-01-A03-FK-01", "parent": "EK-01-A03-FK" },
+    { "prefix": "EK-01-A03", "parent": "EK-01" },
+    { "prefix": "EK-01", "parent": "EK" },
+    { "prefix": "EK", "parent": null }
   ]
 }
