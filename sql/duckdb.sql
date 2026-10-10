@@ -1,11 +1,15 @@
 -- Nigeria's NDAPS postcode for DuckDB: macros with the same names and answers as
 -- sql/postgres.sql.
+-- Version 1.0.0
 --
 --     .read sql/duckdb.sql
 --
 -- DuckDB has no domains, so keep a column to the compact form with a constraint:
 -- CHECK (ng_postcode_parse(code) IS NOT DISTINCT FROM code). scripts/sql_conformance.py
 -- runs the cases in spec/vectors.json against this file.
+
+-- The version of this file, so that an installed copy can be told from a newer one.
+CREATE OR REPLACE MACRO ng_postcode_version() AS '1.0.0';
 
 -- The letters and digits of a hyphenated, spaced or compact code, in upper case, or NULL
 -- if it holds anything else.

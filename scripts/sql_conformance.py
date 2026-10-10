@@ -10,6 +10,7 @@ is true when the SQL agrees with the spec.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -21,7 +22,7 @@ def text(value: str | None) -> str:
     return "NULL" if value is None else "'" + value.replace("'", "''") + "'"
 
 
-def checks() -> list[tuple[str, str]]:
+def checks(engine: str) -> list[tuple[str, str]]:
     """A name and an expression per case, comparing with a NULL-safe test."""
     spec = json.loads((ROOT / "spec" / "vectors.json").read_text(encoding="utf-8"))
 
@@ -56,7 +57,14 @@ def checks() -> list[tuple[str, str]]:
     for sneaky in ("ek01a03fk0ı", "EK01A03FK01", "EK０１A03FK01", "EK01A03FK01\n"):
         found.append((f"reject {sneaky!r}", same(f"ng_postcode_parse({text(sneaky)})", None)))
     found.append(("unknown segment", same("ng_postcode_truncate(ng_postcode_parse('EK01A03FK01'), 'zone')", None)))
+    found.append(("version", same("ng_postcode_version()", version(engine))))
     return found
+
+
+def version(engine: str) -> str:
+    """The version a SQL file states in its header, which its version function must repeat."""
+    header = (ROOT / "sql" / f"{engine}.sql").read_text(encoding="utf-8")
+    return re.search(r"^-- Version (\S+)$", header, re.MULTILINE)[1]
 
 
 def postgres(expressions: list[str]) -> list[bool]:
@@ -85,7 +93,7 @@ def duckdb(expressions: list[str]) -> list[bool]:
 
 def main() -> None:
     engine = {"postgres": postgres, "duckdb": duckdb}[sys.argv[1]]
-    cases = checks()
+    cases = checks(sys.argv[1])
     answers = engine([expression for _, expression in cases])
     if len(answers) != len(cases):
         sys.exit(f"{sys.argv[1]}: {len(answers)} answers for {len(cases)} cases")

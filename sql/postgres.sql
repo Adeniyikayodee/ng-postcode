@@ -1,10 +1,15 @@
 -- Nigeria's NDAPS postcode for PostgreSQL (tested on 14 and 17): two domains and a few functions.
+-- Version 1.0.0
 -- Plain SQL, so it loads on managed services that accept no extensions:
 --
 --     psql -f sql/postgres.sql
 --
 -- Store the compact form in an ng_postcode column. Behaviour follows spec/vectors.json,
 -- as the libraries do; scripts/sql_conformance.py runs those cases against this file.
+
+-- The version of this file, so that an installed copy can be told from a newer one.
+CREATE FUNCTION ng_postcode_version() RETURNS text
+    LANGUAGE sql IMMUTABLE PARALLEL SAFE AS $$ SELECT '1.0.0' $$;
 
 -- A well-formed code in its compact form, EK01A03FK01. Well formed is not assigned:
 -- only the NIPOST API knows whether a code belongs to a building.
