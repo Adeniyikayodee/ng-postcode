@@ -218,7 +218,12 @@ def _around(at: Coordinate, key: str, metres: float | None) -> Params:
     point = (("lat", _number_text(at.lat)), ("lng", _number_text(at.lng)))
     if abs(at.lat) > 90 or abs(at.lng) > 180:
         raise ValueError(f"coordinate is off the globe: {at.lat!r}, {at.lng!r}")
-    return point if metres is None else (*point, (key, _number_text(metres)))
+    if metres is None:
+        return point
+    distance = _number_text(metres)
+    if metres < 0:
+        raise ValueError(f"distance is negative: {metres!r}")
+    return (*point, (key, distance))
 
 
 def _number_text(value: float) -> str:

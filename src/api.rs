@@ -45,6 +45,8 @@ pub enum InvalidRequest {
     NotFinite(&'static str),
     /// The named coordinate is off the globe: latitude beyond 90, or longitude beyond 180.
     OutOfRange(&'static str),
+    /// The named distance is below zero.
+    Negative(&'static str),
 }
 
 /// Resolves a postcode. Levels are cumulative from 1 (validity only) to 5,
@@ -95,7 +97,7 @@ fn around(
     key: &'static str,
     metres: Option<f64>,
 ) -> Result<Vec<(&'static str, String)>, InvalidRequest> {
-    [
+    let query = [
         ("lat", Some(at.lat), 90.0),
         ("lng", Some(at.lng), 180.0),
         (key, metres, f64::INFINITY),
@@ -108,7 +110,11 @@ fn around(
         // Adding zero writes -0.0 as "0", as the other implementations do.
         value => Ok((key, (value + 0.0).to_string())),
     })
-    .collect()
+    .collect::<Result<_, _>>()?;
+    match metres {
+        Some(metres) if metres < 0.0 => Err(InvalidRequest::Negative(key)),
+        _ => Ok(query),
+    }
 }
 
 impl<T> Request<T> {
@@ -337,6 +343,7 @@ impl fmt::Display for InvalidRequest {
             Self::EmptyQuery => f.write_str("autocomplete text must not be empty"),
             Self::NotFinite(name) => write!(f, "{name} must be a finite number"),
             Self::OutOfRange(name) => write!(f, "{name} is off the globe"),
+            Self::Negative(name) => write!(f, "{name} must not be negative"),
         }
     }
 }
