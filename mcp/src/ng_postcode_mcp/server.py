@@ -23,6 +23,7 @@ from typing import Annotated, Any, Literal, TypeVar
 import httpx
 from mcp.server.mcpserver import Context, MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
+from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
 from ng_address import Landmark as AnyLandmark
 from ng_address import Nominatim, ParsedAddress, Resolution, Resolver
@@ -99,6 +100,8 @@ class Settings:
     transport: Literal["stdio", "http"] = "stdio"
     host: str = "127.0.0.1"
     port: int = 8000
+    allowed_hosts: tuple[str, ...] = ()
+    """Host names the HTTP transport answers to. Empty leaves the SDK's default."""
 
 
 def usable_key(key: str) -> bool:
@@ -152,6 +155,13 @@ def settings_from_env(env: Mapping[str, str]) -> Settings | str:
             f"NG_POSTCODE_API_KEY on {host} lets anyone who can reach the server use the key: "
             "unset it so each caller sends their own, or set NG_POSTCODE_ALLOW_SHARED_KEY=1"
         )
+    allowed_hosts = tuple(name.strip() for name in read("NG_POSTCODE_ALLOWED_HOSTS").split(","))
+    allowed_hosts = tuple(filter(None, allowed_hosts))
+    if transport == "http" and api_key and host not in LOOPBACK and not allowed_hosts:
+        return (
+            f"a shared key on {host} needs NG_POSTCODE_ALLOWED_HOSTS, the host names callers "
+            "reach this server by: without it a web page can use the key through DNS rebinding"
+        )
     base_url = read("NG_POSTCODE_BASE_URL", BASE_URL)
     if not is_http(base_url):
         return "NG_POSTCODE_BASE_URL must be an http or https URL"
@@ -165,6 +175,7 @@ def settings_from_env(env: Mapping[str, str]) -> Settings | str:
         transport="http" if transport == "http" else "stdio",
         host=host,
         port=int(raw_port),
+        allowed_hosts=allowed_hosts,
     )
 
 
@@ -682,12 +693,31 @@ def unwrap(result: T | ApiError | TransportError) -> T:
     return result
 
 
+def transport_security(settings: Settings) -> TransportSecuritySettings | None:
+    """Host and Origin checks for the names in `allowed_hosts`, on any port. None leaves
+    the SDK's default: checks on loopback and none elsewhere, where each caller brings a key."""
+    if not settings.allowed_hosts:
+        return None
+    hosts = [host + port for host in settings.allowed_hosts for port in ("", ":*")]
+    return TransportSecuritySettings(
+        allowed_hosts=hosts,
+        allowed_origins=[f"{scheme}://{host}" for scheme in ("http", "https") for host in hosts],
+    )
+
+
 def main() -> None:
     settings = settings_from_env(os.environ)
     if isinstance(settings, str):
         sys.exit(f"ng-postcode-mcp: {settings}")
     server = create_server(settings)
     if settings.transport == "http":
-        server.run("streamable-http", host=settings.host, port=settings.port, **HTTP)
+        security = transport_security(settings)
+        server.run(
+            "streamable-http",
+            host=settings.host,
+            port=settings.port,
+            transport_security=security,
+            **HTTP,
+        )
     else:
         server.run()
