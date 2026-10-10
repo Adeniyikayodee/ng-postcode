@@ -77,7 +77,7 @@ class Client:
                     if size > MAX_BODY:
                         return TransportError("response too large")
                     parts.append(part)
-        except httpx.HTTPError as error:
+        except (httpx.HTTPError, httpx.InvalidURL) as error:
             return _transport(error)
         return decode(request, response.status_code, "".join(parts))
 
@@ -131,7 +131,7 @@ class AsyncClient:
                         parts.append(part)
         except TimeoutError:
             return TransportError("timed out")
-        except httpx.HTTPError as error:
+        except (httpx.HTTPError, httpx.InvalidURL) as error:
             return _transport(error)
         return decode(request, response.status_code, "".join(parts))
 
@@ -161,5 +161,5 @@ def _headers(api_key: str) -> dict[str, str] | None:
     return {"X-API-Key": key} if usable else None
 
 
-def _transport(error: httpx.HTTPError) -> TransportError:
+def _transport(error: Exception) -> TransportError:
     return TransportError(str(error) or type(error).__name__)

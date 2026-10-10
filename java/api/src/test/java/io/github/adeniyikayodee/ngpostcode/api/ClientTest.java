@@ -155,5 +155,9 @@ class ClientTest {
         var failed = assertInstanceOf(Result.Failed.class, client.send(Api.lookup(CODE)));
         assertInstanceOf(TransportError.class, failed.failure());
         assertFalse(failed.failure().toString().contains("secret"));
+        for (String base : List.of("http://[::1", "localhost:8080", "")) {
+            var nowhere = assertInstanceOf(Result.Failed.class, new Client("secret", base).send(Api.lookup(CODE)));
+            assertInstanceOf(TransportError.class, nowhere.failure());
+        }
     }
 }
