@@ -21,6 +21,11 @@ jobs:
       - run: cargo clippy --locked --all-features --all-targets -- -D warnings
       - run: cargo test --locked --all-features
       - run: cargo test --locked --no-default-features
+      - name: Builds on the minimum Rust version Cargo.toml declares
+        run: |
+          msrv=$(sed -n 's/^rust-version = "\(.*\)"/\1/p' Cargo.toml)
+          rustup toolchain install "$msrv" --profile minimal
+          cargo "+$msrv" check --locked --all-features
       - uses: taiki-e/install-action@f7e5d7c961414b23f5b25b2da9294395d08513ad # v2.87.26
         with:
           tool: cargo-audit,cargo-semver-checks
