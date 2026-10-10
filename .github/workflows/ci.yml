@@ -54,6 +54,13 @@ jobs:
       - run: uv run --group dev ruff check .
       - run: uv run --group dev mypy
       - run: uv run --group dev pytest
+      - name: The PostgreSQL file agrees with spec/vectors.json
+        if: matrix.python == '3.14'
+        working-directory: .
+        run: |
+          sudo systemctl start postgresql.service
+          sudo -u postgres createuser --superuser "$USER"
+          PGDATABASE=postgres python3 scripts/sql_conformance.py postgres
 
   mcp:
     runs-on: ubuntu-latest
