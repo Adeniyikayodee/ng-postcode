@@ -177,7 +177,9 @@ export function decode<T>(request: Request<T>, status: number, body: string): T 
     return malformed(status, `not JSON: ${error instanceof Error ? error.message : error}`);
   }
   if (!isObject(envelope)) return malformed(status, "expected a JSON object");
-  if (!sound(envelope)) return malformed(status, "text with a lone surrogate");
+  if (!sound(envelope, MAX_DEPTH)) {
+    return malformed(status, "a lone surrogate, or nesting too deep");
+  }
   const failure = envelope.error;
   if (isObject(failure)) {
     return new ApiError(
@@ -200,12 +202,15 @@ function finite(_key: string, value: unknown): unknown {
   return value;
 }
 
-/** No lone surrogate in any text or key, which the other implementations refuse. */
-function sound(value: unknown): boolean {
+/** Levels of nesting a body may have: what serde_json, behind the Rust crate, reads. */
+const MAX_DEPTH = 127;
+
+/** No lone surrogate in any text or key, and no more than `room` levels of nesting. */
+function sound(value: unknown, room: number): boolean {
   if (typeof value === "string") return !/\p{Cs}/u.test(value);
-  if (Array.isArray(value)) return value.every(sound);
-  if (!isObject(value)) return true;
-  return Object.entries(value).every(([key, item]) => sound(key) && sound(item));
+  if (typeof value !== "object" || value === null) return true;
+  const inside = Array.isArray(value) ? value : Object.entries(value).flat();
+  return room > 0 && inside.every((item) => sound(item, room - 1));
 }
 
 function around(at: Coordinate, key: string, metres?: number): Array<readonly [string, string]> {

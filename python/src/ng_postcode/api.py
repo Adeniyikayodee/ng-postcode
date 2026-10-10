@@ -21,6 +21,9 @@ T = TypeVar("T")
 
 BASE_URL = "https://api.postcode.gov.ng"
 
+_MAX_DEPTH = 127
+"""Levels of nesting a body may have: what serde_json, behind the Rust crate, reads."""
+
 _SURROGATE = re.compile("[\ud800-\udfff]")
 
 Params = tuple[tuple[str, str], ...]
@@ -195,8 +198,8 @@ def decode(request: Request[T], status: int, body: str) -> T | ApiError:
         return _malformed(status, f"not JSON: {error}")
     if not isinstance(envelope, dict):
         return _malformed(status, "expected a JSON object")
-    if not _sound(envelope):
-        return _malformed(status, "text with a lone surrogate")
+    if not _sound(envelope, _MAX_DEPTH):
+        return _malformed(status, "a lone surrogate, or nesting too deep")
     failure = envelope.get("error")
     if isinstance(failure, dict):
         # A code that is not text is unknown; an empty one is passed on as sent.
@@ -239,13 +242,16 @@ def _finite(text: str) -> float:
     return number
 
 
-def _sound(value: object) -> bool:
-    """No lone surrogate in any text or key: a pair is one character once parsed."""
+def _sound(value: object, room: int) -> bool:
+    """No lone surrogate in any text or key (a pair is one character once parsed), and no
+    more than `room` levels of nesting."""
     if isinstance(value, str):
         return not _SURROGATE.search(value)
     if isinstance(value, dict):
-        return all(_sound(key) and _sound(item) for key, item in value.items())
-    return not isinstance(value, list) or all(map(_sound, value))
+        value = [*value, *value.values()]
+    elif not isinstance(value, list):
+        return True
+    return room > 0 and all(_sound(item, room - 1) for item in value)
 
 
 def _whole(text: str) -> int:
