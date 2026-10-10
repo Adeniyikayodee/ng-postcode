@@ -30,6 +30,7 @@ Geocoder = Callable[[str], Awaitable[Geocoded | GeocodeFailure | None]]
 
 LOCATION_RADIUS_M = 50.0
 MAX_QUERIES = 3
+MAX_QUERY_CHARS = 200
 NO_NIPOST = "NG_POSTCODE_API_KEY is not set, so NIPOST cannot be asked for the postcode."
 
 
@@ -138,6 +139,9 @@ class Resolver:
     ) -> tuple[Geocoded | None, list[str]]:
         assert self.geocoder is not None
         for query in queries[:MAX_QUERIES]:
+            query = query.strip()[:MAX_QUERY_CHARS]
+            if not query:
+                continue
             hit = await self.geocoder(query)
             if isinstance(hit, GeocodeFailure):
                 return None, [*notes, f"Geocoding failed: {hit.reason}."]
