@@ -44,11 +44,11 @@ export class Client {
   async send<T>(request: Request<T>): Promise<T | ApiError | TransportError> {
     // A key no header can hold is refused here, as fetch would quote it in its error.
     if (!/^[\x21-\x7e]+$/.test(this.#apiKey)) return new TransportError("unusable API key");
-    const url = new URL(this.#baseUrl + request.path);
-    for (const [key, value] of request.params) url.searchParams.append(key, value);
     // Called bare: browsers and Workers reject `fetch` with a receiver.
     const send = this.#fetch;
     try {
+      const url = new URL(this.#baseUrl + request.path);
+      for (const [key, value] of request.params) url.searchParams.append(key, value);
       const response = await send(url, {
         headers: { "X-API-Key": this.#apiKey },
         // A redirect would carry the key to another host, so it is refused.

@@ -72,11 +72,16 @@ public final class Client {
         String query = request.query().stream()
                 .map(pair -> encode(pair.getKey()) + "=" + encode(pair.getValue()))
                 .collect(Collectors.joining("&"));
-        HttpRequest call = HttpRequest.newBuilder(URI.create(baseUrl + request.path() + "?" + query))
-                // Without this the JDK client waits for an answer forever.
-                .timeout(timeout)
-                .header("X-API-Key", apiKey)
-                .build();
+        HttpRequest call;
+        try {
+            call = HttpRequest.newBuilder(URI.create(baseUrl + request.path() + "?" + query))
+                    // Without this the JDK client waits for an answer forever.
+                    .timeout(timeout)
+                    .header("X-API-Key", apiKey)
+                    .build();
+        } catch (IllegalArgumentException unusableBaseUrl) {
+            return failed(unusableBaseUrl);
+        }
         // The request timeout stops at the response headers before Java 26, so a body that
         // stalls would hang. The deadline here covers the whole exchange.
         var pending = http.sendAsync(call, unused -> new Capped());

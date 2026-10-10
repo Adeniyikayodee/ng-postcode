@@ -58,6 +58,9 @@ test("failures are values, and never carry the key", async () => {
       ),
   ).send(lookup(CODE));
   expect(slow).toBeInstanceOf(TransportError);
+
+  const nowhere = await new Client("secret", { baseUrl: "http://[::1" }).send(lookup(CODE));
+  expect(nowhere).toBeInstanceOf(TransportError);
   expect(String(refused) + String(unreachable) + String(slow)).not.toContain("secret");
 });
 
