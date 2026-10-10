@@ -14,7 +14,7 @@ Since 1 October 2026 a Nigerian building's postcode is this 11-character code. A
 - A well-formed code is not necessarily assigned to a building; only the API confirms that.
 
 - To pass a postcode between systems or agents, use a postcode reference: `{"code": "EK-01-A03-FK", "level": "area", "confidence": "medium"}`. Schema: https://adeniyikayodee.github.io/ng-postcode/schemas/postcode-reference.schema.json
-- To pass a whole address, wrap that reference in an address record with `country: "NG"` and optional `state`, `lga`, `locality`, `street_address`, `description`, and `location`. It maps onto ISO 20022, FHIR, schema.org, and vCard: https://adeniyikayodee.github.io/ng-postcode/address-record
+- To pass a whole address, wrap that reference in an address record with `country: "NG"` and optional `state`, `lga`, `locality`, `street_address`, `description`, and `location`. It maps onto ISO 20022, FHIR, schema.org, vCard, and UPU's address layout for Nigeria: https://adeniyikayodee.github.io/ng-postcode/address-record
 
 ## Packages
 
@@ -183,7 +183,7 @@ Input may be hyphenated, spaced or compact, in either case. The compact form mat
 
 [`docs/schemas/postcode-reference.schema.json`](docs/schemas/postcode-reference.schema.json) defines a small JSON object for handing a location from one system or AI agent to another: the code, its level (`state` to `building`), and optionally a confidence and whether NIPOST confirmed it. A resolved or partial `resolve_address` answer already fits it.
 
-For a whole address, [`docs/address-record.md`](docs/address-record.md) wraps the reference in an address record and maps it onto ISO 20022, FHIR, schema.org, and vCard.
+For a whole address, [`docs/address-record.md`](docs/address-record.md) wraps the reference in an address record and maps it onto ISO 20022, FHIR, schema.org, vCard, and UPU's address layout for Nigeria.
 
 ## Design
 
@@ -247,7 +247,7 @@ How `api.postcode.gov.ng` behaved on the dates given, for anyone building on it.
 
 # A Nigerian address record
 
-A small JSON object for passing a Nigerian address between systems. It is built around the building postcode NIPOST issues, and it maps onto the address formats that payments, health, and web systems already use.
+A small JSON object for passing a Nigerian address between systems. It is built around the building postcode NIPOST issues, and it maps onto the address formats that payments, health, web, and postal systems already use.
 
 ```json
 {
@@ -303,6 +303,43 @@ NIPOST returns the three names and the house address from lookup level 2, which 
 `PstCd` holds [up to 16 characters](https://www.frbservices.org/wp-content/uploads/whats-in-an-iso-20022-message-sidebar.pdf), so the 15-character hyphenated code fits as written. `TwnNm`, `DstrctNm`, and `CtrySubDvsn` hold up to 35 characters each, `StrtNm` and an `AdrLine` up to 70, and `BldgNb` up to 16.
 
 Swift is retiring unstructured addresses from cross-border payments in favour of structured and hybrid ones. In a hybrid address the town and the country are mandatory in their own fields, with up to two free-text lines beside them, according to [bank guidance](https://www.jpmorgan.com/insights/payments/cross-border-payments/iso-20022-migration). `locality` and `country` cover that minimum. The date, the field lengths, and the mandatory fields depend on the message version and the market, so check Swift's current notices and the usage guideline you send under.
+
+### Post
+
+The Universal Postal Union (UPU) publishes an [addressing sheet for Nigeria](https://www.upu.int/UPU/media/upu/PostalEntitiesFiles/addressingUnit/ngaEn.pdf), dated October 2022, that sets out the lines of a Nigerian address. The record's fields fall onto those lines in this order.
+
+| Line | UPU's label | From the record |
+| --- | --- | --- |
+| 1 | addressee | The person or organisation, which the record leaves to you |
+| 2 | house no + street | `street_address` |
+| 3 | locality + postcode | `locality`, then `postcode.code` |
+| 4 | sub-province | `lga` |
+| 5 | province | `state`, in capitals |
+| 6 | country | `NIGERIA`, in capitals, on an item sent from abroad |
+
+```
+Mrs Ada Obi
+12 NTA Road
+Ado Ekiti EK-01-A03-FK-01
+Ado Ekiti
+EKITI STATE
+NIGERIA
+```
+
+The sheet predates the digital postcode and shows a six-digit code to the right of the locality. NIPOST has published no layout for the new code that this project could find, so the example carries the 2022 position forward. Follow NIPOST's guidance once it appears. The sheet has no line for `description` or `location`.
+
+UPU's standard for address data is S42, International postal address components and templates. It names the elements of an address and gives each country a template for arranging them. UPU's [public overview of S42](https://www.upu.int/UPU/media/upu/documents/PostCode/S42_International-Addressing-Standards.pdf) shows the elements below. This project found no S42 template for Nigeria on UPU's site.
+
+| Record | S42 element in UPU's overview |
+| --- | --- |
+| `street_address` | Street No, Street Name, Street type |
+| `locality` | Town |
+| `state` | Region |
+| `postcode.code` | Postcode |
+| `country` | Country |
+| `lga` | none shown |
+
+The full list of S42 elements and their codes is in UPU's Technical Standards Manual. ISO 19160-4, Addressing, Part 4: International postal address components and template language, covers the same ground. Both documents are sold, and this project has read neither, so the table above goes only as far as UPU's public overview does.
 
 ---
 

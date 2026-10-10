@@ -132,7 +132,7 @@ Input may be hyphenated, spaced or compact, in either case. The compact form mat
 
 [`docs/schemas/postcode-reference.schema.json`](docs/schemas/postcode-reference.schema.json) defines a small JSON object for handing a location from one system or AI agent to another: the code, its level (`state` to `building`), and optionally a confidence and whether NIPOST confirmed it. A resolved or partial `resolve_address` answer already fits it.
 
-For a whole address, [`docs/address-record.md`](docs/address-record.md) wraps the reference in an address record and maps it onto ISO 20022, FHIR, schema.org, and vCard.
+For a whole address, [`docs/address-record.md`](docs/address-record.md) wraps the reference in an address record and maps it onto ISO 20022, FHIR, schema.org, vCard, and UPU's address layout for Nigeria.
 
 ## Design
 
