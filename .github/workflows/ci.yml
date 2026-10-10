@@ -61,6 +61,10 @@ jobs:
           sudo systemctl start postgresql.service
           sudo -u postgres createuser --superuser "$USER"
           PGDATABASE=postgres python3 scripts/sql_conformance.py postgres
+      - name: The DuckDB file agrees with spec/vectors.json
+        if: matrix.python == '3.14'
+        working-directory: .
+        run: uv run --no-project --with duckdb==1.5.5 python scripts/sql_conformance.py duckdb
 
   mcp:
     runs-on: ubuntu-latest
