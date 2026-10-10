@@ -108,27 +108,32 @@ def usable_key(key: str) -> bool:
 
 def settings_from_env(env: Mapping[str, str]) -> Settings | str:
     """Read settings from the environment, or describe what is wrong with them."""
-    raw_level = env.get("NG_POSTCODE_MAX_LEVEL", "1").strip()
+
+    def read(name: str, default: str = "") -> str:
+        """A variable's value. Blank is unset, as hosts pass every field of a form."""
+        return env.get(name, "").strip() or default
+
+    raw_level = read("NG_POSTCODE_MAX_LEVEL", "1")
     if raw_level not in {"1", "2", "3", "4", "5"}:
         return f"NG_POSTCODE_MAX_LEVEL must be 1 to 5, got {raw_level!r}"
-    raw_paid = env.get("NG_POSTCODE_MAX_PAID_CALLS", "25").strip()
-    if not raw_paid.isdecimal():
+    raw_paid = read("NG_POSTCODE_MAX_PAID_CALLS", "25")
+    if not (raw_paid.isascii() and raw_paid.isdecimal()):
         return f"NG_POSTCODE_MAX_PAID_CALLS must be a whole number, got {raw_paid!r}"
-    geocoder_url = env.get("NG_GEOCODER_URL", "").strip().rstrip("/") or None
-    geocoder_contact = env.get("NG_GEOCODER_CONTACT", "").strip() or None
+    geocoder_url = read("NG_GEOCODER_URL").rstrip("/") or None
+    geocoder_contact = read("NG_GEOCODER_CONTACT") or None
     if geocoder_url == PUBLIC_NOMINATIM and geocoder_contact is None:
         return "the public Nominatim requires NG_GEOCODER_CONTACT, a URL or email identifying you"
-    transport = env.get("NG_POSTCODE_TRANSPORT", "stdio").strip().lower()
+    transport = read("NG_POSTCODE_TRANSPORT", "stdio").lower()
     if transport not in ("stdio", "http"):
         return f"NG_POSTCODE_TRANSPORT must be stdio or http, got {transport!r}"
-    raw_port = env.get("NG_POSTCODE_PORT", "8000").strip()
-    if not (raw_port.isdecimal() and 0 < int(raw_port) < 65536):
+    raw_port = read("NG_POSTCODE_PORT", "8000")
+    if not (raw_port.isascii() and raw_port.isdecimal() and 0 < int(raw_port) < 65536):
         return f"NG_POSTCODE_PORT must be 1 to 65535, got {raw_port!r}"
-    api_key = env.get("NG_POSTCODE_API_KEY", "").strip() or None
+    api_key = read("NG_POSTCODE_API_KEY") or None
     if api_key and not usable_key(api_key):
         return "NG_POSTCODE_API_KEY does not hold a usable NIPOST API key"
-    host = env.get("NG_POSTCODE_HOST", "").strip() or "127.0.0.1"
-    shared = env.get("NG_POSTCODE_ALLOW_SHARED_KEY", "").strip() == "1"
+    host = read("NG_POSTCODE_HOST", "127.0.0.1")
+    shared = read("NG_POSTCODE_ALLOW_SHARED_KEY") == "1"
     if transport == "http" and api_key and host not in LOOPBACK and not shared:
         return (
             f"NG_POSTCODE_API_KEY on {host} lets anyone who can reach the server use the key: "
@@ -138,7 +143,7 @@ def settings_from_env(env: Mapping[str, str]) -> Settings | str:
         api_key=api_key,
         max_level=int(raw_level),
         max_paid_calls=int(raw_paid),
-        base_url=env.get("NG_POSTCODE_BASE_URL", "").strip() or BASE_URL,
+        base_url=read("NG_POSTCODE_BASE_URL", BASE_URL),
         geocoder_url=geocoder_url,
         geocoder_contact=geocoder_contact,
         transport="http" if transport == "http" else "stdio",

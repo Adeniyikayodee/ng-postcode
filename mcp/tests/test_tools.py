@@ -333,6 +333,22 @@ def test_an_unusable_server_key_is_refused_at_startup_without_being_echoed(key: 
     assert refused == "NG_POSTCODE_API_KEY does not hold a usable NIPOST API key"
 
 
+ENV_SPEC = CALLS_SPEC.with_name("mcp-env.json")
+ENVIRONMENTS: list[dict[str, Any]] = (
+    json.loads(ENV_SPEC.read_text(encoding="utf-8"))["cases"] if ENV_SPEC.exists() else []
+)
+
+
+@pytest.mark.parametrize("case", ENVIRONMENTS, ids=[case["name"] for case in ENVIRONMENTS])
+def test_reads_the_shared_environments(case: dict[str, Any]) -> None:
+    settings = settings_from_env(case["env"])
+    if case.get("refused"):
+        assert isinstance(settings, str)
+    else:
+        assert isinstance(settings, Settings)
+        assert {name: getattr(settings, name) for name in case["settings"]} == case["settings"]
+
+
 def test_settings_from_env() -> None:
     assert settings_from_env({}) == Settings(api_key=None)
     assert settings_from_env({"NG_POSTCODE_API_KEY": " k ", "NG_POSTCODE_MAX_LEVEL": "3"}) == (
