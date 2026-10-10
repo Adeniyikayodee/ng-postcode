@@ -130,7 +130,11 @@ def settings_from_env(env: Mapping[str, str]) -> Settings | str:
         return f"NG_POSTCODE_MAX_PAID_CALLS must be a whole number, got {raw_paid!r}"
     geocoder_url = read("NG_GEOCODER_URL").rstrip("/") or None
     geocoder_contact = read("NG_GEOCODER_CONTACT") or None
-    if geocoder_url == PUBLIC_NOMINATIM and geocoder_contact is None:
+    if geocoder_url and not is_http(geocoder_url):
+        return "NG_GEOCODER_URL must be an http or https URL"
+    # By host, so that another scheme, case, port or path does not avoid the requirement.
+    public = geocoder_url and httpx.URL(geocoder_url).host == httpx.URL(PUBLIC_NOMINATIM).host
+    if public and geocoder_contact is None:
         return "the public Nominatim requires NG_GEOCODER_CONTACT, a URL or email identifying you"
     transport = read("NG_POSTCODE_TRANSPORT", "stdio").lower()
     if transport not in ("stdio", "http"):
