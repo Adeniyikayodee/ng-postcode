@@ -180,6 +180,15 @@ test("reads settings from the environment", () => {
   );
 });
 
+test.each(["SECRET\nPART2", "SECRET PART2", "SÉCRET", "k".repeat(257)])(
+  "an unusable server key %j is refused at startup without being echoed",
+  (key) => {
+    expect(settingsFromEnv({ NG_POSTCODE_API_KEY: key })).toBe(
+      "NG_POSTCODE_API_KEY does not hold a usable NIPOST API key",
+    );
+  },
+);
+
 test("a proxy error page is not blamed on the key", async () => {
   const page = (async () =>
     new Response("<html>403 Forbidden</html>", { status: 403 })) as typeof fetch;
