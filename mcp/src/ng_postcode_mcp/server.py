@@ -11,11 +11,10 @@ header; without one it uses the server's key, if the server has one.
 from __future__ import annotations
 
 import inspect
-import itertools
 import logging
 import os
 import sys
-from collections.abc import AsyncIterator, Callable, Iterator, Mapping
+from collections.abc import AsyncIterator, Callable, Mapping
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from importlib.metadata import version
@@ -250,8 +249,8 @@ class State:
     base_url: str
     nipost: AsyncClient | None
     geocoder: Nominatim | None
-    paid: Iterator[int]
-    """Counts the paid lookups made with the server's own key."""
+    paid: list[int]
+    """One item: the paid lookups made with the server's own key."""
 
 
 def create_server(
@@ -275,7 +274,7 @@ def create_server(
         )
         geocoder = geocoder_for(settings, geocoder_http)
         try:
-            yield State(shared, settings.base_url, nipost, geocoder, itertools.count(1))
+            yield State(shared, settings.base_url, nipost, geocoder, [0])
         finally:
             if http is None:
                 await shared.aclose()
@@ -365,12 +364,18 @@ def create_server(
         client, code = api(ctx), checked(postcode)
         state = ctx.request_context.lifespan_context
         # A caller's own key is the caller's money; the server's key has a ceiling.
-        if client is state.nipost and next(state.paid) > settings.max_paid_calls:
+        mine = client is state.nipost
+        if mine and state.paid[0] >= settings.max_paid_calls:
             raise ToolError(
                 f"This server has made its {settings.max_paid_calls} paid lookups. The user can "
                 "raise NG_POSTCODE_MAX_PAID_CALLS, or restart the server, to allow more."
             )
+        # Counted before the call, so that calls made together cannot pass the ceiling.
+        if mine:
+            state.paid[0] += 1
         result = await client.send(lookup(code, level))
+        if mine and not reached_billing(result):
+            state.paid[0] -= 1
         return PostcodeDetails.model_validate(unwrap(result))
 
     # Not offered at all under the default cap, so a model cannot spend by accident.
@@ -636,6 +641,13 @@ def api(ctx: Context[State, Any]) -> AsyncClient:
             f"HTTP send your own in the X-NIPOST-API-Key header. Get one at {KEY_URL}."
         )
     return client
+
+
+def reached_billing(result: object) -> bool:
+    """False for a call NIPOST never saw, or turned away at the door for its key."""
+    if isinstance(result, ApiError):
+        return result.status not in (401, 403)
+    return not isinstance(result, TransportError)
 
 
 def unwrap(result: T | ApiError | TransportError) -> T:

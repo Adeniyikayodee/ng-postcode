@@ -117,6 +117,14 @@ test("paid lookups stop at the ceiling", async () => {
   expect(seen).toHaveLength(3);
 });
 
+test("a lookup NIPOST turned away does not count towards the ceiling", async () => {
+  const client = await connect({ apiKey: "revoked", maxLevel: 2, maxPaidCalls: 2 });
+  const code = { postcode: "EK-01-A03-FK-01" };
+  for (let n = 0; n < 3; n++) {
+    expect((await call(client, "lookup_postcode_details", code)).text).toContain("invalid_api_key");
+  }
+});
+
 test("missing and rejected keys come back as messages without the key", async () => {
   const missing = await call(await connect({ apiKey: undefined }), "lookup_postcode", LOOKUP);
   expect([missing.isError, missing.text]).toEqual([
