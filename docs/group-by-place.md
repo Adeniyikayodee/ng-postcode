@@ -28,11 +28,18 @@ print(Counter(map(district, rows)))
 # Counter({'EK-01-A03': 2, 'LA-11-W06': 1, None: 1})
 ```
 
-The same function works on a column:
+The same function works on a pandas column:
 
 ```python
-frame["postcode"].map(district).value_counts(dropna=False)             # pandas
-table.group_by(pl.col("postcode").map_elements(district, return_dtype=pl.String)).len()  # Polars
+frame["postcode"].map(district).value_counts(dropna=False)
+```
+
+For Polars, the [`ng-postcode-polars`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/native/polars) plugin does the work in Rust in one pass over the column, with no Python call for each row:
+
+```python
+import ng_postcode_polars  # adds the `ng` namespace
+
+table.group_by(pl.col("postcode").ng.truncate("district").ng.format()).len()
 ```
 
 Rows that are not well-formed codes come out under `None`, so they are counted and visible.
