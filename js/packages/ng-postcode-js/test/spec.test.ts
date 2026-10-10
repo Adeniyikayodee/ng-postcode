@@ -109,6 +109,14 @@ test("a Postcode cannot be built without parse", () => {
   expect("unchecked" in Postcode).toBe(false);
 });
 
+test("a segment name that does not exist is refused", () => {
+  const code = parse("EK01A03FK01") as Postcode;
+  for (const name of ["Area", "building", undefined] as unknown as Segment[]) {
+    expect(() => code.prefix(name)).toThrow(TypeError);
+    expect(() => code.segment(name)).toThrow(TypeError);
+  }
+});
+
 test("text that was never checked cannot reach a lookup", () => {
   const code = parse("EK01A03FK01") as Postcode;
   expect(() => Object.assign(code, { compact: "../admin?x=1" })).toThrow(TypeError);

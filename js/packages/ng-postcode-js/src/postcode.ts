@@ -115,12 +115,12 @@ export class Postcode {
   }
 
   segment(segment: Segment): string {
-    return part(this.compact, segment);
+    return part(this.compact, known(segment));
   }
 
   /** The hyphenated code down to `through`: `prefix("area")` is `EK-01-A03-FK`. */
   prefix(through: Segment): string {
-    return SEGMENTS.slice(0, SEGMENTS.indexOf(through) + 1)
+    return SEGMENTS.slice(0, SEGMENTS.indexOf(known(through)) + 1)
       .map((segment) => this.segment(segment))
       .join("-");
   }
@@ -207,6 +207,12 @@ function collect(text: string): string | ParseError {
     index += 1;
   }
   return found === LENGTH ? kept.toUpperCase() : new WrongLength(found);
+}
+
+/** Untyped callers can pass any name: "Area" would otherwise give an empty prefix. */
+function known(segment: Segment): Segment {
+  if (!SEGMENTS.includes(segment)) throw new TypeError(`unknown segment: ${segment}`);
+  return segment;
 }
 
 function part(compact: string, segment: Segment): string {
