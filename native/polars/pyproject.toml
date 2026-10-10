@@ -1,0 +1,49 @@
+[build-system]
+requires = ["maturin>=1.9,<2"]
+build-backend = "maturin"
+
+[project]
+name = "ng-postcode-polars"
+version = "0.1.0"
+description = "Polars expressions for Nigeria's NIPOST digital postcode (NDAPS): parse, format and group by place."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Kayode Adeniyi" }]
+requires-python = ">=3.10"
+keywords = ["nigeria", "postcode", "nipost", "ndaps", "polars", "dataframe"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Typing :: Typed",
+]
+dependencies = ["polars>=1.30"]
+
+[project.urls]
+Repository = "https://github.com/Adeniyikayodee/ng-postcode"
+Issues = "https://github.com/Adeniyikayodee/ng-postcode/issues"
+
+[dependency-groups]
+dev = ["mypy>=1.13", "pytest>=8", "ruff>=0.8"]
+
+[tool.maturin]
+module-name = "ng_postcode_polars._lib"
+features = ["pyo3/extension-module"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF", "PT"]
+
+[tool.mypy]
+strict = true
+files = ["ng_postcode_polars", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+# Rebuild the extension when the Rust changes, not only the Python.
+[tool.uv]
+cache-keys = [{ file = "pyproject.toml" }, { file = "Cargo.toml" }, { file = "src/**/*.rs" }, { file = "../../src/**/*.rs" }]

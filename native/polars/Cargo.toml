@@ -1,0 +1,23 @@
+[package]
+name = "ng-postcode-polars"
+version = "0.1.0"
+edition = "2021"
+description = "Polars expressions for Nigeria's NIPOST digital postcode (NDAPS)."
+license = "MIT"
+repository = "https://github.com/Adeniyikayodee/ng-postcode"
+# Ships as a Python wheel, not as a crate.
+publish = false
+
+[lib]
+name = "ng_postcode_polars"
+crate-type = ["cdylib"]
+
+[dependencies]
+ng-postcode = { version = "0.5.2", path = "../.." }
+polars = { version = "0.55", default-features = false }
+pyo3 = { version = "0.29", features = ["abi3-py310"] }
+pyo3-polars = { version = "0.28", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+
+# Built on its own, so the core crate's lockfile and audit stay free of Polars.
+[workspace]
