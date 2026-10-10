@@ -21,6 +21,9 @@ TIMEOUT = 10.0
 
 UNUSABLE_KEY = "unusable API key"
 
+MAX_BODY = 1_000_000
+"""Characters of a response read before it is refused. Real answers are a few thousand."""
+
 
 @dataclass(frozen=True, slots=True)
 class TransportError:
@@ -65,10 +68,13 @@ class Client:
                 follow_redirects=False,
                 timeout=self._timeout,
             ) as response:
-                parts = []
+                parts, size = [], 0
                 for part in response.iter_text():
+                    size += len(part)
                     if time.monotonic() > deadline:
                         return TransportError("timed out")
+                    if size > MAX_BODY:
+                        return TransportError("response too large")
                     parts.append(part)
         except httpx.HTTPError as error:
             return _transport(error)
@@ -109,14 +115,24 @@ class AsyncClient:
         url = self._base_url + request.path
         try:
             with anyio.fail_after(self._timeout):
-                response = await self._http.get(
-                    url, params=request.params, headers=self._headers, follow_redirects=False
-                )
+                async with self._http.stream(
+                    "GET",
+                    url,
+                    params=request.params,
+                    headers=self._headers,
+                    follow_redirects=False,
+                ) as response:
+                    parts, size = [], 0
+                    async for part in response.aiter_text():
+                        size += len(part)
+                        if size > MAX_BODY:
+                            return TransportError("response too large")
+                        parts.append(part)
         except TimeoutError:
             return TransportError("timed out")
         except httpx.HTTPError as error:
             return _transport(error)
-        return decode(request, response.status_code, response.text)
+        return decode(request, response.status_code, "".join(parts))
 
     async def aclose(self) -> None:
         if self._owns_http:

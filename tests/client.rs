@@ -136,3 +136,30 @@ fn whitespace_around_a_key_is_dropped() {
         .iter()
         .any(|line| line.to_lowercase() == "x-api-key: secret"));
 }
+
+// spec/client.json: caps_the_body
+#[test]
+fn a_body_over_the_cap_is_refused_without_being_read_in_full() {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let served = Arc::new(AtomicUsize::new(0));
+    let count = Arc::clone(&served);
+    thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        stream.write_all(b"HTTP/1.1 200 OK\r\n\r\n").unwrap();
+        while stream.write_all(&[b' '; 65536]).is_ok() {
+            if count.fetch_add(65536, Ordering::SeqCst) > 64_000_000 {
+                break;
+            }
+        }
+    });
+
+    let code = "FC-03-B06-AG-12".parse().unwrap();
+    let failed = Client::new("secret")
+        .with_base_url(base)
+        .send(&api::lookup(code, 1).unwrap())
+        .unwrap_err();
+
+    assert!(matches!(failed, Error::Transport(_)));
+    assert!(served.load(Ordering::SeqCst) < 64_000_000);
+}
