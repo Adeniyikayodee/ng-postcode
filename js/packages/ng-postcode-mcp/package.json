@@ -44,7 +44,7 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@modelcontextprotocol/server": "^2.3.0",
+    "@modelcontextprotocol/server": "^2.3.1",
     "ng-postcode-js": "^0.4.0"
   },
   "engines": {
