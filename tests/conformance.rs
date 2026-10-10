@@ -1,6 +1,6 @@
 //! Runs the shared cases in `spec/vectors.json`, which every implementation must pass.
 
-use ng_postcode::{ParseError, Postcode, Segment};
+use ng_postcode::{ParseError, Postcode, Prefix, Segment};
 use serde_json::{json, Value};
 
 const VECTORS: &str = include_str!("../spec/vectors.json");
@@ -36,6 +36,7 @@ fn segment(name: &str) -> Segment {
 fn error_json(error: &ParseError) -> Value {
     let mut json = match error {
         ParseError::Length { found } => json!({ "kind": "length", "found": found }),
+        ParseError::PrefixLength { found } => json!({ "kind": "prefix_length", "found": found }),
         ParseError::InvalidCharacter { ch, index } => {
             json!({ "kind": "invalid_character", "char": ch.to_string(), "index": index })
         }
@@ -105,5 +106,42 @@ fn prefix() {
         let code = Postcode::parse(text(case, "input")).unwrap();
         let through = segment(text(case, "through"));
         assert_eq!(code.prefix(through), text(case, "prefix"), "{case}");
+    }
+}
+
+#[test]
+fn parse_prefix() {
+    let all = vectors();
+    for case in cases(&all, "/parse_prefix/valid") {
+        let prefix = Prefix::parse(text(case, "input")).unwrap();
+        assert_eq!(prefix.to_string(), text(case, "canonical"), "{case}");
+        assert_eq!(prefix.as_str(), text(case, "compact"), "{case}");
+        assert_eq!(prefix.through(), segment(text(case, "through")), "{case}");
+    }
+    for case in cases(&all, "/parse_prefix/invalid") {
+        let error = Prefix::parse(text(case, "input")).unwrap_err();
+        assert_eq!(error_json(&error), case["error"], "{case}");
+    }
+}
+
+#[test]
+fn prefix_contains_and_parent() {
+    let all = vectors();
+    for case in cases(&all, "/prefix_contains") {
+        let prefix = Prefix::parse(text(case, "prefix")).unwrap();
+        let code = Postcode::parse(text(case, "code")).unwrap();
+        assert_eq!(json!(prefix.contains(&code)), case["contains"], "{case}");
+        assert_eq!(
+            code.truncate(prefix.through()) == prefix,
+            prefix.contains(&code)
+        );
+    }
+    for case in cases(&all, "/prefix_parent") {
+        let parent = Prefix::parse(text(case, "prefix")).unwrap().parent();
+        assert_eq!(
+            json!(parent.map(|p| p.to_string())),
+            case["parent"],
+            "{case}"
+        );
     }
 }

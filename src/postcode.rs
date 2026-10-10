@@ -34,6 +34,8 @@ pub enum Segment {
 pub enum ParseError {
     /// The input did not hold exactly 11 letters and digits.
     Length { found: usize },
+    /// The input did not end where a segment does: after 2, 4, 7, 9 or 11 letters and digits.
+    PrefixLength { found: usize },
     /// The input held something other than letters, digits, spaces and hyphens.
     InvalidCharacter { ch: char, index: usize },
     /// A segment has the wrong shape, such as digits in the state.
@@ -107,6 +109,14 @@ impl Postcode {
         self.joined(through, "-")
     }
 
+    /// The code cut off after `through`, as a value: `truncate(Segment::Area)` is the
+    /// area this building is in.
+    pub fn truncate(&self, through: Segment) -> Prefix {
+        let mut bytes = self.0;
+        bytes[through.range().end..].fill(0);
+        Prefix { bytes, through }
+    }
+
     pub fn segment(&self, segment: Segment) -> &str {
         &self.as_str()[segment.range()]
     }
@@ -138,6 +148,57 @@ impl Postcode {
             .map(|s| self.segment(s))
             .collect::<Vec<_>>()
             .join(separator)
+    }
+}
+
+/// A postcode cut off after one of its segments, such as the district `EK-01-A03`.
+///
+/// It names every code that starts with it, so it serves to group or select codes by
+/// state, LGA, district or area. A whole code is the narrowest prefix.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Prefix {
+    // Zero after the last segment.
+    bytes: [u8; LEN],
+    through: Segment,
+}
+
+impl Prefix {
+    /// Parses a hyphenated, spaced or compact prefix in either case.
+    pub fn parse(input: &str) -> Result<Self, ParseError> {
+        let (bytes, found) = scan(input)?;
+        let through = Segment::ALL
+            .into_iter()
+            .find(|s| s.range().end == found)
+            .ok_or(ParseError::PrefixLength { found })?;
+        match (Segment::ALL.into_iter())
+            .take_while(|&s| s <= through)
+            .find(|s| !s.accepts(&bytes[s.range()]))
+        {
+            Some(segment) => Err(ParseError::Segment(segment)),
+            None => Ok(Self { bytes, through }),
+        }
+    }
+
+    /// The last segment the prefix holds.
+    pub fn through(&self) -> Segment {
+        self.through
+    }
+
+    /// The compact form, `EK01A03`. Store and compare this one.
+    pub fn as_str(&self) -> &str {
+        std::str::from_utf8(&self.bytes[..self.through.range().end])
+            .expect("prefix bytes are ASCII")
+    }
+
+    /// Whether `code` starts with this prefix.
+    pub fn contains(&self, code: &Postcode) -> bool {
+        code.truncate(self.through) == *self
+    }
+
+    /// The prefix one segment shorter, or `None` for a state.
+    pub fn parent(&self) -> Option<Self> {
+        let through = (Segment::ALL.into_iter()).rfind(|&s| s < self.through)?;
+        Some(Postcode(self.bytes).truncate(through))
     }
 }
 
@@ -200,6 +261,14 @@ impl Segment {
 }
 
 fn collect(input: &str) -> Result<[u8; LEN], ParseError> {
+    match scan(input)? {
+        (bytes, LEN) => Ok(bytes),
+        (_, found) => Err(ParseError::Length { found }),
+    }
+}
+
+/// The letters and digits of `input` in upper case, and how many there were.
+fn scan(input: &str) -> Result<([u8; LEN], usize), ParseError> {
     // Every character is checked, but only a postcode's worth is held: no allocation.
     let mut bytes = [0; LEN];
     let mut found = 0;
@@ -215,10 +284,7 @@ fn collect(input: &str) -> Result<[u8; LEN], ParseError> {
         }
         found += 1;
     }
-    match found {
-        LEN => Ok(bytes),
-        _ => Err(ParseError::Length { found }),
-    }
+    Ok((bytes, found))
 }
 
 fn validate(bytes: [u8; LEN]) -> Result<[u8; LEN], ParseError> {
@@ -252,6 +318,46 @@ impl fmt::Debug for Postcode {
     }
 }
 
+impl FromStr for Prefix {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::parse(s)
+    }
+}
+
+impl From<Postcode> for Prefix {
+    fn from(code: Postcode) -> Self {
+        code.truncate(Unit)
+    }
+}
+
+/// The hyphenated form, `EK-01-A03`.
+impl fmt::Display for Prefix {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.pad(&Postcode(self.bytes).prefix(self.through))
+    }
+}
+
+impl fmt::Debug for Prefix {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Prefix({self})")
+    }
+}
+
+/// By compact form, so a prefix sorts just before the codes it contains.
+impl Ord for Prefix {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.as_str().cmp(other.as_str())
+    }
+}
+
+impl PartialOrd for Prefix {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 impl fmt::Display for Segment {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad(match self {
@@ -268,6 +374,12 @@ impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Length { found } => write!(f, "expected {LEN} letters and digits, found {found}"),
+            Self::PrefixLength { found } => {
+                write!(
+                    f,
+                    "expected 2, 4, 7, 9 or 11 letters and digits, found {found}"
+                )
+            }
             Self::InvalidCharacter { ch, index } => {
                 write!(f, "invalid character '{ch}' at index {index}")
             }
@@ -287,6 +399,21 @@ impl serde::Serialize for Postcode {
 
 #[cfg(feature = "serde")]
 impl<'de> serde::Deserialize<'de> for Postcode {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let text = <std::borrow::Cow<'de, str>>::deserialize(deserializer)?;
+        text.parse().map_err(serde::de::Error::custom)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for Prefix {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.collect_str(self)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for Prefix {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let text = <std::borrow::Cow<'de, str>>::deserialize(deserializer)?;
         text.parse().map_err(serde::de::Error::custom)

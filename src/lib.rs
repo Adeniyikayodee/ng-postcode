@@ -26,7 +26,7 @@ pub mod api;
 #[cfg(feature = "client")]
 pub mod client;
 
-pub use postcode::{is_valid, Corrected, ParseError, Postcode, Segment};
+pub use postcode::{is_valid, Corrected, ParseError, Postcode, Prefix, Segment};
 
 // Compiles and runs the examples in the crate README.
 #[cfg(all(doctest, feature = "client"))]
