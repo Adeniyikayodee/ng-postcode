@@ -59,7 +59,7 @@ public final class Client {
         }
         // Surrounding whitespace, as read from a file, is dropped.
         this.apiKey = Objects.requireNonNull(apiKey, "apiKey").strip();
-        this.baseUrl = baseUrl;
+        this.baseUrl = baseUrl.replaceAll("/+$", "");
         this.http = http;
         this.timeout = timeout;
     }

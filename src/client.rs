@@ -59,7 +59,7 @@ impl Client {
     /// Points the client at another host, such as a staging stack or a mock.
     pub fn with_base_url(self, base_url: impl Into<String>) -> Self {
         Self {
-            base_url: base_url.into(),
+            base_url: base_url.into().trim_end_matches('/').to_owned(),
             ..self
         }
     }
