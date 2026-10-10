@@ -48,6 +48,31 @@ test("failures are values, and never carry the key", async () => {
   expect(String(refused) + String(unreachable) + String(slow)).not.toContain("secret");
 });
 
+// spec/client.json: refuses_an_unusable_key
+test.each(["se\ncret", "se cret", "sécret", "", " \n"])(
+  "an unusable key %j is refused without being echoed",
+  async (key) => {
+    let sent = 0;
+    const fake = (() => {
+      sent += 1;
+      return Promise.resolve(new Response());
+    }) as typeof fetch;
+    const refused = await new Client(key, { fetch: fake }).send(lookup(CODE));
+    expect(refused).toEqual(new TransportError("unusable API key"));
+    expect(sent).toBe(0);
+  },
+);
+
+test("whitespace around a key is dropped", async () => {
+  let headers: unknown;
+  const fake = ((_: URL, init: RequestInit) => {
+    headers = init.headers;
+    return Promise.resolve(Response.json({ data: { postcode: "FC-03-B06-AG-12", valid: true } }));
+  }) as typeof fetch;
+  await new Client(" secret\n", { fetch: fake }).send(lookup(CODE));
+  expect(headers).toEqual({ "X-API-Key": "secret" });
+});
+
 test("calls fetch without a receiver, as browsers and Workers require", async () => {
   let receiver: unknown = "unset";
   const fake = function (this: unknown) {
