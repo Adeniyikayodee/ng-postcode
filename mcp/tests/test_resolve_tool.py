@@ -149,3 +149,12 @@ def test_geocoder_settings() -> None:
     assert isinstance(configured, Settings)
     assert configured.geocoder_url == "https://nominatim.openstreetmap.org"
     assert settings_from_env({}) == Settings(api_key=None)
+    for url in (
+        "http://nominatim.openstreetmap.org",
+        "HTTPS://Nominatim.OpenStreetMap.org:443/",
+        "https://nominatim.openstreetmap.org/search",
+    ):
+        assert "NG_GEOCODER_CONTACT" in str(settings_from_env({"NG_GEOCODER_URL": url}))
+    assert settings_from_env({"NG_GEOCODER_URL": "http://localhost:abc"}) == (
+        "NG_GEOCODER_URL must be an http or https URL"
+    )
