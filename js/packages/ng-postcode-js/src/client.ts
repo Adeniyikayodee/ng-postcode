@@ -28,13 +28,16 @@ export class Client {
   readonly #timeoutMs: number;
 
   constructor(apiKey: string, options: ClientOptions = {}) {
-    this.#apiKey = apiKey;
+    // Surrounding whitespace, as read from a file, is dropped.
+    this.#apiKey = apiKey.trim();
     this.#baseUrl = options.baseUrl ?? BASE_URL;
     this.#fetch = options.fetch ?? globalThis.fetch;
     this.#timeoutMs = options.timeoutMs ?? TIMEOUT_MS;
   }
 
   async send<T>(request: Request<T>): Promise<T | ApiError | TransportError> {
+    // A key no header can hold is refused here, as fetch would quote it in its error.
+    if (!/^[\x21-\x7e]+$/.test(this.#apiKey)) return new TransportError("unusable API key");
     const url = new URL(this.#baseUrl + request.path);
     for (const [key, value] of request.params) url.searchParams.append(key, value);
     // Called bare: browsers and Workers reject `fetch` with a receiver.
