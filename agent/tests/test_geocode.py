@@ -140,3 +140,15 @@ async def test_failures_are_values() -> None:
 def test_first_place_rejects_coordinates_that_are_not_numbers() -> None:
     assert first_place("q", [{"lat": "nan", "lon": "5.2", "place_rank": 30}]) is None
     assert first_place("q", [{"lat": "7.6", "lon": "inf", "place_rank": 30}]) is None
+    assert first_place("q", [{"lat": "95.0", "lon": "5.2", "place_rank": 30}]) is None
+    assert first_place("q", [{"lat": "7.6", "lon": "-181", "place_rank": 30}]) is None
+    assert first_place("q", [{"lat": 10**400, "lon": "5.2", "place_rank": 30}]) is None
+    assert first_place("q", [{"lat": "7.6", "lon": "5.2", "place_rank": float("inf")}]) is None
+
+
+@pytest.mark.anyio
+async def test_a_body_nested_too_deep_to_read_is_a_failure() -> None:
+    deep = httpx.Response(200, content="[" * 200_000)
+    assert await nominatim(lambda r: deep)("q") == GeocodeFailure(
+        "geocoder answered with something other than JSON"
+    )
