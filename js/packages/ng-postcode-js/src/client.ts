@@ -33,7 +33,7 @@ export class Client {
   constructor(apiKey: string, options: ClientOptions = {}) {
     // Surrounding whitespace, as read from a file, is dropped.
     this.#apiKey = apiKey.trim();
-    this.#baseUrl = options.baseUrl ?? BASE_URL;
+    this.#baseUrl = (options.baseUrl ?? BASE_URL).replace(/\/+$/, "");
     this.#fetch = options.fetch ?? globalThis.fetch;
     this.#timeoutMs = options.timeoutMs ?? TIMEOUT_MS;
     if (!(this.#timeoutMs > 0 && Number.isFinite(this.#timeoutMs))) {

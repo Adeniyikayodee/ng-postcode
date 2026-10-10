@@ -51,7 +51,7 @@ class Client:
         self._timeout = _seconds(timeout)
         self._http = http if http is not None else httpx.Client(timeout=timeout)
         self._owns_http = http is None
-        self._base_url = base_url
+        self._base_url = base_url.rstrip("/")
         self._headers = _headers(api_key)
 
     def send(self, request: Request[T]) -> T | ApiError | TransportError:
@@ -107,7 +107,7 @@ class AsyncClient:
         self._timeout = _seconds(timeout)
         self._http = http if http is not None else httpx.AsyncClient(timeout=timeout)
         self._owns_http = http is None
-        self._base_url = base_url
+        self._base_url = base_url.rstrip("/")
         self._headers = _headers(api_key)
 
     async def send(self, request: Request[T]) -> T | ApiError | TransportError:

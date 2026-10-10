@@ -139,6 +139,15 @@ class ClientTest {
         assertEquals("secret", seen.get(0).getRequestHeaders().getFirst("X-API-Key"));
     }
 
+    // spec/client.json: ignores_a_trailing_slash
+    @Test
+    void aTrailingSlashOnTheBaseUrlIsIgnored() throws IOException {
+        clientFor(exchange -> reply(exchange, 200, "{\"data\": {\"valid\": true}}"));
+        String base = "http://127.0.0.1:" + server.getAddress().getPort() + "//";
+        assertInstanceOf(Result.Ok.class, new Client("secret", base).send(Api.lookup(CODE)));
+        assertEquals("/v1/lookup", seen.get(0).getRequestURI().getPath());
+    }
+
     // spec/client.json: failures_are_values
     @Test
     void aSilentServerTimesOutAsAValueWithoutTheKey() throws IOException {
