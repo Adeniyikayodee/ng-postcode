@@ -31,6 +31,7 @@ if (code instanceof Postcode) {
 - `parse` accepts hyphenated, spaced or compact input in either case.
 - `parseLenient` first swaps look-alikes that cannot occur where they stand (`O`/`0`, `I`/`1`, `S`/`5`, `B`/`8`) and reports how many it changed.
 - `fromSegments` assembles a code from its parts and zero-fills the LGA and unit.
+- `parsePrefix` reads a code cut off after a segment, such as the district `EK-01-A03`, and `truncate` cuts a code down to one. A prefix knows which codes it contains, so it groups them by state, LGA, district, or area.
 - `isValid` answers yes or no.
 
 A well-formed code is not necessarily assigned to a building. Only the API can confirm that a postcode exists.
