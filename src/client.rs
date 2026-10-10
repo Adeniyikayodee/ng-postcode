@@ -47,9 +47,11 @@ impl Client {
     }
 
     /// Allows `timeout` for a whole exchange, body included, instead of 10 seconds.
+    /// Anything over a day is read as a day.
     pub fn with_timeout(self, timeout: Duration) -> Self {
         Self {
-            agent: agent(timeout),
+            // A deadline is the clock plus the timeout, which overflows for `Duration::MAX`.
+            agent: agent(timeout.min(Duration::from_secs(86_400))),
             ..self
         }
     }
