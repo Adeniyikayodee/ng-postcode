@@ -1,0 +1,120 @@
+{
+  "about": "Environments both MCP servers must read the same way. settings holds the four values they share; refused means the server must not start. A blank variable is an unset one.",
+  "cases": [
+    {
+      "name": "nothing_set",
+      "env": {},
+      "settings": {
+        "api_key": null,
+        "max_level": 1,
+        "max_paid_calls": 25,
+        "base_url": "https://api.postcode.gov.ng"
+      }
+    },
+    {
+      "name": "blank_is_unset",
+      "env": {
+        "NG_POSTCODE_API_KEY": "",
+        "NG_POSTCODE_MAX_LEVEL": " ",
+        "NG_POSTCODE_MAX_PAID_CALLS": "",
+        "NG_POSTCODE_BASE_URL": "\t"
+      },
+      "settings": {
+        "api_key": null,
+        "max_level": 1,
+        "max_paid_calls": 25,
+        "base_url": "https://api.postcode.gov.ng"
+      }
+    },
+    {
+      "name": "values_are_trimmed",
+      "env": {
+        "NG_POSTCODE_API_KEY": " k\n",
+        "NG_POSTCODE_MAX_LEVEL": " 3 ",
+        "NG_POSTCODE_MAX_PAID_CALLS": " 7 ",
+        "NG_POSTCODE_BASE_URL": " https://staging.example "
+      },
+      "settings": {
+        "api_key": "k",
+        "max_level": 3,
+        "max_paid_calls": 7,
+        "base_url": "https://staging.example"
+      }
+    },
+    {
+      "name": "no_paid_calls_at_all",
+      "env": {
+        "NG_POSTCODE_MAX_PAID_CALLS": "0"
+      },
+      "settings": {
+        "api_key": null,
+        "max_level": 1,
+        "max_paid_calls": 0,
+        "base_url": "https://api.postcode.gov.ng"
+      }
+    },
+    {
+      "name": "level_zero",
+      "env": {
+        "NG_POSTCODE_MAX_LEVEL": "0"
+      },
+      "refused": true
+    },
+    {
+      "name": "level_six",
+      "env": {
+        "NG_POSTCODE_MAX_LEVEL": "6"
+      },
+      "refused": true
+    },
+    {
+      "name": "level_in_words",
+      "env": {
+        "NG_POSTCODE_MAX_LEVEL": "two"
+      },
+      "refused": true
+    },
+    {
+      "name": "level_in_other_digits",
+      "env": {
+        "NG_POSTCODE_MAX_LEVEL": "\u0663"
+      },
+      "refused": true
+    },
+    {
+      "name": "paid_calls_negative",
+      "env": {
+        "NG_POSTCODE_MAX_PAID_CALLS": "-1"
+      },
+      "refused": true
+    },
+    {
+      "name": "paid_calls_fraction",
+      "env": {
+        "NG_POSTCODE_MAX_PAID_CALLS": "1.5"
+      },
+      "refused": true
+    },
+    {
+      "name": "paid_calls_in_other_digits",
+      "env": {
+        "NG_POSTCODE_MAX_PAID_CALLS": "\u0663"
+      },
+      "refused": true
+    },
+    {
+      "name": "key_with_a_line_break",
+      "env": {
+        "NG_POSTCODE_API_KEY": "SECRET\nPART2"
+      },
+      "refused": true
+    },
+    {
+      "name": "key_outside_ascii",
+      "env": {
+        "NG_POSTCODE_API_KEY": "S\u00c9CRET"
+      },
+      "refused": true
+    }
+  ]
+}
