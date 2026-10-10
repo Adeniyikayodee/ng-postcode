@@ -25,6 +25,9 @@ public final class Api {
 
     // Responses are read as a tree and checked by hand: data binding would turn a missing
     // boolean into false, and a renamed field into "not assigned".
+    /** Levels of nesting a body may have: what serde_json, behind the Rust crate, reads. */
+    private static final int MAX_DEPTH = 127;
+
     private static final ObjectMapper JSON =
             new ObjectMapper().enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
 
@@ -108,8 +111,8 @@ public final class Api {
         if (!finite(envelope)) {
             return malformed(status, "number out of range");
         }
-        if (!sound(envelope)) {
-            return malformed(status, "text with a lone surrogate");
+        if (!sound(envelope, MAX_DEPTH)) {
+            return malformed(status, "a lone surrogate, or nesting too deep");
         }
         JsonNode failure = envelope.path("error");
         if (failure.isObject()) {
@@ -159,10 +162,13 @@ public final class Api {
         return true;
     }
 
-    /** No lone surrogate in any text or key, which the other implementations refuse. */
-    private static boolean sound(JsonNode node) {
+    /** No lone surrogate in any text or key, and no more than {@code room} levels of nesting. */
+    private static boolean sound(JsonNode node, int room) {
         if (node.isTextual()) {
             return sound(node.textValue());
+        }
+        if (node.isContainerNode() && room == 0) {
+            return false;
         }
         for (var names = node.fieldNames(); names.hasNext(); ) {
             if (!sound(names.next())) {
@@ -170,7 +176,7 @@ public final class Api {
             }
         }
         for (JsonNode child : node) {
-            if (!sound(child)) {
+            if (!sound(child, room - 1)) {
                 return false;
             }
         }
