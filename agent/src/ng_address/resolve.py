@@ -81,7 +81,11 @@ class Resolver:
     async def _by_location(self, at: Coordinate) -> Resolution:
         if self.nipost is None:
             return unresolved("location", NO_NIPOST)
-        found = await self.nipost.send(reverse(at, LOCATION_RADIUS_M))
+        try:
+            request = reverse(at, LOCATION_RADIUS_M)
+        except ValueError:
+            return unresolved("location", "The location is not a point on the globe.")
+        found = await self.nipost.send(request)
         if isinstance(found, ApiError | TransportError):
             return unresolved("location", f"NIPOST reverse geocoding failed: {found}.")
         return from_location(found)

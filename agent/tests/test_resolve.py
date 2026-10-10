@@ -111,6 +111,14 @@ async def test_a_location_pin_gives_the_building() -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize("pin", [(95.0, 5.19), (7.62, 181.0), (float("nan"), 5.19)])
+async def test_a_pin_off_the_globe_is_unresolved(pin: tuple[float, float]) -> None:
+    result = await Resolver(nipost=nipost()).resolve("x", Coordinate(lat=pin[0], lng=pin[1]))
+    assert (result.status, result.method) == ("unresolved", "location")
+    assert result.evidence == ["The location is not a point on the globe."]
+
+
+@pytest.mark.anyio
 async def test_behind_a_landmark_gives_only_the_area() -> None:
     resolver = Resolver(
         nipost=nipost(),
