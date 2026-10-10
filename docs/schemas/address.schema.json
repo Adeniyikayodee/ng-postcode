@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adeniyikayodee.github.io/ng-postcode/schemas/address.schema.json",
+  "title": "Nigerian address record",
+  "description": "A Nigerian address as passed between systems: a postcode reference, with the names and lines that other address formats need. Only the postcode and the country are required. Receivers ignore fields they do not know.",
+  "type": "object",
+  "required": [
+    "postcode",
+    "country"
+  ],
+  "properties": {
+    "postcode": {
+      "$ref": "postcode-reference.schema.json"
+    },
+    "country": {
+      "description": "ISO 3166-1 alpha-2.",
+      "const": "NG"
+    },
+    "state": {
+      "description": "State name, such as Ekiti. NIPOST's lookup returns it as state_name.",
+      "type": "string",
+      "minLength": 1
+    },
+    "lga": {
+      "description": "Local government area name. NIPOST's lookup returns it as lga_name.",
+      "type": "string",
+      "minLength": 1
+    },
+    "locality": {
+      "description": "Town or locality name, such as Ado Ekiti. NIPOST's lookup returns it as locality_name.",
+      "type": "string",
+      "minLength": 1
+    },
+    "street_address": {
+      "description": "House number and street on one line, such as 12 NTA Road.",
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "description": "What else locates the place, in the sender's words, such as behind Fabian Hotel.",
+      "type": "string",
+      "minLength": 1
+    },
+    "location": {
+      "description": "A point on the building, in WGS 84 decimal degrees.",
+      "type": "object",
+      "required": [
+        "lat",
+        "lng"
+      ],
+      "properties": {
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lng": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "postcode": {
+        "code": "EK-01-A03-FK-01",
+        "level": "building",
+        "confidence": "high",
+        "assigned": true,
+        "checked_at": "2026-10-03T12:00:00Z"
+      },
+      "country": "NG",
+      "state": "Ekiti",
+      "lga": "Ado Ekiti",
+      "locality": "Ado Ekiti",
+      "street_address": "12 NTA Road",
+      "location": {
+        "lat": 7.6211,
+        "lng": 5.2214
+      }
+    },
+    {
+      "postcode": {
+        "code": "EK-01-A03-FK",
+        "level": "area",
+        "confidence": "medium"
+      },
+      "country": "NG",
+      "description": "behind Fabian Hotel, NTA Road"
+    }
+  ]
+}
