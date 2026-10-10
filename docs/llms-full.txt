@@ -411,7 +411,7 @@ Part of the [ng-postcode project](https://github.com/Adeniyikayodee/ng-postcode)
 npm install ng-postcode-js
 ```
 
-No runtime dependencies. Needs Node 22.12 or later, or any runtime with `fetch`.
+No runtime dependencies. Needs Node 22.12 or later, or any runtime with `fetch`. It is an ES module that `require()` can also load; a TypeScript project compiled to CommonJS needs `"module": "nodenext"` for that, as `node16` rejects it.
 
 ## Offline
 
