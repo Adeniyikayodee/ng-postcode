@@ -66,7 +66,9 @@ def landmark_for(query: str, parsed: ParsedAddress | None) -> Landmark | None:
     if parsed is None:
         return None
     text = query.casefold()
-    return next((lm for lm in parsed.landmarks if lm.name.casefold() in text), None)
+    # The longest name, so "Bank" does not answer for "First Bank". An empty name is in every query.
+    named = [lm for lm in parsed.landmarks if lm.name.strip() and lm.name.casefold() in text]
+    return max(named, key=lambda lm: len(lm.name), default=None)
 
 
 def is_the_place(landmark: Landmark | None, parsed: ParsedAddress | None) -> bool:
