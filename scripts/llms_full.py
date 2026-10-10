@@ -15,6 +15,7 @@ SOURCES = [
     "docs/llms.txt",
     "README.md",
     "docs/api-differences.md",
+    "docs/address-record.md",
     "python/README.md",
     "CRATE.md",
     "js/packages/ng-postcode-js/README.md",

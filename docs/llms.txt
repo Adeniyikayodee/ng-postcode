@@ -12,6 +12,7 @@ Since 1 October 2026 a Nigerian building's postcode is this 11-character code. A
 - A well-formed code is not necessarily assigned to a building; only the API confirms that.
 
 - To pass a postcode between systems or agents, use a postcode reference: `{"code": "EK-01-A03-FK", "level": "area", "confidence": "medium"}`. Schema: https://adeniyikayodee.github.io/ng-postcode/schemas/postcode-reference.schema.json
+- To pass a whole address, wrap that reference in an address record with `country: "NG"` and optional `state`, `lga`, `locality`, `street_address`, `description`, and `location`. It maps onto ISO 20022, FHIR, schema.org, and vCard: https://adeniyikayodee.github.io/ng-postcode/address-record
 
 ## Packages
 
