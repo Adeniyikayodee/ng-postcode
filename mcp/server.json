@@ -38,6 +38,16 @@
           ]
         },
         {
+          "name": "NG_POSTCODE_MAX_PAID_CALLS",
+          "description": "How many paid lookups one run of the server may make with its own key.",
+          "default": "25"
+        },
+        {
+          "name": "NG_POSTCODE_BASE_URL",
+          "description": "Alternative API host, such as a staging stack.",
+          "default": "https://api.postcode.gov.ng"
+        },
+        {
           "name": "NG_GEOCODER_URL",
           "description": "Nominatim server used by resolve_address to place described addresses. Ideally your own instance."
         },
@@ -53,6 +63,27 @@
             "stdio",
             "http"
           ]
+        },
+        {
+          "name": "NG_POSTCODE_HOST",
+          "description": "Address the HTTP transport listens on.",
+          "default": "127.0.0.1"
+        },
+        {
+          "name": "NG_POSTCODE_PORT",
+          "description": "Port the HTTP transport listens on.",
+          "default": "8000"
+        },
+        {
+          "name": "NG_POSTCODE_ALLOW_SHARED_KEY",
+          "description": "Set to 1 to let the HTTP transport start with a server key on a public address.",
+          "choices": [
+            "1"
+          ]
+        },
+        {
+          "name": "NG_POSTCODE_ALLOWED_HOSTS",
+          "description": "Host names the HTTP transport answers to, separated by commas. Required with a server key on a public address."
         }
       ]
     },
@@ -82,6 +113,16 @@
             "4",
             "5"
           ]
+        },
+        {
+          "name": "NG_POSTCODE_MAX_PAID_CALLS",
+          "description": "How many paid lookups one run of the server may make with its own key.",
+          "default": "25"
+        },
+        {
+          "name": "NG_POSTCODE_BASE_URL",
+          "description": "Alternative API host, such as a staging stack.",
+          "default": "https://api.postcode.gov.ng"
         }
       ]
     }
