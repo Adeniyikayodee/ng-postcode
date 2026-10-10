@@ -25,6 +25,19 @@ test("sends the key and query, refuses redirects, and decodes the answer", async
   expect(seen?.[1]).toMatchObject({ headers: { "X-API-Key": "secret" }, redirect: "error" });
 });
 
+// spec/client.json: ignores_a_trailing_slash
+test("a trailing slash on the base URL is ignored", async () => {
+  let seen = "";
+  const fake = ((url: URL) => {
+    seen = String(url);
+    return Promise.resolve(Response.json({ data: { valid: true } }));
+  }) as typeof fetch;
+  await new Client("secret", { baseUrl: "https://staging.example//", fetch: fake }).send(
+    lookup(CODE),
+  );
+  expect(seen).toBe("https://staging.example/v1/lookup?code=FC-03-B06-AG-12&level=1");
+});
+
 // spec/client.json: failures_are_values
 test("failures are values, and never carry the key", async () => {
   const refused = await client(() =>

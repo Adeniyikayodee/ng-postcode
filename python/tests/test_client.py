@@ -40,6 +40,27 @@ def test_sends_the_key_and_decodes_the_answer() -> None:
     assert (found.postcode, found.valid) == ("EK-01-A03-FK-01", True)
 
 
+# spec/client.json: ignores_a_trailing_slash
+def test_a_trailing_slash_on_the_base_url_is_ignored() -> None:
+    paths: list[str] = []
+
+    def record(request: httpx.Request) -> httpx.Response:
+        paths.append(request.url.path)
+        return httpx.Response(200, json={"data": {"valid": True}})
+
+    http = httpx.Client(transport=httpx.MockTransport(record))
+    with Client("key", base_url="https://staging.example//", http=http) as client:
+        client.send(lookup(CODE))
+
+    async def run() -> None:
+        http = httpx.AsyncClient(transport=httpx.MockTransport(record))
+        async with AsyncClient("key", base_url="https://staging.example/", http=http) as client:
+            await client.send(lookup(CODE))
+
+    asyncio.run(run())
+    assert paths == ["/v1/lookup", "/v1/lookup"]
+
+
 # spec/client.json: failures_are_values
 def test_api_and_network_failures_are_values() -> None:
     with sync_client("wrong", api) as client:

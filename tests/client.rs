@@ -134,13 +134,15 @@ fn whitespace_around_a_key_is_dropped() {
 
     let code = "FC-03-B06-AG-12".parse().unwrap();
     let _ = Client::new(" secret\n")
-        .with_base_url(base)
+        .with_base_url(format!("{base}//"))
         .send(&api::lookup(code, 1).unwrap());
 
     let head = seen.join().unwrap();
     assert!(head
         .iter()
         .any(|line| line.to_lowercase() == "x-api-key: secret"));
+    // spec/client.json: ignores_a_trailing_slash
+    assert!(head[0].starts_with("GET /v1/lookup?"));
 }
 
 // spec/client.json: caps_the_body
