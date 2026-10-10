@@ -88,6 +88,14 @@ fn an_unreachable_host_is_a_value_without_the_key() {
     assert!(matches!(failed, Error::Transport(_)));
     assert!(!format!("{failed} {failed:?}").contains("secret"));
 
+    let mut chain = vec![failed.to_string()];
+    let mut cause = std::error::Error::source(&failed);
+    while let Some(error) = cause {
+        chain.push(error.to_string());
+        cause = error.source();
+    }
+    assert!(chain.windows(2).all(|pair| pair[0] != pair[1]), "{chain:?}");
+
     let forever = Client::new("secret")
         .with_base_url(format!("http://{closed}"))
         .with_timeout(Duration::MAX)
