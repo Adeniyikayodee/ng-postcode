@@ -69,6 +69,15 @@ def test_api_and_network_failures_are_values() -> None:
         )
     with sync_client("key", unreachable) as client:
         assert client.send(lookup(CODE)) == TransportError("connection refused")
+    with Client("key", base_url="http://localhost:abc") as client:
+        nowhere = client.send(lookup(CODE))
+    assert isinstance(nowhere, TransportError)
+
+    async def run() -> Lookup | ApiError | TransportError:
+        async with AsyncClient("key", base_url="http://[::1") as client:
+            return await client.send(lookup(CODE))
+
+    assert isinstance(asyncio.run(run()), TransportError)
 
 
 # spec/client.json: refuses_an_unusable_key
