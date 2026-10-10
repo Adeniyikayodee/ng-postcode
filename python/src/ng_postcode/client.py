@@ -19,6 +19,8 @@ T = TypeVar("T")
 TIMEOUT = 10.0
 """Seconds allowed for a whole exchange, body included."""
 
+UNUSABLE_KEY = "unusable API key"
+
 
 @dataclass(frozen=True, slots=True)
 class TransportError:
@@ -45,10 +47,12 @@ class Client:
         self._http = http if http is not None else httpx.Client(timeout=timeout)
         self._owns_http = http is None
         self._base_url = base_url
-        self._headers = {"X-API-Key": api_key}
+        self._headers = _headers(api_key)
         self._timeout = timeout
 
     def send(self, request: Request[T]) -> T | ApiError | TransportError:
+        if self._headers is None:
+            return TransportError(UNUSABLE_KEY)
         url = self._base_url + request.path
         # httpx times each read, so a body that drips would never end: the deadline does.
         deadline = time.monotonic() + self._timeout
@@ -96,10 +100,12 @@ class AsyncClient:
         self._http = http if http is not None else httpx.AsyncClient(timeout=timeout)
         self._owns_http = http is None
         self._base_url = base_url
-        self._headers = {"X-API-Key": api_key}
+        self._headers = _headers(api_key)
         self._timeout = timeout
 
     async def send(self, request: Request[T]) -> T | ApiError | TransportError:
+        if self._headers is None:
+            return TransportError(UNUSABLE_KEY)
         url = self._base_url + request.path
         try:
             with anyio.fail_after(self._timeout):
@@ -121,6 +127,14 @@ class AsyncClient:
 
     async def __aexit__(self, *exc_info: object) -> None:
         await self.aclose()
+
+
+def _headers(api_key: str) -> dict[str, str] | None:
+    """The key header, or None for a key no header can hold. Surrounding whitespace, as read
+    from a file, is dropped."""
+    key = api_key.strip()
+    usable = key and key.isascii() and key.isprintable() and " " not in key
+    return {"X-API-Key": key} if usable else None
 
 
 def _transport(error: httpx.HTTPError) -> TransportError:

@@ -5,6 +5,7 @@ import time
 from collections.abc import AsyncIterator, Callable, Iterator
 
 import httpx
+import pytest
 
 from ng_postcode import Postcode
 from ng_postcode.api import ApiError, Lookup, lookup
@@ -46,6 +47,33 @@ def test_api_and_network_failures_are_values() -> None:
         )
     with sync_client("key", unreachable) as client:
         assert client.send(lookup(CODE)) == TransportError("connection refused")
+
+
+# spec/client.json: refuses_an_unusable_key
+@pytest.mark.parametrize("key", ["se\ncret", "se cret", "sécret", "", " \n"])
+def test_an_unusable_key_is_refused_without_being_echoed(key: str) -> None:
+    sent: list[httpx.Request] = []
+
+    def record(request: httpx.Request) -> httpx.Response:
+        sent.append(request)
+        return httpx.Response(200)
+
+    transport = httpx.MockTransport(record)
+    with Client(key, http=httpx.Client(transport=transport)) as client:
+        refused = client.send(lookup(CODE))
+
+    async def run() -> Lookup | ApiError | TransportError:
+        async with AsyncClient(key, http=httpx.AsyncClient(transport=transport)) as client:
+            return await client.send(lookup(CODE))
+
+    assert refused == asyncio.run(run()) == TransportError("unusable API key")
+    assert sent == []
+
+
+def test_whitespace_around_a_key_is_dropped() -> None:
+    with sync_client(" key\n", api) as client:
+        found = client.send(lookup(CODE))
+    assert isinstance(found, Lookup)
 
 
 # spec/client.json: refuses_redirects
