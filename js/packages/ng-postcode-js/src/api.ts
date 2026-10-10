@@ -122,7 +122,7 @@ export interface NearbyUnit {
  * not a `Postcode`, so that text which was never validated cannot reach a paid lookup.
  */
 export function lookup(code: Postcode, level = 1): Request<Lookup> {
-  if (!(code instanceof Postcode)) throw new TypeError("code must be a Postcode from parse()");
+  if (!Postcode.is(code)) throw new TypeError("code must be a Postcode from parse()");
   if (typeof level !== "number") throw new TypeError(`level must be a number, got ${level}`);
   if (!Number.isInteger(level) || level < 1 || level > 5) {
     throw new RangeError(`level must be 1 to 5, got ${level}`);

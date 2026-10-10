@@ -109,6 +109,15 @@ test("a Postcode cannot be built without parse", () => {
   expect("unchecked" in Postcode).toBe(false);
 });
 
+test("text that was never checked cannot reach a lookup", () => {
+  const code = parse("EK01A03FK01") as Postcode;
+  expect(() => Object.assign(code, { compact: "../admin?x=1" })).toThrow(TypeError);
+  expect(() => Object.defineProperty(code, "compact", { value: "x" })).toThrow(TypeError);
+  expect(code.compact).toBe("EK01A03FK01");
+  const forged = Object.create(Postcode.prototype, { compact: { value: "not a code!" } });
+  expect(() => lookup(forged)).toThrow(TypeError);
+});
+
 const REQUESTS: Record<string, Request<unknown>> = {
   lookup: lookup(CODE),
   autocomplete: autocomplete("E"),

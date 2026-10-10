@@ -60,12 +60,24 @@ const CHECKED: unique symbol = Symbol("checked");
  * code belongs to a real building. Build one with `parse`.
  */
 export class Postcode {
+  // Private and frozen, so no assignment can put unchecked text in a request.
+  readonly #compact: string;
+
   /** @internal Callers use `parse`: only this module holds the key. */
-  constructor(
-    key: typeof CHECKED,
-    readonly compact: string,
-  ) {
+  constructor(key: typeof CHECKED, compact: string) {
     if (key !== CHECKED) throw new TypeError("build a Postcode with parse()");
+    this.#compact = compact;
+    Object.freeze(this);
+  }
+
+  /** Whether `value` came from `parse`. A look-alike object does not pass, as it does `instanceof`. */
+  static is(value: unknown): value is Postcode {
+    return typeof value === "object" && value !== null && #compact in value;
+  }
+
+  /** The form to store and compare, `EK01A03FK01`. */
+  get compact(): string {
+    return this.#compact;
   }
 
   /** The canonical hyphenated form, `EK-01-A03-FK-01`. */
