@@ -105,7 +105,7 @@ it, and makes only free calls unless you pass `--paid`.
 - Never commit a key, and never put one in an issue or a pull request.
 - Level 2 and above return a person's address. Do not commit captured
   responses that contain one.
-- When the live API differs from its documentation, record it in
+- When the live API does something its documentation does not describe, record it in
   `docs/api-differences.md`, with the date observed, and capture the body in
   `spec/responses.json` if it holds no personal data.
 
