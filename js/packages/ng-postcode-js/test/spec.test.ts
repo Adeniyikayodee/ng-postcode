@@ -117,6 +117,11 @@ test("a segment name that does not exist is refused", () => {
   }
 });
 
+test("a segment value that is not text is an invalid segment", () => {
+  const untyped = fromSegments as (...values: unknown[]) => unknown;
+  expect(untyped("EK", 1, "A03", "FK", "01")).toEqual(new InvalidSegment("lga"));
+});
+
 test("text that was never checked cannot reach a lookup", () => {
   const code = parse("EK01A03FK01") as Postcode;
   expect(() => Object.assign(code, { compact: "../admin?x=1" })).toThrow(TypeError);
