@@ -177,6 +177,7 @@ export function decode<T>(request: Request<T>, status: number, body: string): T 
     return malformed(status, `not JSON: ${error instanceof Error ? error.message : error}`);
   }
   if (!isObject(envelope)) return malformed(status, "expected a JSON object");
+  if (!sound(envelope)) return malformed(status, "text with a lone surrogate");
   const failure = envelope.error;
   if (isObject(failure)) {
     return new ApiError(
@@ -197,6 +198,14 @@ function finite(_key: string, value: unknown): unknown {
   if (typeof value === "number" && !Number.isFinite(value))
     throw new RangeError("number out of range");
   return value;
+}
+
+/** No lone surrogate in any text or key, which the other implementations refuse. */
+function sound(value: unknown): boolean {
+  if (typeof value === "string") return !/\p{Cs}/u.test(value);
+  if (Array.isArray(value)) return value.every(sound);
+  if (!isObject(value)) return true;
+  return Object.entries(value).every(([key, item]) => sound(key) && sound(item));
 }
 
 function around(at: Coordinate, key: string, metres?: number): Array<readonly [string, string]> {

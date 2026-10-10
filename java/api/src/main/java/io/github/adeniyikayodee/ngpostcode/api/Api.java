@@ -108,6 +108,9 @@ public final class Api {
         if (!finite(envelope)) {
             return malformed(status, "number out of range");
         }
+        if (!sound(envelope)) {
+            return malformed(status, "text with a lone surrogate");
+        }
         JsonNode failure = envelope.path("error");
         if (failure.isObject()) {
             String code = text(failure, "code");
@@ -150,6 +153,37 @@ public final class Api {
         }
         for (JsonNode child : node) {
             if (!finite(child)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** No lone surrogate in any text or key, which the other implementations refuse. */
+    private static boolean sound(JsonNode node) {
+        if (node.isTextual()) {
+            return sound(node.textValue());
+        }
+        for (var names = node.fieldNames(); names.hasNext(); ) {
+            if (!sound(names.next())) {
+                return false;
+            }
+        }
+        for (JsonNode child : node) {
+            if (!sound(child)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean sound(String text) {
+        for (int i = 0; i < text.length(); i++) {
+            if (Character.isHighSurrogate(text.charAt(i))
+                    && i + 1 < text.length()
+                    && Character.isLowSurrogate(text.charAt(i + 1))) {
+                i++;
+            } else if (Character.isSurrogate(text.charAt(i))) {
                 return false;
             }
         }
