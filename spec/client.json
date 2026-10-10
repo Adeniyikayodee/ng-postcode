@@ -4,7 +4,8 @@
     "sends_the_key": "The key travels in the X-API-Key header.",
     "refuses_redirects": "A redirect is not followed, as it would carry the key to another host.",
     "times_out_a_stalled_body": "One deadline covers the whole exchange, so a body that stalls or drips ends as a transport failure.",
-    "failures_are_values": "A refused request, an unreachable host and a timeout come back as values that never contain the key."
+    "failures_are_values": "A refused request, an unreachable host and a timeout come back as values that never contain the key.",
+    "refuses_an_unusable_key": "Whitespace around the key is dropped. A key no header can hold is refused before anything is sent, as a value that never contains it."
   },
   "clients": [
     "tests/client.rs",
