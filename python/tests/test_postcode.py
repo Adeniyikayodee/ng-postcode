@@ -42,7 +42,8 @@ def test_exposes_segments() -> None:
         "TC",
         "10",
     )
-    assert repr(code) == "Postcode('LA-11-W06-TC-10')"
+    assert repr(code) == "Postcode('LA11W06TC10')"
+    assert eval(repr(code)) == code
 
 
 def test_postcodes_are_immutable_hashable_and_ordered() -> None:

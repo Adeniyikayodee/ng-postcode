@@ -96,7 +96,7 @@ class Postcode:
         return self.prefix(Segment.UNIT)
 
     def __repr__(self) -> str:
-        return f"Postcode('{self}')"
+        return f"Postcode('{self.compact}')"
 
     @property
     def spaced(self) -> str:
@@ -145,7 +145,7 @@ def parse(text: str) -> Postcode | ParseError:
     """Parse a hyphenated, spaced or compact code in either case.
 
     >>> parse("ek 01 a03 fk 01")
-    Postcode('EK-01-A03-FK-01')
+    Postcode('EK01A03FK01')
     >>> parse("EK-00-A03-FK-01")
     InvalidSegment(segment=<Segment.LGA: 'lga'>)
     """
@@ -165,7 +165,7 @@ def parse_lenient(text: str) -> Corrected | ParseError:
     it with them when `corrections` is not zero.
 
     >>> parse_lenient("EK-O1-A03-FK-0I")
-    Corrected(postcode=Postcode('EK-01-A03-FK-01'), corrections=2)
+    Corrected(postcode=Postcode('EK01A03FK01'), corrections=2)
     """
     raw = _collect(text)
     if not isinstance(raw, str):
@@ -183,7 +183,7 @@ def from_segments(
     """Build a code from its segments, zero-filling the LGA and unit.
 
     >>> from_segments("ek", "1", "a03", "fk", "1")
-    Postcode('EK-01-A03-FK-01')
+    Postcode('EK01A03FK01')
     """
     values = (state, lga, district, area, unit)
     padded = [_padded(s, v) for s, v in zip(Segment, values, strict=True)]
