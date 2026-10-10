@@ -22,7 +22,21 @@ test("sends the key and query, refuses redirects, and decodes the answer", async
   }).send(lookup(CODE, 2));
   expect(found).toMatchObject({ valid: true });
   expect(seen?.[0]).toBe("https://api.postcode.gov.ng/v1/lookup?code=FC-03-B06-AG-12&level=2");
-  expect(seen?.[1]).toMatchObject({ headers: { "X-API-Key": "secret" }, redirect: "error" });
+  expect(seen?.[1]).toMatchObject({ headers: { "X-API-Key": "secret" }, redirect: "manual" });
+});
+
+test("a redirect is not followed, and reads as a malformed answer", async () => {
+  let served = 0;
+  const server = createServer((_, response) => {
+    served += 1;
+    response.writeHead(302, { Location: "/elsewhere" }).end();
+  }).listen(0, "127.0.0.1");
+  await new Promise((resolve) => server.once("listening", resolve));
+  const baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  const refused = await new Client("secret", { baseUrl }).send(lookup(CODE));
+  server.close();
+  expect(refused).toMatchObject({ status: 302, code: "malformed_response" });
+  expect(served).toBe(1);
 });
 
 // spec/client.json: ignores_a_trailing_slash
