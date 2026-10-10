@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 from ng_postcode.api import Coordinate
 from ng_postcode.client import AsyncClient
 
-from .geocode import PUBLIC_NOMINATIM, Nominatim
+from .geocode import Nominatim, is_public
 from .models import Resolution
 from .resolve import Parser, Resolver
 
@@ -47,7 +47,7 @@ def main(argv: list[str] | None = None) -> None:
 
 def config_problem(env: Mapping[str, str]) -> str | None:
     url = env.get("NG_GEOCODER_URL", "").strip().rstrip("/")
-    if url == PUBLIC_NOMINATIM and not env.get("NG_GEOCODER_CONTACT", "").strip():
+    if is_public(url) and not env.get("NG_GEOCODER_CONTACT", "").strip():
         return "the public Nominatim requires NG_GEOCODER_CONTACT, a URL or email identifying you"
     return None
 
@@ -76,7 +76,7 @@ def geocoder_from(env: Mapping[str, str]) -> Nominatim | None:
     if not url:
         return None
     contact = env.get("NG_GEOCODER_CONTACT", "").strip() or "unknown"
-    if url == PUBLIC_NOMINATIM:
+    if is_public(url):
         print(
             "ng-address: using the public Nominatim, for light personal use only. "
             "Map data (c) OpenStreetMap contributors.",

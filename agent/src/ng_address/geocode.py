@@ -18,6 +18,16 @@ from .core import precision_of
 from .models import Geocoded
 
 PUBLIC_NOMINATIM = "https://nominatim.openstreetmap.org"
+
+
+def is_public(url: str) -> bool:
+    """Whether `url` points at the public instance, in any case, scheme, port or path."""
+    try:
+        return httpx.URL(url).host == httpx.URL(PUBLIC_NOMINATIM).host
+    except httpx.InvalidURL:
+        return False
+
+
 CACHE_SIZE = 1024
 
 

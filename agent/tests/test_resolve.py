@@ -240,6 +240,23 @@ async def test_map_searches_stop_at_the_budget() -> None:
     assert "Geocoding took longer than 0.05 s." in result.evidence
 
 
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://nominatim.openstreetmap.org",
+        "http://nominatim.openstreetmap.org",
+        "https://NOMINATIM.OpenStreetMap.org:443/",
+        "https://nominatim.openstreetmap.org/search",
+    ],
+)
+def test_the_public_nominatim_needs_a_contact_however_it_is_written(url: str) -> None:
+    from ng_address.cli import config_problem
+
+    assert "NG_GEOCODER_CONTACT" in (config_problem({"NG_GEOCODER_URL": url}) or "")
+    assert config_problem({"NG_GEOCODER_URL": url, "NG_GEOCODER_CONTACT": "a@b.example"}) is None
+    assert config_problem({"NG_GEOCODER_URL": "https://geo.example"}) is None
+
+
 @pytest.mark.parametrize("pin", [["--lat", "nan", "--lng", "5"], ["--lat", "7", "--lng", "500"]])
 def test_the_cli_rejects_a_pin_off_the_map(pin: list[str]) -> None:
     from ng_address.cli import main
