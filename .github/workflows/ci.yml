@@ -159,3 +159,24 @@ jobs:
       - run: uv run --group dev ruff check .
       - run: uv run --group dev mypy
       - run: uv run --group dev pytest
+
+  # Code compiled from the Rust core for other systems. These builds are slow, so they
+  # have a job of their own, and it is not one of the checks a merge waits for.
+  native:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: native/polars
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - run: cargo fmt --check
+      - run: cargo clippy --locked -- -D warnings
+      - run: uv run --group dev ruff format --check .
+      - run: uv run --group dev ruff check .
+      - run: uv run --group dev mypy
+      - run: uv run --group dev pytest
