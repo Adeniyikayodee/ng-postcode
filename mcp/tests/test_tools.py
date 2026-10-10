@@ -446,3 +446,11 @@ def test_building_the_server_keeps_request_urls_out_of_the_logs() -> None:
     logging.getLogger("httpx").setLevel(logging.INFO)
     create_server(Settings(api_key=None))
     assert logging.getLogger("httpx").level == logging.WARNING
+
+
+@pytest.mark.anyio
+async def test_refused_input_is_not_logged(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.INFO)
+    refused = await call("lookup_postcode", {"postcode": "12 Oba Street"})
+    assert refused.is_error
+    assert "Oba Street" not in caplog.text
