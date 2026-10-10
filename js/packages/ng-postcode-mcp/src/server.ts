@@ -49,12 +49,11 @@ export function settingsFromEnv(env: Record<string, string | undefined>): Settin
   if (apiKey && !/^[\x21-\x7e]{1,256}$/.test(apiKey)) {
     return "NG_POSTCODE_API_KEY does not hold a usable NIPOST API key";
   }
-  return {
-    apiKey,
-    maxLevel: Number(level),
-    maxPaidCalls: Number(paid),
-    baseUrl: env.NG_POSTCODE_BASE_URL?.trim() || BASE_URL,
-  };
+  const baseUrl = env.NG_POSTCODE_BASE_URL?.trim() || BASE_URL;
+  if (!/^https?:\/\/[^/]/.test(baseUrl) || !URL.canParse(baseUrl)) {
+    return "NG_POSTCODE_BASE_URL must be an http or https URL";
+  }
+  return { apiKey, maxLevel: Number(level), maxPaidCalls: Number(paid), baseUrl };
 }
 
 /** A failure the model can act on; its message becomes the tool's error text. */
