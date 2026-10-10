@@ -38,7 +38,10 @@ class TransportError:
 
 class Client:
     """Blocking client. Pass `http` to reuse your own `httpx.Client`; it stays yours to close.
-    A redirect is never followed, as it would carry the key to another host."""
+    A redirect is never followed, as it would carry the key to another host.
+
+    `timeout` bounds the body as a whole. While the headers arrive it bounds each read, so
+    a server that drips them can take longer; `AsyncClient` holds one deadline throughout."""
 
     def __init__(
         self,
