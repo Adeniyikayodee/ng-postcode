@@ -115,10 +115,12 @@ impl fmt::Display for TransportError {
     }
 }
 
+// Each `Display` here prints the error it wraps, so `source` skips to that error's own
+// cause: a reporter that walks the chain would otherwise print one message three times.
 impl std::error::Error for TransportError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.0 {
-            Cause::Http(error) => Some(error),
+            Cause::Http(error) => error.source(),
             Cause::UnusableKey => None,
         }
     }
@@ -142,8 +144,8 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::Transport(error) => Some(error),
-            Self::Api(error) => Some(error),
+            Self::Transport(error) => error.source(),
+            Self::Api(error) => error.source(),
         }
     }
 }
