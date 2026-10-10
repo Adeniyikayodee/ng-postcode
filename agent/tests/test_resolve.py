@@ -257,6 +257,15 @@ def test_the_public_nominatim_needs_a_contact_however_it_is_written(url: str) ->
     assert config_problem({"NG_GEOCODER_URL": "https://geo.example"}) is None
 
 
+@pytest.mark.parametrize("url", ["http://localhost:abc", "http://[::1", "geo.example", "ftp://x"])
+def test_a_geocoder_address_that_cannot_be_used_is_a_configuration_problem(url: str) -> None:
+    from ng_address.cli import config_problem
+
+    assert config_problem({"NG_GEOCODER_URL": url}) == (
+        "NG_GEOCODER_URL must be an http or https URL"
+    )
+
+
 @pytest.mark.parametrize("pin", [["--lat", "nan", "--lng", "5"], ["--lat", "7", "--lng", "500"]])
 def test_the_cli_rejects_a_pin_off_the_map(pin: list[str]) -> None:
     from ng_address.cli import main
