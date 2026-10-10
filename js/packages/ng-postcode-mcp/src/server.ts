@@ -43,8 +43,13 @@ export function settingsFromEnv(env: Record<string, string | undefined>): Settin
   if (!/^[0-9]+$/.test(paid)) {
     return `NG_POSTCODE_MAX_PAID_CALLS must be a whole number, got '${paid}'`;
   }
+  const apiKey = env.NG_POSTCODE_API_KEY?.trim() || undefined;
+  // Refused without quoting it: a key no header can hold would surface in fetch's error.
+  if (apiKey && !/^[\x21-\x7e]{1,256}$/.test(apiKey)) {
+    return "NG_POSTCODE_API_KEY does not hold a usable NIPOST API key";
+  }
   return {
-    apiKey: env.NG_POSTCODE_API_KEY?.trim() || undefined,
+    apiKey,
     maxLevel: Number(level),
     maxPaidCalls: Number(paid),
     baseUrl: env.NG_POSTCODE_BASE_URL?.trim() || BASE_URL,
