@@ -3,6 +3,7 @@ package io.github.adeniyikayodee.ngpostcode.api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
@@ -128,6 +129,17 @@ class SpecTest {
             return ok.value();
         }
         return fail(result.toString());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void undocumentedFieldsCannotBeChanged() {
+        String body = "{\"data\": {\"valid\": true, \"other_building_info\": {\"floors\": [1, {\"a\": null}]}}}";
+        var info = (Map<String, Object>) ok(Api.decode(Api.lookup(CODE), 200, body)).otherBuildingInfo();
+        var floors = (List<Object>) info.get("floors");
+        assertThrows(UnsupportedOperationException.class, () -> info.put("injected", 1));
+        assertThrows(UnsupportedOperationException.class, () -> floors.add(2));
+        assertThrows(UnsupportedOperationException.class, () -> ((Map<String, Object>) floors.get(1)).put("b", 1));
     }
 
     @Test

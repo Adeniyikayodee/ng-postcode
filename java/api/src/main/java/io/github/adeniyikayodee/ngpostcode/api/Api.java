@@ -10,6 +10,8 @@ import io.github.adeniyikayodee.ngpostcode.api.Failure.ApiError;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -227,7 +229,20 @@ public final class Api {
 
     /** Undocumented fields, as maps, lists, strings and numbers. */
     private static Object raw(JsonNode value) {
-        return value.isMissingNode() || value.isNull() ? null : JSON.convertValue(value, Object.class);
+        return value.isMissingNode() || value.isNull() ? null : frozen(JSON.convertValue(value, Object.class));
+    }
+
+    /** Unmodifiable all the way down, so a record that holds it cannot change after it is read. */
+    private static Object frozen(Object value) {
+        if (value instanceof List<?> list) {
+            return list.stream().map(Api::frozen).toList();
+        }
+        if (value instanceof Map<?, ?> map) {
+            var copy = new LinkedHashMap<Object, Object>();
+            map.forEach((key, item) -> copy.put(key, frozen(item)));
+            return Collections.unmodifiableMap(copy);
+        }
+        return value;
     }
 
     private static Lookup readLookup(JsonNode data) {
