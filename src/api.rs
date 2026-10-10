@@ -143,8 +143,8 @@ impl<T> Request<T> {
         };
         // Read as a tree and checked by hand: `data` this version cannot read must not
         // hide the `error` beside it, and keys beside the two are ignored.
-        let envelope: Value =
-            serde_json::from_str(body).map_err(|error| malformed(&error.to_string()))?;
+        let envelope: Value = serde_json::from_str(body.strip_prefix('\u{feff}').unwrap_or(body))
+            .map_err(|error| malformed(&error.to_string()))?;
         if !finite(&envelope) {
             return Err(malformed("number out of range"));
         }
