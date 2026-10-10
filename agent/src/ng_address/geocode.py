@@ -8,7 +8,6 @@ results. A service whose main job is geocoding must run its own instance.
 from __future__ import annotations
 
 import asyncio
-import math
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -69,7 +68,7 @@ class Nominatim:
             return GeocodeFailure(f"geocoder answered HTTP {response.status_code}")
         try:
             place = first_place(query, response.json())
-        except ValueError:
+        except (ValueError, RecursionError):
             return GeocodeFailure("geocoder answered with something other than JSON")
         if len(self._cache) >= CACHE_SIZE:
             del self._cache[next(iter(self._cache))]
@@ -92,9 +91,10 @@ def first_place(query: str, data: Any) -> Geocoded | None:
     hit = data[0]
     try:
         lat, lng, rank = float(hit["lat"]), float(hit["lon"]), int(hit.get("place_rank", 0))
-    except (KeyError, TypeError, ValueError):
+    except (KeyError, TypeError, ValueError, OverflowError):
         return None
-    if not (math.isfinite(lat) and math.isfinite(lng)):
+    # Also false for NaN. A point off the globe would be refused when sent to NIPOST.
+    if not (abs(lat) <= 90 and abs(lng) <= 180):
         return None
     label = str(hit.get("display_name") or query)
     return Geocoded(query=query, lat=lat, lng=lng, precision=precision_of(rank), label=label)
