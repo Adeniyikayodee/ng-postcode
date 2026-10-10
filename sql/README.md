@@ -50,5 +50,6 @@ SELECT * FROM customers WHERE postcode >= 'EK01A03' AND postcode < 'EK01A03' || 
 | `ng_postcode_truncate(code, segment)` | The prefix through `state`, `lga`, `district`, `area`, or `unit` |
 | `ng_postcode_parent(prefix)` | The prefix one segment shorter, or NULL for a state |
 | `ng_postcode_within(code, prefix)` | Whether the code starts with the prefix |
+| `ng_postcode_version()` | The version of the file that was loaded |
 
 A well-formed code is not necessarily assigned to a building. Only the NIPOST API can confirm that, through one of the [libraries](../README.md).
