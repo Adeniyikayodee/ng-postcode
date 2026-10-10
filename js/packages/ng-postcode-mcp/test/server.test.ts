@@ -166,6 +166,33 @@ test("the reported version is the package version", () => {
   expect(VERSION).toBe(JSON.parse(readFileSync(manifest, "utf8")).version);
 });
 
+interface SharedEnv {
+  name: string;
+  env: Record<string, string>;
+  settings?: {
+    api_key: string | null;
+    max_level: number;
+    max_paid_calls: number;
+    base_url: string;
+  };
+  refused?: boolean;
+}
+const environments = new URL("../../../../spec/mcp-env.json", import.meta.url);
+
+test.each(JSON.parse(readFileSync(environments, "utf8")).cases as SharedEnv[])(
+  "shared environment $name",
+  (c) => {
+    const settings = settingsFromEnv(c.env);
+    if (c.refused || !c.settings) return expect(typeof settings).toBe("string");
+    expect(settings).toEqual({
+      apiKey: c.settings.api_key ?? undefined,
+      maxLevel: c.settings.max_level,
+      maxPaidCalls: c.settings.max_paid_calls,
+      baseUrl: c.settings.base_url,
+    });
+  },
+);
+
 test("reads settings from the environment", () => {
   expect(settingsFromEnv({})).toEqual({
     apiKey: undefined,

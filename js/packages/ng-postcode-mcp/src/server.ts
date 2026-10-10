@@ -37,9 +37,10 @@ export interface Settings {
 
 /** Read settings from the environment, or describe what is wrong with them. */
 export function settingsFromEnv(env: Record<string, string | undefined>): Settings | string {
-  const level = (env.NG_POSTCODE_MAX_LEVEL ?? "1").trim();
+  // Blank is unset, as hosts pass every field of a form.
+  const level = env.NG_POSTCODE_MAX_LEVEL?.trim() || "1";
   if (!/^[1-5]$/.test(level)) return `NG_POSTCODE_MAX_LEVEL must be 1 to 5, got '${level}'`;
-  const paid = (env.NG_POSTCODE_MAX_PAID_CALLS ?? "25").trim();
+  const paid = env.NG_POSTCODE_MAX_PAID_CALLS?.trim() || "25";
   if (!/^[0-9]+$/.test(paid)) {
     return `NG_POSTCODE_MAX_PAID_CALLS must be a whole number, got '${paid}'`;
   }

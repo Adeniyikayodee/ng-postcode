@@ -56,6 +56,7 @@ read them directly.
 | `client.json` | What every HTTP client must do, such as refusing redirects. A check fails when a client's tests do not name each one |
 | `mcp.json` | The MCP tools, generated from the Python server |
 | `mcp-calls.json` | Tool calls that need no network, and what both MCP servers must answer |
+| `mcp-env.json` | Environments both MCP servers must read the same way, or refuse to start on |
 
 A change in behaviour starts in `spec/`:
 
