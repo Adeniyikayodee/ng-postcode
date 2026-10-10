@@ -83,8 +83,10 @@ impl Client {
             .body_mut()
             .with_config()
             .limit(MAX_BODY_BYTES)
-            .read_to_string()
+            .read_to_vec()
             .map_err(failed)?;
+        // Lossy, so a proxy's page in another encoding keeps its status and is malformed.
+        let body = String::from_utf8_lossy(&body);
         Ok(request.decode(response.status().as_u16(), &body)?)
     }
 }

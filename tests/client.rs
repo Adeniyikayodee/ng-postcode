@@ -171,3 +171,25 @@ fn a_body_over_the_cap_is_refused_without_being_read_in_full() {
     assert!(matches!(failed, Error::Transport(_)));
     assert!(served.load(Ordering::SeqCst) < 64_000_000);
 }
+
+#[test]
+fn a_body_that_is_not_utf8_keeps_its_status() {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let head = "HTTP/1.1 502 Bad Gateway\r\nContent-Length: 4\r\nConnection: close\r\n\r\n";
+        stream.write_all(head.as_bytes()).unwrap();
+        stream.write_all(b"caf\xe9").unwrap();
+    });
+
+    let code = "FC-03-B06-AG-12".parse().unwrap();
+    let result = Client::new("secret")
+        .with_base_url(base)
+        .send(&api::lookup(code, 1).unwrap());
+
+    assert!(matches!(
+        result,
+        Err(Error::Api(ApiError::Malformed { status: 502, .. }))
+    ));
+}
