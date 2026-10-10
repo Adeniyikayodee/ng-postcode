@@ -41,6 +41,7 @@ fn main() -> Result<(), ParseError> {
 - `Postcode::parse` checks the structure: 2 letters, 2 digits, 3 letters or digits, 2 letters, 2 digits, with numeric segments from 01 to 99.
 - `Postcode::parse_lenient` first swaps look-alike characters that cannot occur where they stand (`O`/`0`, `I`/`1`, `S`/`5`, `B`/`8`) and reports how many it changed.
 - `Postcode::from_segments` assembles a code from its parts and zero-fills the LGA and unit.
+- `Prefix::parse` reads a code cut off after a segment, such as the district `EK-01-A03`, and `Postcode::truncate` cuts a code down to one. A prefix knows which codes it contains, so it groups them by state, LGA, district, or area.
 - `Postcode` is `Copy`, 11 bytes, and sorts by state, LGA, district, area, unit.
 
 A well-formed code is not necessarily assigned to a building, and the state is not checked against a list of state codes. Only the API can confirm that a postcode exists.

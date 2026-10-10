@@ -41,6 +41,7 @@ match parse("ek 01 a03 fk 01"):
 - `parse` accepts hyphenated, spaced or compact input in either case.
 - `parse_lenient` first swaps look-alikes that cannot occur where they stand (`O`/`0`, `I`/`1`, `S`/`5`, `B`/`8`) and reports how many it changed.
 - `from_segments` assembles a code from its parts and zero-fills the LGA and unit.
+- `parse_prefix` reads a code cut off after a segment, such as the district `EK-01-A03`, and `Postcode.truncate` cuts a code down to one. A prefix knows which codes it contains, so it groups them by state, LGA, district, or area.
 - `Postcode` is immutable, hashable and sorts by state, LGA, district, area, unit.
 
 A well-formed code is not necessarily assigned to a building. Only the API can confirm that a postcode exists.
