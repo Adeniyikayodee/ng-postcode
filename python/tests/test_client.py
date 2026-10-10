@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 from collections.abc import AsyncIterator, Callable, Iterator
+from typing import Any
 
 import httpx
 import pytest
@@ -97,6 +98,13 @@ def test_a_redirect_is_not_followed_even_by_a_client_that_would() -> None:
         assert isinstance(result, ApiError)
         assert (result.status, result.code) == (302, "malformed_response")
     assert hosts == ["api.postcode.gov.ng"] * 2
+
+
+@pytest.mark.parametrize("timeout", [0, -1, float("nan"), float("inf"), None, "5"])
+def test_a_timeout_that_is_not_a_positive_number_is_refused(timeout: Any) -> None:
+    for client in (Client, AsyncClient):
+        with pytest.raises(ValueError, match="timeout must be"):
+            client("key", timeout=timeout)
 
 
 # spec/client.json: caps_the_body
