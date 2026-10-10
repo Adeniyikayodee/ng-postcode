@@ -24,14 +24,22 @@ pub enum Error {
 ///
 /// Opaque, so the HTTP library behind it can change without breaking callers.
 #[derive(Debug)]
-pub struct TransportError(ureq::Error);
+pub struct TransportError(Cause);
+
+#[derive(Debug)]
+enum Cause {
+    Http(ureq::Error),
+    UnusableKey,
+}
 
 impl Client {
+    /// Whitespace around the key, as read from a file, is dropped. A key no header can hold
+    /// makes every `send` fail without a request.
     pub fn new(api_key: impl Into<String>) -> Self {
         Self {
             agent: agent(TIMEOUT),
             base_url: BASE_URL.to_owned(),
-            api_key: api_key.into(),
+            api_key: api_key.into().trim().to_owned(),
         }
     }
 
@@ -52,6 +60,10 @@ impl Client {
     }
 
     pub fn send<T>(&self, request: &Request<T>) -> Result<T, Error> {
+        // A key no header can hold is refused before anything is sent.
+        if !self.api_key.bytes().all(|byte| byte.is_ascii_graphic()) || self.api_key.is_empty() {
+            return Err(Error::Transport(TransportError(Cause::UnusableKey)));
+        }
         let call = self
             .agent
             .get(format!("{}{}", self.base_url, request.path))
@@ -79,18 +91,24 @@ fn agent(timeout: Duration) -> ureq::Agent {
 }
 
 fn failed(error: ureq::Error) -> Error {
-    Error::Transport(TransportError(error))
+    Error::Transport(TransportError(Cause::Http(error)))
 }
 
 impl fmt::Display for TransportError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+        match &self.0 {
+            Cause::Http(error) => error.fmt(f),
+            Cause::UnusableKey => f.write_str("unusable API key"),
+        }
     }
 }
 
 impl std::error::Error for TransportError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        Some(&self.0)
+        match &self.0 {
+            Cause::Http(error) => Some(error),
+            Cause::UnusableKey => None,
+        }
     }
 }
 
