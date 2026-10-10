@@ -25,9 +25,12 @@ export {
   LENGTH,
   type ParseError,
   Postcode,
+  Prefix,
   parse,
   parseLenient,
+  parsePrefix,
   SEGMENTS,
   type Segment,
   WrongLength,
+  WrongPrefixLength,
 } from "./postcode.js";
