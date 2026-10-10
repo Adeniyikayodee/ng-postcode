@@ -172,7 +172,7 @@ export function nearby(at: Coordinate, radiusM?: number): Request<readonly Nearb
 export function decode<T>(request: Request<T>, status: number, body: string): T | ApiError {
   let envelope: unknown;
   try {
-    envelope = JSON.parse(body, finite);
+    envelope = JSON.parse(body.replace(/^\uFEFF/, ""), finite);
   } catch (error) {
     return malformed(status, `not JSON: ${error instanceof Error ? error.message : error}`);
   }

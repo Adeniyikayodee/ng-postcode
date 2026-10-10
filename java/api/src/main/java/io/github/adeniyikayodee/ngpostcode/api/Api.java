@@ -101,7 +101,7 @@ public final class Api {
     public static <T> Result<T> decode(Request<T> request, int status, String body) {
         JsonNode envelope;
         try {
-            envelope = JSON.readTree(body);
+            envelope = JSON.readTree(body.startsWith("\uFEFF") ? body.substring(1) : body);
         } catch (JsonProcessingException error) {
             return malformed(status, "not JSON: " + error.getOriginalMessage());
         }
