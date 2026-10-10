@@ -5,6 +5,7 @@ Install with `pip install "ng-postcode[client]"`.
 
 from __future__ import annotations
 
+import math
 import time
 from dataclasses import dataclass
 from typing import TypeVar
@@ -47,11 +48,11 @@ class Client:
         http: httpx.Client | None = None,
         timeout: float = TIMEOUT,
     ) -> None:
+        self._timeout = _seconds(timeout)
         self._http = http if http is not None else httpx.Client(timeout=timeout)
         self._owns_http = http is None
         self._base_url = base_url
         self._headers = _headers(api_key)
-        self._timeout = timeout
 
     def send(self, request: Request[T]) -> T | ApiError | TransportError:
         if self._headers is None:
@@ -103,11 +104,11 @@ class AsyncClient:
         http: httpx.AsyncClient | None = None,
         timeout: float = TIMEOUT,
     ) -> None:
+        self._timeout = _seconds(timeout)
         self._http = http if http is not None else httpx.AsyncClient(timeout=timeout)
         self._owns_http = http is None
         self._base_url = base_url
         self._headers = _headers(api_key)
-        self._timeout = timeout
 
     async def send(self, request: Request[T]) -> T | ApiError | TransportError:
         if self._headers is None:
@@ -143,6 +144,13 @@ class AsyncClient:
 
     async def __aexit__(self, *exc_info: object) -> None:
         await self.aclose()
+
+
+def _seconds(timeout: float) -> float:
+    """Refused here, where the mistake is: NaN would otherwise switch the deadline off."""
+    if not (isinstance(timeout, int | float) and 0 < timeout < math.inf):
+        raise ValueError(f"timeout must be a positive number of seconds, got {timeout!r}")
+    return timeout
 
 
 def _headers(api_key: str) -> dict[str, str] | None:
