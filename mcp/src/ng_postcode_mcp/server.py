@@ -295,6 +295,8 @@ def create_server(
     # httpx logs every request URL at INFO, which would copy postcodes, coordinates and
     # address searches into the logs of whoever embeds this server.
     logging.getLogger("httpx").setLevel(logging.WARNING)
+    # The SDK logs each failed tool call at INFO with its message, which quotes what was typed.
+    logging.getLogger("mcp.server.mcpserver.server").setLevel(logging.WARNING)
 
     @asynccontextmanager
     async def lifespan(_: MCPServer[State]) -> AsyncIterator[State]:
