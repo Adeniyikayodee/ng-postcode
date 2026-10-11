@@ -23,6 +23,7 @@ A postcode has 11 characters in five segments, written `EK-01-A03-FK-01`: state,
 | `ng-postcode-mcp` (npm) | The same server for Node, without address resolution | `npx ng-postcode-mcp` | [`js/packages/ng-postcode-mcp`](js/packages/ng-postcode-mcp) |
 | `ng-postcode-polars` | Polars expressions that parse, format and group codes by place, compiled from the Rust core (unreleased) | `pip install ng-postcode-polars` | [`native/polars`](native/polars) |
 | `ng_postcode` (PostgreSQL) | The postcode as native 8-byte types with index support, compiled from the Rust core | Package from [Releases](https://github.com/Adeniyikayodee/ng-postcode/releases), then `CREATE EXTENSION ng_postcode` | [`native/pg`](native/pg) |
+| `ng_postcode` (DuckDB) | The same functions as a DuckDB extension, compiled from the Rust core | Build from [ng-postcode-duckdb](https://github.com/Adeniyikayodee/ng-postcode-duckdb) | [ng-postcode-duckdb](https://github.com/Adeniyikayodee/ng-postcode-duckdb) |
 | `ng-address-resolver` | Resolve free-text addresses to postcodes, only as precisely as the evidence allows (pre-alpha) | `pip install ng-address-resolver` | [`agent/`](agent) |
 
 Each package has its own README with full usage.
