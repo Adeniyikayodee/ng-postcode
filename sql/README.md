@@ -54,4 +54,6 @@ SELECT * FROM customers WHERE postcode >= 'EK01A03' AND postcode < 'EK01A03' || 
 | `ng_postcode_within(code, prefix)` | Whether the code starts with the prefix |
 | `ng_postcode_version()` | The version of the file that was loaded |
 
+Where you can install an extension and the table is large, [`native/pg`](../native/pg) offers the same functions over a native 8-byte type.
+
 A well-formed code is not necessarily assigned to a building. Only the NIPOST API can confirm that, through one of the [libraries](../README.md).
