@@ -20,7 +20,13 @@ Sorting and joining on the column were within a fifth of each other.
 
 ## Install
 
-Releases attach a package for each PostgreSQL version from 14 to 18 on Linux, built against the PostgreSQL project's own Debian and Ubuntu packages. Unpack it at the root of the filesystem, then:
+Each [release](https://github.com/Adeniyikayodee/ng-postcode/releases) tagged `pg-v` attaches a package for each PostgreSQL version from 14 to 18, for x86-64 and ARM Linux, built against the PostgreSQL project's own Debian and Ubuntu packages. Unpack the one for your version at the root of the filesystem:
+
+```sh
+sudo tar -xzf ng_postcode-0.1.0-pg17-x86_64.tar.gz -C /
+```
+
+Then, in the database:
 
 ```sql
 CREATE EXTENSION ng_postcode;
