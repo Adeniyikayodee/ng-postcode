@@ -46,6 +46,28 @@ match parse("ek 01 a03 fk 01"):
 
 A well-formed code is not necessarily assigned to a building. Only the API can confirm that a postcode exists.
 
+## Convert a CSV file
+
+The package installs an `ng-postcode` command that checks a column of postcodes and writes the file back with four columns added.
+
+```sh
+ng-postcode orders.csv --column postcode --out checked.csv
+```
+
+```text
+id,postcode,postcode_compact,postcode_status,postcode_suggestion,postcode_error
+1,ek 01 a03 fk 01,EK01A03FK01,valid,,
+2,EK-O1-A03-FK-01,,suggested,EK-01-A03-FK-01,invalid lga segment
+3,360001,,invalid,,"expected 11 letters and digits, found 6"
+4,,,empty,,
+```
+
+- `valid` rows carry the compact code to store.
+- `suggested` rows only parse after look-alike characters are swapped. The fix is offered for a person to confirm, and the compact column is left empty.
+- `invalid` rows say what is wrong, and `empty` rows had no value.
+
+It works offline and reads one row at a time, so the size of the file does not matter. Add `--confirm` to ask NIPOST whether each well-formed code is assigned to a building. That needs `pip install "ng-postcode[client]"` and your own key in `NG_POSTCODE_API_KEY`, makes one free level 1 lookup for each distinct code, and adds a `postcode_assigned` column.
+
 ## API
 
 ```python
