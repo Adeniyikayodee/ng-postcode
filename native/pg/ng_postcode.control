@@ -1,0 +1,6 @@
+comment = 'Nigeria''s NIPOST digital postcode (NDAPS) as a native type'
+default_version = '@CARGO_VERSION@'
+module_pathname = 'ng_postcode'
+relocatable = false
+superuser = true
+trusted = false
