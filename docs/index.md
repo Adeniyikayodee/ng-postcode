@@ -1,3 +1,7 @@
+---
+title: Validate Nigerian postcodes in Python, JavaScript, Rust, Java, and SQL
+---
+
 # ng-postcode
 
 Open-source tools for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode issued by NIPOST. A postcode has 11 characters in five segments, written `EK-01-A03-FK-01`: state, LGA, district, area and building unit.
