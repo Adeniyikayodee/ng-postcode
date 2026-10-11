@@ -156,6 +156,60 @@ The MCP server works with any MCP client. It runs over stdio as `uvx ng-postcode
 
 To run it with Node, use `"command": "npx"` and `"args": ["-y", "ng-postcode-mcp"]`; that edition has every tool except address resolution. Per-client steps for Cursor, VS Code, Codex, Claude and others are in the [MCP server README](mcp#install). Validation works without a key; the other tools need one from the [NIPOST developer dashboard](https://dashboard.postcode.gov.ng). The server is listed in the MCP Registry as `io.github.Adeniyikayodee/ng-postcode`.
 
+**PostgreSQL**
+
+Load the plain SQL file with `psql -f sql/postgres.sql`. It needs no extension, so it runs on managed services.
+
+```sql
+CREATE TABLE customers (
+    id       bigint PRIMARY KEY,
+    postcode ng_postcode            -- refuses anything that is not a compact code
+);
+
+INSERT INTO customers VALUES (1, ng_postcode_parse('ek 01 a03 fk 01'));
+
+SELECT ng_postcode_format(ng_postcode_truncate(postcode, 'district')) AS district, count(*)
+FROM customers
+GROUP BY 1;
+-- EK-01-A03 | 1
+```
+
+On a server where you can install an extension, the [native extension](native/pg) has the same functions and stores a code in 8 bytes. Unpack the package for your PostgreSQL version from [Releases](https://github.com/Adeniyikayodee/ng-postcode/releases), then run `CREATE EXTENSION ng_postcode`.
+
+**DuckDB**
+
+Load the same functions with `duckdb my.db < sql/duckdb.sql`.
+
+```sql
+SELECT ng_postcode_parse('ek 01 a03 fk 01');
+-- EK01A03FK01
+```
+
+[ng-postcode-duckdb](https://github.com/Adeniyikayodee/ng-postcode-duckdb) provides them as a compiled extension.
+
+**Polars**
+
+```python
+import polars as pl
+import ng_postcode_polars  # pip install ng-postcode-polars
+
+frame = pl.DataFrame({"postcode": ["ek 01 a03 fk 01", "EK-01-A03-ZZ-14", "100001"]})
+
+print(frame.with_columns(code=pl.col("postcode").ng.parse(), ok=pl.col("postcode").ng.is_valid()))
+# ek 01 a03 fk 01  EK01A03FK01  true
+# EK-01-A03-ZZ-14  EK01A03ZZ14  true
+# 100001           null         false
+```
+
+**A CSV file**
+
+```sh
+pip install ng-postcode
+ng-postcode --column postcode customers.csv --out checked.csv
+```
+
+The output keeps every row and adds the compact code, a status of `valid`, `suggested`, `invalid`, or `empty`, a suggested correction, and the reason for each invalid row.
+
 ## For coding agents
 
 Language models trained before October 2026 expect a six-digit Nigerian postcode. To point a coding agent at the current format, paste this into your project's `AGENTS.md`, `CLAUDE.md`, or editor rules:
