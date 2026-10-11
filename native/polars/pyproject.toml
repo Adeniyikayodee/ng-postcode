@@ -5,12 +5,12 @@ build-backend = "maturin"
 [project]
 name = "ng-postcode-polars"
 version = "0.1.0"
-description = "Polars expressions for Nigeria's NIPOST digital postcode (NDAPS): parse, format and group by place."
+description = "Polars expressions for Nigerian postcodes (Nigeria's NIPOST digital postcode, NDAPS): validate, parse, format and group by place."
 readme = "README.md"
 license = "MIT"
 authors = [{ name = "Kayode Adeniyi" }]
 requires-python = ">=3.10"
-keywords = ["nigeria", "postcode", "nipost", "ndaps", "polars", "dataframe"]
+keywords = ["nigeria", "postcode", "nipost", "ndaps", "polars", "dataframe", "nigerian", "postal-code", "validation"]
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: 3",
