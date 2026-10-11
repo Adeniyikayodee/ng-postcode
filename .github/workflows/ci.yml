@@ -180,3 +180,36 @@ jobs:
       - run: uv run --group dev ruff check .
       - run: uv run --group dev mypy
       - run: uv run --group dev pytest
+
+  # The PostgreSQL extension, tested against the runner's own PostgreSQL. Like `native`, it
+  # is slow and is not one of the checks a merge waits for.
+  native-pg:
+    runs-on: ubuntu-latest
+    env:
+      PG: "16"
+    defaults:
+      run:
+        working-directory: native/pg
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+      - name: PostgreSQL headers, and leave to install an extension
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y "postgresql-server-dev-$PG" libclang-dev
+          sudo chmod -R a+rwX "$(pg_config --pkglibdir)" "$(pg_config --sharedir)/extension"
+      - run: cargo install cargo-pgrx --version 0.19.3 --locked
+      - run: cargo pgrx init "--pg$PG" "$(which pg_config)"
+      - run: cargo fmt --check
+      - run: cargo clippy --locked --no-default-features --features "pg$PG" -- -D warnings
+      - run: cargo pgrx test "pg$PG" --no-default-features
+      - name: The extension agrees with spec/vectors.json
+        working-directory: .
+        run: |
+          (cd native/pg && cargo pgrx install --release --no-default-features --features "pg$PG" --pg-config "$(which pg_config)")
+          sudo systemctl start postgresql.service
+          sudo -u postgres createuser --superuser "$USER"
+          PGDATABASE=postgres python3 scripts/sql_conformance.py extension
