@@ -32,6 +32,9 @@ dependencies = []
 [project.optional-dependencies]
 client = ["anyio>=3", "httpx>=0.27"]
 
+[project.scripts]
+ng-postcode = "ng_postcode.convert:main"
+
 [project.urls]
 Repository = "https://github.com/Adeniyikayodee/ng-postcode"
 Issues = "https://github.com/Adeniyikayodee/ng-postcode/issues"
