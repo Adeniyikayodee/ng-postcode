@@ -24,6 +24,10 @@ Since 1 October 2026 a Nigerian building's postcode is this 11-character code. A
 - [ng-address-resolver](https://pypi.org/project/ng-address-resolver/): `pip install ng-address-resolver`. Resolves free-text Nigerian addresses to postcodes, only as precisely as the evidence allows. Pre-release.
 - [WooCommerce plugin](https://github.com/Adeniyikayodee/ng-postcode-woocommerce): checks and tidies the postcode at checkout, finds it from the customer's location, and makes shipping zones match on postcode prefixes.
 - [SQL](https://github.com/Adeniyikayodee/ng-postcode/tree/main/sql): the postcode as a PostgreSQL domain and DuckDB macros, with `ng_postcode_parse`, `ng_postcode_format`, and `ng_postcode_truncate` for grouping by state, LGA, district, or area.
+- [ng-postcode-polars](https://pypi.org/project/ng-postcode-polars/): `pip install ng-postcode-polars`, then `import ng_postcode_polars`. Polars expressions under `pl.col(...).ng`: `parse`, `parse_prefix`, `format`, `truncate`, `is_valid`. Compiled from the Rust core.
+- [ng_postcode for PostgreSQL](https://github.com/Adeniyikayodee/ng-postcode/tree/main/native/pg): a native extension for PostgreSQL 14 to 18. Types `ng_postcode` and `ng_postcode_prefix` take 8 bytes and support B-tree and hash indexes. Install a package from the repository's Releases, then `CREATE EXTENSION ng_postcode`.
+- [ng_postcode for DuckDB](https://github.com/Adeniyikayodee/ng-postcode-duckdb): a DuckDB extension in Rust with `ng_postcode_parse`, `ng_postcode_prefix_parse`, `ng_postcode_format`, `ng_postcode_truncate`, `ng_postcode_parent`, and `ng_postcode_within`.
+- Convert a CSV file: `pip install ng-postcode`, then `ng-postcode --column postcode customers.csv --out checked.csv`. It adds the compact code, a status of valid, suggested, invalid, or empty, and the reason for each invalid row.
 - [Group records by place](https://adeniyikayodee.github.io/ng-postcode/group-by-place): count or select records by state, LGA, district, or area by cutting each code to a prefix with `truncate`.
 
 ## Docs
