@@ -9,6 +9,10 @@ Open-source tools for Nigeria's National Digital Alphanumeric Postcode System (N
 | [`ng-postcode-js`](https://www.npmjs.com/package/ng-postcode-js) | `npm install ng-postcode-js` | The same behaviour in JavaScript and TypeScript |
 | [`ng-postcode` for Java](https://central.sonatype.com/artifact/io.github.adeniyikayodee/ng-postcode-api) | `io.github.adeniyikayodee:ng-postcode-api` | The same behaviour in Java 17 and later |
 | [`ng-postcode-mcp`](https://pypi.org/project/ng-postcode-mcp/) | `uvx ng-postcode-mcp` or `npx ng-postcode-mcp` | Give an AI assistant postcode tools |
+| [`ng-postcode-polars`](https://pypi.org/project/ng-postcode-polars/) | `pip install ng-postcode-polars` | Parse, check and group a Polars column of codes |
+| [`ng_postcode` for PostgreSQL](https://github.com/Adeniyikayodee/ng-postcode/tree/main/native/pg) | Package from [Releases](https://github.com/Adeniyikayodee/ng-postcode/releases), then `CREATE EXTENSION ng_postcode` | Store codes as a native 8-byte type with index support |
+| [`ng_postcode` for DuckDB](https://github.com/Adeniyikayodee/ng-postcode-duckdb) | Build from the repository | Parse, format and group codes in DuckDB |
+| [SQL files](https://github.com/Adeniyikayodee/ng-postcode/tree/main/sql) | Run one file in PostgreSQL or DuckDB | The same functions where no extension can be installed |
 | [`ng-address-resolver`](https://pypi.org/project/ng-address-resolver/) | `pip install ng-address-resolver` | Turn a described address into a postcode (pre-release) |
 
 Source and issues: [github.com/Adeniyikayodee/ng-postcode](https://github.com/Adeniyikayodee/ng-postcode). For AI agents: [llms.txt](llms.txt).
