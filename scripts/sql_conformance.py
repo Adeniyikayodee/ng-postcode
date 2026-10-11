@@ -2,6 +2,7 @@
 
     python3 scripts/sql_conformance.py postgres   # through psql, using PG* from the environment
     python3 scripts/sql_conformance.py duckdb     # needs the duckdb package
+    python3 scripts/sql_conformance.py extension  # the native extension, already installed
 
 SQL has no error values, so a rejected input is NULL. Each case becomes one expression that
 is true when the SQL agrees with the spec. For PostgreSQL, the examples in `sql/README.md` are
@@ -65,6 +66,9 @@ def checks(engine: str) -> list[tuple[str, str]]:
 
 def version(engine: str) -> str:
     """The version a SQL file states in its header, which its version function must repeat."""
+    if engine == "extension":
+        manifest = (ROOT / "native" / "pg" / "Cargo.toml").read_text(encoding="utf-8")
+        return re.search(r'^version = "(.+)"$', manifest, re.MULTILINE)[1]
     header = (ROOT / "sql" / f"{engine}.sql").read_text(encoding="utf-8")
     return re.search(r"^-- Version (\S+)$", header, re.MULTILINE)[1]
 
@@ -100,6 +104,21 @@ def postgres(expressions: list[str]) -> list[bool]:
     return [line == "t" for line in run.stdout.splitlines()]
 
 
+def extension(expressions: list[str]) -> list[bool]:
+    """The native types in `native/pg`, which keep the SQL file's function names."""
+    queries = "".join(f"SELECT {expression};\n" for expression in expressions)
+    run = subprocess.run(
+        ["psql", "-X", "-q", "-At", "-v", "ON_ERROR_STOP=1"],
+        input=f"BEGIN;\nCREATE EXTENSION ng_postcode;\n{queries}ROLLBACK;\n",
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if run.returncode != 0:
+        sys.exit(run.stderr)
+    return [line == "t" for line in run.stdout.splitlines()]
+
+
 def duckdb(expressions: list[str]) -> list[bool]:
     import duckdb as engine
 
@@ -109,7 +128,7 @@ def duckdb(expressions: list[str]) -> list[bool]:
 
 
 def main() -> None:
-    engine = {"postgres": postgres, "duckdb": duckdb}[sys.argv[1]]
+    engine = {"postgres": postgres, "duckdb": duckdb, "extension": extension}[sys.argv[1]]
     cases = checks(sys.argv[1])
     answers = engine([expression for _, expression in cases])
     if len(answers) != len(cases):
