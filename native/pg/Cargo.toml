@@ -1,0 +1,40 @@
+[package]
+name = "ng_postcode"
+version = "0.1.0"
+edition = "2021"
+description = "Nigeria's NIPOST digital postcode (NDAPS) as a native PostgreSQL type."
+license = "MIT"
+repository = "https://github.com/Adeniyikayodee/ng-postcode"
+# Ships as a PostgreSQL extension, not as a crate.
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default = ["pg17"]
+pg14 = ["pgrx/pg14", "pgrx-tests/pg14"]
+pg15 = ["pgrx/pg15", "pgrx-tests/pg15"]
+pg16 = ["pgrx/pg16", "pgrx-tests/pg16"]
+pg17 = ["pgrx/pg17", "pgrx-tests/pg17"]
+pg18 = ["pgrx/pg18", "pgrx-tests/pg18"]
+pg_test = []
+
+[dependencies]
+ng-postcode = { version = "0.5.2", path = "../.." }
+pgrx = "=0.19.3"
+
+[dev-dependencies]
+pgrx-tests = "=0.19.3"
+
+[profile.dev]
+panic = "unwind"
+
+[profile.release]
+panic = "unwind"
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+
+# Built on its own, so the core crate's lockfile and audit stay free of pgrx.
+[workspace]
