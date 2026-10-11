@@ -24,6 +24,7 @@ SOURCES = [
     "js/packages/ng-postcode-mcp/README.md",
     "agent/README.md",
     "native/polars/README.md",
+    "native/pg/README.md",
     "sql/README.md",
 ]
 
