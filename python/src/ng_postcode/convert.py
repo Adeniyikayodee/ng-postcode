@@ -75,15 +75,23 @@ def read(source: TextIO, column: str) -> csv.DictReader[str]:
     reader = csv.DictReader(source)
     if column not in (reader.fieldnames or []):
         sys.exit(f"ng-postcode: no column named {column!r}; found {reader.fieldnames}")
+    taken = [name for name in reader.fieldnames or [] if name in new_columns(column, True)]
+    if taken:
+        sys.exit(f"ng-postcode: the file already has a column named {taken[0]!r}")
     return reader
+
+
+def new_columns(column: str, confirming: bool) -> list[str]:
+    """The columns a run adds, which the file must not already hold."""
+    names = ["compact", "status", "suggestion", "error", *(["assigned"] if confirming else [])]
+    return [f"{column}_{name}" for name in names]
 
 
 def write(
     reader: csv.DictReader[str], target: TextIO, column: str, confirm: Confirm | None
 ) -> Counter[str]:
     """Convert the rows of `reader` to `target` and count them by status."""
-    added = ["compact", "status", "suggestion", "error", *(["assigned"] if confirm else [])]
-    names = [*(reader.fieldnames or []), *(f"{column}_{name}" for name in added)]
+    names = [*(reader.fieldnames or []), *new_columns(column, confirm is not None)]
     writer = csv.DictWriter(target, fieldnames=names, lineterminator="\n")
     # Written before any row, so a file with none keeps its header.
     writer.writeheader()

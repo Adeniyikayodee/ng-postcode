@@ -97,6 +97,11 @@ def test_a_row_shorter_than_the_header_is_empty(capsys: pytest.CaptureFixture[st
     assert capsys.readouterr().out.splitlines()[1] == "1,,,empty,,"
 
 
+def test_a_column_the_run_would_add_is_never_replaced() -> None:
+    with pytest.raises(SystemExit, match="already has a column named 'pc_status'"):
+        read(io.StringIO("pc,pc_status\nEK01A03FK01,shipped\n"), "pc")
+
+
 def test_confirming_asks_once_for_each_code_and_stops_at_the_first_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
