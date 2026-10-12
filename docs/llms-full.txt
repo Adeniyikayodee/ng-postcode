@@ -485,7 +485,7 @@ id,postcode,postcode_compact,postcode_status,postcode_suggestion,postcode_error
 - `suggested` rows only parse after look-alike characters are swapped. The fix is offered for a person to confirm, and the compact column is left empty.
 - `invalid` rows say what is wrong, and `empty` rows had no value.
 
-It works offline and reads one row at a time, so the size of the file does not matter. Add `--confirm` to ask NIPOST whether each well-formed code is assigned to a building. That needs `pip install "ng-postcode[client]"` and your own key in `NG_POSTCODE_API_KEY`, makes one free level 1 lookup for each distinct code, and adds a `postcode_assigned` column.
+It works offline and reads one row at a time, so the size of the file does not matter. It never writes over the file it reads, and it stops at a header that already has one of these columns or a row with more cells than the header. Add `--confirm` to ask NIPOST whether each well-formed code is assigned to a building. That needs `pip install "ng-postcode[client]"` and your own key in `NG_POSTCODE_API_KEY`, makes one free level 1 lookup for each distinct code, and adds a `postcode_assigned` column.
 
 ## API
 
