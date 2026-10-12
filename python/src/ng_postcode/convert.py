@@ -137,6 +137,9 @@ def main(argv: list[str] | None = None) -> None:
         )
         reader = read(source, args.column)
         # Opening the output empties it, so it waits until the input is known to be usable.
+        same = args.out and args.file != "-" and os.path.exists(args.out)
+        if same and os.path.samefile(args.file, args.out):
+            sys.exit("ng-postcode: --out is the input file, which writing would empty")
         target = (
             files.enter_context(open(args.out, "w", newline="", encoding="utf-8"))
             if args.out

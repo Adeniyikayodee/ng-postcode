@@ -64,6 +64,17 @@ def test_a_missing_column_or_key_stops_before_anything_is_written(tmp_path: Path
     assert target.read_text(encoding="utf-8") == "kept"
 
 
+def test_the_input_file_is_never_written_over(tmp_path: Path) -> None:
+    source = tmp_path / "in.csv"
+    source.write_text("id,pc\n1,EK01A03FK01\n", encoding="utf-8")
+    link = tmp_path / "link.csv"
+    link.symlink_to(source)
+    for out in (source, link):
+        with pytest.raises(SystemExit, match="--out is the input file"):
+            main([str(source), "--column", "pc", "--out", str(out)])
+    assert source.read_text(encoding="utf-8") == "id,pc\n1,EK01A03FK01\n"
+
+
 def test_confirming_asks_once_for_each_code_and_stops_at_the_first_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
