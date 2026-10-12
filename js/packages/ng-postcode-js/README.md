@@ -58,7 +58,7 @@ if (found instanceof ApiError || found instanceof TransportError) {
 
 `ng-postcode-js/api` covers `lookup`, `autocomplete`, `reverse` and `nearby`. Each returns a plain `Request`, and `decode` turns a status and body into a typed result, so it works with any HTTP client. A request that cannot succeed, such as a level outside 1 to 5, an empty autocomplete or a coordinate that is not finite, throws `RangeError` before anything is sent.
 
-The client refuses redirects, so the key is never sent to another host. Response fields keep the API's own names, such as `administrative_address`.
+The client refuses redirects and a plain http base URL (except on this machine), so the key is never sent to another host or unencrypted. Response fields keep the API's own names, such as `administrative_address`.
 
 Get a key from the [NIPOST developer dashboard](https://dashboard.postcode.gov.ng). Level 1 lookups confirm a code is assigned; levels 2 and up return address details and consume credits.
 
