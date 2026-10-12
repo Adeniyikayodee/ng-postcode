@@ -146,7 +146,13 @@ public final class Client {
     }
 
     private static <T> Result<T> failed(Throwable error) {
-        String reason = error.getMessage() != null ? error.getMessage() : error.getClass().getSimpleName();
+        String reason = error.getMessage();
+        if (reason == null) {
+            // The JDK gives a failed connection no message: its cause says which kind.
+            Throwable cause = error.getCause();
+            reason = error.getClass().getSimpleName()
+                    + (cause != null ? ": " + cause.getClass().getSimpleName() : "");
+        }
         return new Result.Failed<>(new TransportError(reason));
     }
 }
