@@ -29,7 +29,9 @@ def anyio_backend() -> str:
     return "asyncio"
 
 
-def nipost(distance_m: float = 6.0, *, valid: bool = True, found: bool = True) -> AsyncClient:
+def nipost(
+    distance_m: float = 6.0, *, valid: bool = True, found: bool = True, key: str = "key"
+) -> AsyncClient:
     def handle(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/v1/lookup":
             return httpx.Response(
@@ -48,7 +50,7 @@ def nipost(distance_m: float = 6.0, *, valid: bool = True, found: bool = True) -
             data |= {"unit": unit, "area": "EK-01-A03-FK", "district": "EK-01-A03", "state": "EK"}
         return httpx.Response(200, json={"data": data})
 
-    return AsyncClient("key", http=httpx.AsyncClient(transport=httpx.MockTransport(handle)))
+    return AsyncClient(key, http=httpx.AsyncClient(transport=httpx.MockTransport(handle)))
 
 
 def reading(relation: Relation | None, question: str | None = None) -> ParsedAddress:
@@ -209,6 +211,16 @@ async def test_an_unassigned_typed_code_falls_back_to_the_pin() -> None:
     result = await resolver.resolve("Deliver to ek01a03fk01", Coordinate(lat=7.62, lng=5.19))
     assert (result.status, result.level, result.method) == ("resolved", "building", "location")
     assert result.evidence[1] == "NIPOST says it is not assigned."
+
+
+@pytest.mark.anyio
+async def test_a_code_a_test_key_cannot_confirm_says_so() -> None:
+    resolver = Resolver(nipost=nipost(valid=False, key="nipost_pk_test_1"))
+    result = await resolver.resolve("EK-01-A03-FK-01, NTA Road")
+    assert result.evidence[1] == (
+        "NIPOST says it is not assigned. It was asked with a test key, which may not see "
+        "assigned codes."
+    )
 
 
 @pytest.mark.anyio

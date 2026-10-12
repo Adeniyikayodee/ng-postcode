@@ -31,6 +31,7 @@ Geocoder = Callable[[str], Awaitable[Geocoded | GeocodeFailure | None]]
 LOCATION_RADIUS_M = 50.0
 MAX_QUERIES = 3
 MAX_QUERY_CHARS = 200
+TEST_KEY = " It was asked with a test key, which may not see assigned codes."
 NO_NIPOST = "NG_POSTCODE_API_KEY is not set, so NIPOST cannot be asked for the postcode."
 
 
@@ -74,10 +75,11 @@ class Resolver:
         result = await self.nipost.send(lookup(code, 1))
         if isinstance(result, ApiError | TransportError):
             return None, f"Not confirmed with NIPOST: {result}."
-        note = (
-            "NIPOST confirms it is assigned." if result.valid else "NIPOST says it is not assigned."
-        )
-        return result.valid, note
+        if result.valid:
+            return True, "NIPOST confirms it is assigned."
+        # An older client does not say what kind of key it holds.
+        test = getattr(self.nipost, "test_key", False)
+        return False, "NIPOST says it is not assigned." + TEST_KEY * test
 
     async def _by_location(self, at: Coordinate) -> Resolution:
         if self.nipost is None:
