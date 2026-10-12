@@ -107,6 +107,15 @@ def test_a_header_that_repeats_a_name_is_refused() -> None:
         read(io.StringIO("id,pc,id\n1,EK01A03FK01,2\n"), "pc")
 
 
+def test_a_file_that_cannot_be_read_is_reported_in_one_line(tmp_path: Path) -> None:
+    with pytest.raises(SystemExit, match=r"ng-postcode: .*No such file"):
+        main([str(tmp_path / "missing.csv"), "--column", "pc"])
+    latin = tmp_path / "latin.csv"
+    latin.write_bytes("id,pc\n1,caf\xe9\n".encode("latin-1"))
+    with pytest.raises(SystemExit, match="is not UTF-8"):
+        main([str(latin), "--column", "pc"])
+
+
 def test_confirming_asks_once_for_each_code_and_stops_at_the_first_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
