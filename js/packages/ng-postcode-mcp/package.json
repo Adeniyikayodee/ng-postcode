@@ -1,6 +1,6 @@
 {
   "name": "ng-postcode-mcp",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "MCP server for Nigerian postcodes (Nigeria's NIPOST digital postcode, NDAPS): validate, look up, autocomplete and find postcodes by location.",
   "mcpName": "io.github.Adeniyikayodee/ng-postcode",
   "license": "MIT",
@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.3.1",
-    "ng-postcode-js": "^0.4.0"
+    "ng-postcode-js": "^0.4.3"
   },
   "engines": {
     "node": ">=22.12"
