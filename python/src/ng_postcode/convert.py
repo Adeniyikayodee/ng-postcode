@@ -82,12 +82,13 @@ def write(
     reader: csv.DictReader[str], target: TextIO, column: str, confirm: Confirm | None
 ) -> Counter[str]:
     """Convert the rows of `reader` to `target` and count them by status."""
-    writer: csv.DictWriter[str] | None = None
+    added = ["compact", "status", "suggestion", "error", *(["assigned"] if confirm else [])]
+    names = [*(reader.fieldnames or []), *(f"{column}_{name}" for name in added)]
+    writer = csv.DictWriter(target, fieldnames=names, lineterminator="\n")
+    # Written before any row, so a file with none keeps its header.
+    writer.writeheader()
     counts: Counter[str] = Counter()
     for row in rows(reader, column, confirm):
-        if writer is None:
-            writer = csv.DictWriter(target, fieldnames=list(row), lineterminator="\n")
-            writer.writeheader()
         writer.writerow(row)
         counts[row[f"{column}_status"]] += 1
     return counts

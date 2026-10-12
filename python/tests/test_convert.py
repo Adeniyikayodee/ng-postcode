@@ -75,6 +75,15 @@ def test_the_input_file_is_never_written_over(tmp_path: Path) -> None:
     assert source.read_text(encoding="utf-8") == "id,pc\n1,EK01A03FK01\n"
 
 
+def test_a_file_with_no_rows_keeps_its_header(tmp_path: Path) -> None:
+    source, target = tmp_path / "in.csv", tmp_path / "out.csv"
+    source.write_text("id,pc\n", encoding="utf-8")
+    main([str(source), "--column", "pc", "--out", str(target)])
+    assert target.read_text(encoding="utf-8") == (
+        "id,pc,pc_compact,pc_status,pc_suggestion,pc_error\n"
+    )
+
+
 def test_confirming_asks_once_for_each_code_and_stops_at_the_first_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
