@@ -8,7 +8,7 @@ import httpx
 import pytest
 
 from ng_postcode import Postcode
-from ng_postcode.convert import Converted, convert, main, nipost, rows, write
+from ng_postcode.convert import Converted, convert, main, nipost, read, rows
 
 
 @pytest.mark.parametrize(
@@ -52,12 +52,16 @@ def test_converts_a_file_and_reports_the_counts(
 
 
 def test_a_missing_column_or_key_stops_before_anything_is_written(tmp_path: Path) -> None:
-    source = tmp_path / "in.csv"
+    source, target = tmp_path / "in.csv", tmp_path / "out.csv"
     source.write_text("id,pc\n1,x\n", encoding="utf-8")
+    target.write_text("kept", encoding="utf-8")
     with pytest.raises(SystemExit, match="no column named 'postcode'"):
-        write(source.open(), io.StringIO(), "postcode", None)
+        read(io.StringIO("id,pc\n1,x\n"), "postcode")
+    with pytest.raises(SystemExit, match="no column named 'postcode'"):
+        main([str(source), "--column", "postcode", "--out", str(target)])
     with pytest.raises(SystemExit):
         main([str(source), "--column", "pc", "--confirm"])
+    assert target.read_text(encoding="utf-8") == "kept"
 
 
 def test_confirming_asks_once_for_each_code_and_stops_at_the_first_failure(
