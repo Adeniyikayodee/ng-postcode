@@ -92,6 +92,15 @@ def test_a_row_longer_than_the_header_stops_the_run(tmp_path: Path) -> None:
         main([str(source), "--column", "pc", "--out", str(tmp_path / "out.csv")])
 
 
+def test_one_row_is_counted_in_the_singular(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    source = tmp_path / "in.csv"
+    source.write_text("pc\nEK01A03FK01\n", encoding="utf-8")
+    main([str(source), "--column", "pc"])
+    assert "ng-postcode: 1 row: 1 valid" in capsys.readouterr().err
+
+
 def test_a_row_shorter_than_the_header_is_empty(capsys: pytest.CaptureFixture[str]) -> None:
     write(read(io.StringIO("id,pc\n1\n"), "pc"), sys.stdout, "pc", None)
     assert capsys.readouterr().out.splitlines()[1] == "1,,,empty,,"

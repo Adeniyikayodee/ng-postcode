@@ -170,4 +170,5 @@ def main(argv: list[str] | None = None) -> None:
     parts = [
         f"{counts[status]:,} {status}" for status in ("valid", "suggested", "invalid", "empty")
     ]
-    print(f"ng-postcode: {sum(counts.values()):,} rows: {', '.join(parts)}", file=sys.stderr)
+    total = sum(counts.values())
+    print(f"ng-postcode: {total:,} row{'s' * (total != 1)}: {', '.join(parts)}", file=sys.stderr)
