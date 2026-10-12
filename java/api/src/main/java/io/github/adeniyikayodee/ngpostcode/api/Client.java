@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -28,6 +29,9 @@ public final class Client {
 
     /** Bytes of a response read before it is refused. Real answers are a few thousand. */
     public static final int MAX_BODY_BYTES = 1_000_000;
+
+    /** Hosts a plain http base URL may name: a mock on this machine. */
+    private static final Set<String> LOOPBACK = Set.of("localhost", "127.0.0.1", "[::1]");
 
     private final String apiKey;
     private final String baseUrl;
@@ -81,6 +85,9 @@ public final class Client {
                     .build();
         } catch (IllegalArgumentException unusableBaseUrl) {
             return failed(unusableBaseUrl);
+        }
+        if ("http".equalsIgnoreCase(call.uri().getScheme()) && !LOOPBACK.contains(call.uri().getHost())) {
+            return new Result.Failed<>(new TransportError("refusing to send the key over plain http"));
         }
         // The request timeout stops at the response headers before Java 26, so a body that
         // stalls would hang. The deadline here covers the whole exchange.

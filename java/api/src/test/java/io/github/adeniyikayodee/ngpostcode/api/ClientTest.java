@@ -158,6 +158,20 @@ class ClientTest {
         assertEquals("/v1/lookup", seen.get(0).getRequestURI().getPath());
     }
 
+    // spec/client.json: refuses_plain_http
+    @Test
+    void plainHttpIsRefusedExceptOnThisMachine() throws IOException {
+        clientFor(exchange -> reply(exchange, 200, "{\"data\": {\"postcode\": \"FC-03-B06-AG-12\", \"valid\": true}}"));
+        int port = server.getAddress().getPort();
+        for (String base : List.of("http://api.postcode.gov.ng", "HTTP://10.0.0.5:8080/", "http://localhost.example")) {
+            var refused = assertInstanceOf(Result.Failed.class, new Client("secret", base).send(Api.lookup(CODE)));
+            assertEquals("refusing to send the key over plain http", refused.failure().toString());
+        }
+        assertInstanceOf(Result.Ok.class, new Client("secret", "http://localhost:" + port).send(Api.lookup(CODE)));
+        assertInstanceOf(Result.Ok.class, new Client("secret", "HTTP://127.0.0.1:" + port).send(Api.lookup(CODE)));
+        assertEquals(2, seen.size());
+    }
+
     // spec/client.json: failures_are_values
     @Test
     void aSilentServerTimesOutAsAValueWithoutTheKey() throws IOException {

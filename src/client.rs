@@ -33,6 +33,7 @@ pub struct TransportError(Cause);
 enum Cause {
     Http(ureq::Error),
     UnusableKey,
+    PlainHttp,
 }
 
 impl Client {
@@ -69,6 +70,9 @@ impl Client {
         if !self.api_key.bytes().all(|byte| byte.is_ascii_graphic()) || self.api_key.is_empty() {
             return Err(Error::Transport(TransportError(Cause::UnusableKey)));
         }
+        if plain_http(&self.base_url) {
+            return Err(Error::Transport(TransportError(Cause::PlainHttp)));
+        }
         let call = self
             .agent
             .get(format!("{}{}", self.base_url, request.path))
@@ -102,6 +106,16 @@ fn agent(timeout: Duration) -> ureq::Agent {
         .into()
 }
 
+/// Whether a request would carry the key unencrypted to another machine. A mock on this
+/// machine, at localhost, 127.0.0.1 or ::1, may use plain http.
+fn plain_http(base_url: &str) -> bool {
+    let Ok(uri) = base_url.parse::<ureq::http::Uri>() else {
+        return false;
+    };
+    let local = matches!(uri.host(), Some("localhost" | "127.0.0.1" | "[::1]"));
+    uri.scheme_str() == Some("http") && !local
+}
+
 fn failed(error: ureq::Error) -> Error {
     Error::Transport(TransportError(Cause::Http(error)))
 }
@@ -111,6 +125,7 @@ impl fmt::Display for TransportError {
         match &self.0 {
             Cause::Http(error) => error.fmt(f),
             Cause::UnusableKey => f.write_str("unusable API key"),
+            Cause::PlainHttp => f.write_str("refusing to send the key over plain http"),
         }
     }
 }
@@ -121,7 +136,7 @@ impl std::error::Error for TransportError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.0 {
             Cause::Http(error) => error.source(),
-            Cause::UnusableKey => None,
+            Cause::UnusableKey | Cause::PlainHttp => None,
         }
     }
 }

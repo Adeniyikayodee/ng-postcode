@@ -22,6 +22,11 @@ TIMEOUT = 10.0
 
 UNUSABLE_KEY = "unusable API key"
 
+PLAIN_HTTP = "refusing to send the key over plain http"
+
+LOOPBACK = frozenset({"localhost", "127.0.0.1", "::1"})
+"""Hosts a plain http base URL may name: a mock on this machine."""
+
 MAX_BODY = 1_000_000
 """Characters of a response read before it is refused. Real answers are a few thousand."""
 
@@ -56,10 +61,13 @@ class Client:
         self._owns_http = http is None
         self._base_url = base_url.rstrip("/")
         self._headers = _headers(api_key)
+        self._plain = _plain(self._base_url)
 
     def send(self, request: Request[T]) -> T | ApiError | TransportError:
         if self._headers is None:
             return TransportError(UNUSABLE_KEY)
+        if self._plain:
+            return TransportError(PLAIN_HTTP)
         url = self._base_url + request.path
         # httpx times each read, so a body that drips would never end: the deadline does.
         deadline = time.monotonic() + self._timeout
@@ -112,10 +120,13 @@ class AsyncClient:
         self._owns_http = http is None
         self._base_url = base_url.rstrip("/")
         self._headers = _headers(api_key)
+        self._plain = _plain(self._base_url)
 
     async def send(self, request: Request[T]) -> T | ApiError | TransportError:
         if self._headers is None:
             return TransportError(UNUSABLE_KEY)
+        if self._plain:
+            return TransportError(PLAIN_HTTP)
         url = self._base_url + request.path
         try:
             with anyio.fail_after(self._timeout):
@@ -162,6 +173,15 @@ def _headers(api_key: str) -> dict[str, str] | None:
     key = api_key.strip()
     usable = key and key.isascii() and key.isprintable() and " " not in key
     return {"X-API-Key": key} if usable else None
+
+
+def _plain(base_url: str) -> bool:
+    """Whether a request would carry the key unencrypted to another machine."""
+    try:
+        url = httpx.URL(base_url)
+    except httpx.InvalidURL:
+        return False
+    return url.scheme == "http" and url.host not in LOOPBACK
 
 
 def _transport(error: Exception) -> TransportError:
