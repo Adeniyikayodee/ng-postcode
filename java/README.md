@@ -64,7 +64,7 @@ if (found instanceof Result.Ok<Lookup> ok) {
 
 `Api` covers `lookup`, `autocomplete`, `reverse` and `nearby`. Each returns a plain `Request`, and `Api.decode` turns a status and body into a typed result, so it works with any HTTP client. A request that cannot succeed, such as a level outside 1 to 5, a blank autocomplete or a coordinate that is not finite, throws `IllegalArgumentException` before anything is sent.
 
-The client never follows redirects, so the key is never sent to another host, and it gives up after 10 seconds. Fields the API may omit are `null`.
+The client never follows redirects and refuses a plain http base URL (except on this machine), so the key is never sent to another host or unencrypted, and it gives up after 10 seconds. Fields the API may omit are `null`.
 
 Get a key from the [NIPOST developer dashboard](https://dashboard.postcode.gov.ng). Level 1 lookups confirm a code is assigned; levels 2 and up return address details and consume credits.
 
