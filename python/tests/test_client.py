@@ -101,6 +101,40 @@ def test_an_unusable_key_is_refused_without_being_echoed(key: str) -> None:
     assert sent == []
 
 
+# spec/client.json: refuses_plain_http
+@pytest.mark.parametrize(
+    ("base_url", "sent"),
+    [
+        ("http://api.postcode.gov.ng", False),
+        ("HTTP://10.0.0.5:8080/", False),
+        ("http://localhost.example", False),
+        ("http://localhost:8080", True),
+        ("http://127.0.0.1", True),
+        ("http://[::1]:8080", True),
+        ("https://staging.example", True),
+    ],
+)
+def test_plain_http_is_refused_except_on_this_machine(base_url: str, sent: bool) -> None:
+    seen: list[httpx.Request] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return api(request)
+
+    async def run() -> object:
+        http = httpx.AsyncClient(transport=httpx.MockTransport(handle))
+        return await AsyncClient("key", base_url=base_url, http=http).send(lookup(CODE))
+
+    http = httpx.Client(transport=httpx.MockTransport(handle))
+    answers = [Client("key", base_url=base_url, http=http).send(lookup(CODE)), asyncio.run(run())]
+    if sent:
+        assert all(isinstance(answer, Lookup) for answer in answers)
+        assert len(seen) == 2
+    else:
+        assert answers == [TransportError("refusing to send the key over plain http")] * 2
+        assert seen == []
+
+
 def test_whitespace_around_a_key_is_dropped() -> None:
     with sync_client(" key\n", api) as client:
         found = client.send(lookup(CODE))

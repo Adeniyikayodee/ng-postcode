@@ -103,6 +103,36 @@ fn an_unreachable_host_is_a_value_without_the_key() {
     assert!(matches!(forever, Err(Error::Transport(_))));
 }
 
+// spec/client.json: refuses_plain_http
+#[test]
+fn plain_http_is_refused_except_on_this_machine() {
+    const REFUSAL: &str = "refusing to send the key over plain http";
+    let send = |base: String| {
+        Client::new("secret")
+            .with_base_url(base)
+            .with_timeout(Duration::from_millis(500))
+            .send(&api::lookup("FC-03-B06-AG-12".parse().unwrap(), 1).unwrap())
+            .unwrap_err()
+            .to_string()
+    };
+    for base in [
+        "http://api.postcode.gov.ng",
+        "HTTP://10.0.0.5:8080/",
+        "http://localhost.example",
+    ] {
+        assert_eq!(send(base.to_owned()), REFUSAL);
+    }
+    // A mock on this machine is let through, here to a port nothing listens on.
+    let port = TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap()
+        .port();
+    for host in ["localhost", "127.0.0.1", "[::1]"] {
+        assert_ne!(send(format!("http://{host}:{port}")), REFUSAL);
+    }
+}
+
 // spec/client.json: refuses_an_unusable_key
 #[test]
 fn an_unusable_key_is_refused_without_being_echoed() {

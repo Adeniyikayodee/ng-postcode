@@ -25,6 +25,36 @@ test("sends the key and query, refuses redirects, and decodes the answer", async
   expect(seen?.[1]).toMatchObject({ headers: { "X-API-Key": "secret" }, redirect: "manual" });
 });
 
+// spec/client.json: refuses_plain_http
+test("plain http is refused except on this machine", async () => {
+  const seen: string[] = [];
+  const fake = ((url: URL) => {
+    seen.push(String(url));
+    return Promise.resolve(Response.json({ data: { postcode: "FC-03-B06-AG-12", valid: true } }));
+  }) as typeof fetch;
+  const send = (baseUrl: string) =>
+    new Client("secret", { baseUrl, fetch: fake }).send(lookup(CODE));
+  for (const baseUrl of [
+    "http://api.postcode.gov.ng",
+    "HTTP://10.0.0.5:8080/",
+    "http://localhost.example",
+  ]) {
+    expect(await send(baseUrl)).toEqual(
+      new TransportError("refusing to send the key over plain http"),
+    );
+  }
+  expect(seen).toEqual([]);
+  for (const baseUrl of [
+    "http://localhost:8080",
+    "http://127.0.0.1",
+    "http://[::1]:8080",
+    "https://staging.example",
+  ]) {
+    expect(await send(baseUrl)).toMatchObject({ valid: true });
+  }
+  expect(seen).toHaveLength(4);
+});
+
 test("a redirect is not followed, and reads as a malformed answer", async () => {
   let served = 0;
   const server = createServer((_, response) => {

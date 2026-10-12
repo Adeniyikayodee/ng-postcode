@@ -7,6 +7,9 @@ export const TIMEOUT_MS = 10_000;
 /** Bytes of a response read before it is refused. Real answers are a few thousand. */
 export const MAX_BODY_BYTES = 1_000_000;
 
+/** Hosts a plain http base URL may name: a mock on this machine. */
+const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
 /** The request never produced a response: DNS, TLS, timeout and the like. */
 export class TransportError {
   constructor(readonly reason: string) {}
@@ -48,6 +51,9 @@ export class Client {
     const send = this.#fetch;
     try {
       const url = new URL(this.#baseUrl + request.path);
+      if (url.protocol === "http:" && !LOOPBACK.has(url.hostname)) {
+        return new TransportError("refusing to send the key over plain http");
+      }
       for (const [key, value] of request.params) url.searchParams.append(key, value);
       const response = await send(url, {
         headers: { "X-API-Key": this.#apiKey },
