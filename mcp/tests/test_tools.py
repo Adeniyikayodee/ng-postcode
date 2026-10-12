@@ -304,7 +304,35 @@ async def test_rejects_out_of_range_arguments() -> None:
 def test_output_models_only_use_fields_the_library_has(
     model: type[BaseModel], source: type
 ) -> None:
-    assert set(model.model_fields) <= {field.name for field in dataclasses.fields(source)}
+    # The note is the server's own.
+    fields = set(model.model_fields) - {"note"}
+    assert fields <= {field.name for field in dataclasses.fields(source)}
+
+
+@pytest.mark.anyio
+async def test_a_test_key_that_finds_nothing_says_so() -> None:
+    def handle(request: httpx.Request) -> httpx.Response:
+        found = request.headers["X-API-Key"].endswith("found")
+        if request.url.path == "/v1/lookup":
+            return httpx.Response(200, json={"data": {"postcode": "x", "valid": found}})
+        return httpx.Response(200, json={"data": {"found": found}})
+
+    async def note(tool: str, arguments: dict[str, Any], key: str) -> Any:
+        http = httpx.AsyncClient(transport=httpx.MockTransport(handle))
+        async with Client(create_server(Settings(api_key=key), http=http)) as client:
+            result = await client.call_tool(tool, arguments)
+        assert result.structured_content is not None
+        return result.structured_content["note"]
+
+    calls: list[tuple[str, dict[str, Any]]] = [
+        ("lookup_postcode", {"postcode": "EK-01-A03-FK-01"}),
+        ("find_postcode_at_location", {"latitude": 7.62, "longitude": 5.22}),
+    ]
+    for tool, arguments in calls:
+        said = await note(tool, arguments, "nipost_pk_test_1")
+        assert said == "Asked with a test key, which may not see assigned codes."
+        assert await note(tool, arguments, "nipost_pk_test_found") is None
+        assert await note(tool, arguments, "nipost_live_1") is None
 
 
 def test_transport_settings() -> None:

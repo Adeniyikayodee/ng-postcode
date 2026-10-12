@@ -317,6 +317,19 @@
             "default": null,
             "description": "Level 5, unstructured.",
             "title": "Point Geometry"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Why the answer may be incomplete, such as a test key.",
+            "title": "Note"
           }
         },
         "required": [
@@ -501,6 +514,19 @@
             "default": null,
             "description": "Level 5, unstructured.",
             "title": "Point Geometry"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Why the answer may be incomplete, such as a test key.",
+            "title": "Note"
           }
         },
         "required": [
@@ -837,6 +863,19 @@
             "default": null,
             "description": "How deep the match goes, e.g. unit.",
             "title": "Depth"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Why the answer may be incomplete, such as a test key.",
+            "title": "Note"
           }
         },
         "required": [
