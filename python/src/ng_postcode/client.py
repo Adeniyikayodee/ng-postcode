@@ -62,6 +62,8 @@ class Client:
         self._base_url = base_url.rstrip("/")
         self._headers = _headers(api_key)
         self._plain = _plain(self._base_url)
+        self.test_key = _is_test(api_key)
+        """Whether the key is a NIPOST test key, which may not see assigned codes."""
 
     def send(self, request: Request[T]) -> T | ApiError | TransportError:
         if self._headers is None:
@@ -121,6 +123,8 @@ class AsyncClient:
         self._base_url = base_url.rstrip("/")
         self._headers = _headers(api_key)
         self._plain = _plain(self._base_url)
+        self.test_key = _is_test(api_key)
+        """Whether the key is a NIPOST test key, which may not see assigned codes."""
 
     async def send(self, request: Request[T]) -> T | ApiError | TransportError:
         if self._headers is None:
@@ -182,6 +186,10 @@ def _plain(base_url: str) -> bool:
     except httpx.InvalidURL:
         return False
     return url.scheme == "http" and url.host not in LOOPBACK
+
+
+def _is_test(api_key: str) -> bool:
+    return api_key.strip().startswith(("nipost_test_", "nipost_pk_test_"))
 
 
 def _transport(error: Exception) -> TransportError:
