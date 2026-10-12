@@ -117,7 +117,7 @@ def main() -> None:
     key = api_key()
     if key is None:
         sys.exit("No key: set NG_POSTCODE_API_KEY or save the key in ~/.nipost_key")
-    kind = next((p for p in ("nipost_live_", "nipost_test_", "nipost_pk_") if key.startswith(p)), "unknown")
+    kind = next((p for p in ("nipost_live_", "nipost_test_", "nipost_pk_test_", "nipost_pk_") if key.startswith(p)), "unknown")
     print(f"Using a {kind.strip('_')} key against {BASE_URL}")
     with httpx.Client(headers={"X-API-Key": key}, timeout=20.0) as http:
         print(f"healthz -> HTTP {http.get(BASE_URL + '/healthz').status_code}")
