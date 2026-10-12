@@ -89,6 +89,9 @@ def write(
     writer.writeheader()
     counts: Counter[str] = Counter()
     for row in rows(reader, column, confirm):
+        # The reader files cells past the header under None, and no column can take them.
+        if None in row:
+            sys.exit(f"ng-postcode: line {reader.line_num} has more cells than the header")
         writer.writerow(row)
         counts[row[f"{column}_status"]] += 1
     return counts

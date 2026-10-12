@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import csv
 import io
+import sys
 from pathlib import Path
 
 import httpx
 import pytest
 
 from ng_postcode import Postcode
-from ng_postcode.convert import Converted, convert, main, nipost, read, rows
+from ng_postcode.convert import Converted, convert, main, nipost, read, rows, write
 
 
 @pytest.mark.parametrize(
@@ -82,6 +83,18 @@ def test_a_file_with_no_rows_keeps_its_header(tmp_path: Path) -> None:
     assert target.read_text(encoding="utf-8") == (
         "id,pc,pc_compact,pc_status,pc_suggestion,pc_error\n"
     )
+
+
+def test_a_row_longer_than_the_header_stops_the_run(tmp_path: Path) -> None:
+    source = tmp_path / "in.csv"
+    source.write_text("id,pc\n1,EK01A03FK01\n2,x,extra\n", encoding="utf-8")
+    with pytest.raises(SystemExit, match="line 3 has more cells than the header"):
+        main([str(source), "--column", "pc", "--out", str(tmp_path / "out.csv")])
+
+
+def test_a_row_shorter_than_the_header_is_empty(capsys: pytest.CaptureFixture[str]) -> None:
+    write(read(io.StringIO("id,pc\n1\n"), "pc"), sys.stdout, "pc", None)
+    assert capsys.readouterr().out.splitlines()[1] == "1,,,empty,,"
 
 
 def test_confirming_asks_once_for_each_code_and_stops_at_the_first_failure(
