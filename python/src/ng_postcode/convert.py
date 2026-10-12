@@ -70,11 +70,18 @@ def rows(
         yield row | added
 
 
-def write(source: TextIO, target: TextIO, column: str, confirm: Confirm | None) -> Counter[str]:
-    """Convert `source` to `target` and count the rows by status."""
+def read(source: TextIO, column: str) -> csv.DictReader[str]:
+    """The rows of `source`, once its header is known to hold `column`."""
     reader = csv.DictReader(source)
     if column not in (reader.fieldnames or []):
         sys.exit(f"ng-postcode: no column named {column!r}; found {reader.fieldnames}")
+    return reader
+
+
+def write(
+    reader: csv.DictReader[str], target: TextIO, column: str, confirm: Confirm | None
+) -> Counter[str]:
+    """Convert the rows of `reader` to `target` and count them by status."""
     writer: csv.DictWriter[str] | None = None
     counts: Counter[str] = Counter()
     for row in rows(reader, column, confirm):
@@ -128,12 +135,14 @@ def main(argv: list[str] | None = None) -> None:
             if args.file == "-"
             else files.enter_context(open(args.file, newline="", encoding="utf-8-sig"))
         )
+        reader = read(source, args.column)
+        # Opening the output empties it, so it waits until the input is known to be usable.
         target = (
             files.enter_context(open(args.out, "w", newline="", encoding="utf-8"))
             if args.out
             else sys.stdout
         )
-        counts = write(source, target, args.column, confirm)
+        counts = write(reader, target, args.column, confirm)
     parts = [
         f"{counts[status]:,} {status}" for status in ("valid", "suggested", "invalid", "empty")
     ]
