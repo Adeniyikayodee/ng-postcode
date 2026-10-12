@@ -144,24 +144,29 @@ def main(argv: list[str] | None = None) -> None:
     if args.confirm and not key:
         cli.error("--confirm needs a NIPOST API key in NG_POSTCODE_API_KEY")
     confirm = nipost(key) if args.confirm else None
-    with contextlib.ExitStack() as files:
-        # utf-8-sig drops the byte order mark that spreadsheet exports begin with.
-        source = (
-            sys.stdin
-            if args.file == "-"
-            else files.enter_context(open(args.file, newline="", encoding="utf-8-sig"))
-        )
-        reader = read(source, args.column)
-        # Opening the output empties it, so it waits until the input is known to be usable.
-        same = args.out and args.file != "-" and os.path.exists(args.out)
-        if same and os.path.samefile(args.file, args.out):
-            sys.exit("ng-postcode: --out is the input file, which writing would empty")
-        target = (
-            files.enter_context(open(args.out, "w", newline="", encoding="utf-8"))
-            if args.out
-            else sys.stdout
-        )
-        counts = write(reader, target, args.column, confirm)
+    try:
+        with contextlib.ExitStack() as files:
+            # utf-8-sig drops the byte order mark that spreadsheet exports begin with.
+            source = (
+                sys.stdin
+                if args.file == "-"
+                else files.enter_context(open(args.file, newline="", encoding="utf-8-sig"))
+            )
+            reader = read(source, args.column)
+            # Opening the output empties it, so it waits until the input is known to be usable.
+            same = args.out and args.file != "-" and os.path.exists(args.out)
+            if same and os.path.samefile(args.file, args.out):
+                sys.exit("ng-postcode: --out is the input file, which writing would empty")
+            target = (
+                files.enter_context(open(args.out, "w", newline="", encoding="utf-8"))
+                if args.out
+                else sys.stdout
+            )
+            counts = write(reader, target, args.column, confirm)
+    except UnicodeDecodeError:
+        sys.exit(f"ng-postcode: {args.file} is not UTF-8; save it as CSV UTF-8 and run again")
+    except OSError as error:
+        sys.exit(f"ng-postcode: {error}")
     parts = [
         f"{counts[status]:,} {status}" for status in ("valid", "suggested", "invalid", "empty")
     ]
