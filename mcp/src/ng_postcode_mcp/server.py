@@ -237,6 +237,9 @@ class PostcodeDetails(FromLibrary):
     building_use_status: str | None = Field(description="Level 3 and up, e.g. residential.")
     other_building_info: Any = Field(default=None, description="Level 4 and up, unstructured.")
     point_geometry: Any = Field(default=None, description="Level 5, unstructured.")
+    note: str | None = Field(
+        default=None, description="Why the answer may be incomplete, such as a test key."
+    )
 
 
 class Completion(FromLibrary):
@@ -273,6 +276,9 @@ class Location(FromLibrary):
     message: str | None
     radius_m: float | None = Field(description="The radius the API actually applied.")
     depth: str | None = Field(default=None, description="How deep the match goes, e.g. unit.")
+    note: str | None = Field(
+        default=None, description="Why the answer may be incomplete, such as a test key."
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -369,8 +375,9 @@ def create_server(
 
         For the address and building details, use lookup_postcode_details.
         """
-        result = await api(ctx).send(lookup(checked(postcode), level))
-        return PostcodeDetails.model_validate(unwrap(result))
+        client = api(ctx)
+        result = await client.send(lookup(checked(postcode), level))
+        return noted(PostcodeDetails.model_validate(unwrap(result)), client)
 
     async def lookup_postcode_details(
         postcode: Annotated[
@@ -413,7 +420,7 @@ def create_server(
         result = await client.send(lookup(code, level))
         if mine and not reached_billing(result):
             state.paid[0] -= 1
-        return PostcodeDetails.model_validate(unwrap(result))
+        return noted(PostcodeDetails.model_validate(unwrap(result)), client)
 
     # Not offered at all under the default cap, so a model cannot spend by accident.
     if settings.max_level >= 2:
@@ -476,10 +483,10 @@ def create_server(
 
         Names and the house address are withheld unless NG_POSTCODE_MAX_LEVEL is 2 or more.
         """
-        result = await api(ctx).send(
-            reverse(Coordinate(lat=latitude, lng=longitude), max_distance_m)
-        )
-        return capped(Location.model_validate(unwrap(result)), settings.max_level)
+        client = api(ctx)
+        result = await client.send(reverse(Coordinate(lat=latitude, lng=longitude), max_distance_m))
+        found = capped(Location.model_validate(unwrap(result)), settings.max_level)
+        return noted(found, client)
 
     @server.tool(
         title="Resolve a Nigerian address to a postcode",
@@ -593,6 +600,17 @@ def geocoder_for(settings: Settings, http: httpx.AsyncClient | None) -> Nominati
         f"ng-postcode-mcp/{version('ng-postcode-mcp')} ({contact})",
         http=http,
     )
+
+
+Answer = TypeVar("Answer", PostcodeDetails, Location)
+
+TEST_KEY = "Asked with a test key, which may not see assigned codes."
+
+
+def noted(answer: Answer, client: AsyncClient) -> Answer:
+    """The answer, with a note when a test key found nothing: NIPOST may hold the building."""
+    missing = not (answer.valid if isinstance(answer, PostcodeDetails) else answer.found)
+    return answer.model_copy(update={"note": TEST_KEY}) if missing and client.test_key else answer
 
 
 def capped(location: Location, max_level: int) -> Location:

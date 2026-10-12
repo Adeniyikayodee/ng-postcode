@@ -161,6 +161,29 @@ test("autocompletes, and withholds address fields under the level cap", async ()
   expect(outside.isError).toBe(true);
 });
 
+test("a test key that finds nothing says so", async () => {
+  const answer = (async (url: URL, init: RequestInit) => {
+    const found = (init.headers as Record<string, string>)["X-API-Key"]?.endsWith("found");
+    const data = url.pathname === "/v1/lookup" ? { postcode: "x", valid: found } : { found };
+    return Response.json({ data });
+  }) as typeof fetch;
+  const note = async (name: string, args: Record<string, unknown>, apiKey: string) => {
+    const result = await call(await connect({ apiKey, fetch: answer }), name, args);
+    return (result.structuredContent as { note: string | null }).note;
+  };
+  const calls: Array<[string, Record<string, unknown>]> = [
+    ["lookup_postcode", { postcode: "EK-01-A03-FK-01" }],
+    ["find_postcode_at_location", { latitude: 7.62, longitude: 5.22 }],
+  ];
+  for (const [name, args] of calls) {
+    expect(await note(name, args, "nipost_pk_test_1")).toBe(
+      "Asked with a test key, which may not see assigned codes.",
+    );
+    expect(await note(name, args, "nipost_pk_test_found")).toBeNull();
+    expect(await note(name, args, "nipost_live_1")).toBeNull();
+  }
+});
+
 test("the reported version is the package version", () => {
   const manifest = new URL("../package.json", import.meta.url);
   expect(VERSION).toBe(JSON.parse(readFileSync(manifest, "utf8")).version);

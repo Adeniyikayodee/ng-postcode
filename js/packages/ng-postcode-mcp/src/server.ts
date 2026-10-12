@@ -82,14 +82,23 @@ export function createServer(settings: Settings): McpServer {
     );
   };
 
+  // A test key that finds nothing says so: NIPOST may hold the building.
+  const testKey = /^nipost_(pk_)?test_/.test(settings.apiKey ?? "");
+  const noted = <T extends object>(answer: T, missing: boolean) => ({
+    ...answer,
+    note: missing && testKey ? "Asked with a test key, which may not see assigned codes." : null,
+  });
+
   const maxPaidCalls = settings.maxPaidCalls ?? 25;
   let paid = 0;
 
   const handlers: Record<string, Handler> = {
     validate_postcode: ({ postcode }) => validation(String(postcode)),
 
-    lookup_postcode: async ({ postcode }) =>
-      unwrap(await api().send(lookup(checked(String(postcode)), 1))),
+    lookup_postcode: async ({ postcode }) => {
+      const found = unwrap(await api().send(lookup(checked(String(postcode)), 1)));
+      return noted(found, !found.valid);
+    },
 
     lookup_postcode_details: async ({ postcode, level = 2 }) => {
       if (Number(level) > settings.maxLevel) {
@@ -107,7 +116,8 @@ export function createServer(settings: Settings): McpServer {
       paid += 1;
       const result = await client.send(lookup(code, Number(level)));
       if (!reachedBilling(result)) paid -= 1;
-      return unwrap(result);
+      const found = unwrap(result);
+      return noted(found, !found.valid);
     },
 
     autocomplete_postcode: async ({ partial }) => {
@@ -120,7 +130,7 @@ export function createServer(settings: Settings): McpServer {
       const at = { lat: Number(latitude), lng: Number(longitude) };
       const metres = max_distance_m == null ? undefined : Number(max_distance_m);
       const { coordinate: _, ...found } = unwrap(await api().send(reverse(at, metres)));
-      return capped(found, settings.maxLevel);
+      return noted(capped(found, settings.maxLevel), !found.found);
     },
   };
 
