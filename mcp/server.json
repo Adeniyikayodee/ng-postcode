@@ -90,7 +90,7 @@
     {
       "registryType": "npm",
       "identifier": "ng-postcode-mcp",
-      "version": "0.4.1",
+      "version": "0.4.2",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
