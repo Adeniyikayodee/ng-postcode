@@ -75,7 +75,11 @@ def read(source: TextIO, column: str) -> csv.DictReader[str]:
     reader = csv.DictReader(source)
     if column not in (reader.fieldnames or []):
         sys.exit(f"ng-postcode: no column named {column!r}; found {reader.fieldnames}")
-    taken = [name for name in reader.fieldnames or [] if name in new_columns(column, True)]
+    names = list(reader.fieldnames or [])
+    repeated = [name for name in names if names.count(name) > 1]
+    if repeated:
+        sys.exit(f"ng-postcode: the header names {repeated[0]!r} more than once")
+    taken = [name for name in names if name in new_columns(column, True)]
     if taken:
         sys.exit(f"ng-postcode: the file already has a column named {taken[0]!r}")
     return reader

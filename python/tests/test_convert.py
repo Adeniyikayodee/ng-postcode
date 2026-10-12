@@ -102,6 +102,11 @@ def test_a_column_the_run_would_add_is_never_replaced() -> None:
         read(io.StringIO("pc,pc_status\nEK01A03FK01,shipped\n"), "pc")
 
 
+def test_a_header_that_repeats_a_name_is_refused() -> None:
+    with pytest.raises(SystemExit, match="names 'id' more than once"):
+        read(io.StringIO("id,pc,id\n1,EK01A03FK01,2\n"), "pc")
+
+
 def test_confirming_asks_once_for_each_code_and_stops_at_the_first_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
