@@ -25,6 +25,9 @@ public final class Api {
 
     public static final String BASE_URL = "https://api.postcode.gov.ng";
 
+    /** Characters of autocomplete text sent. A full code with its separators is 15. */
+    private static final int MAX_PARTIAL = 64;
+
     // Responses are read as a tree and checked by hand: data binding would turn a missing
     // boolean into false, and a renamed field into "not assigned".
     /** Levels of nesting a body may have: what serde_json, behind the Rust crate, reads. */
@@ -57,12 +60,16 @@ public final class Api {
     /**
      * Suggests completions for a partial postcode such as {@code EK 01 A}.
      *
-     * @throws IllegalArgumentException for a blank {@code partial}: the live API never answers one
+     * @throws IllegalArgumentException for a blank {@code partial}, which the live API never answers,
+     *     or one over 64 characters
      */
     public static Request<Autocomplete> autocomplete(String partial) {
         // Unicode White_Space, as the other implementations trim: isBlank() keeps a no-break space.
         if (partial.chars().allMatch(c -> Character.isSpaceChar(c) || (c >= '\t' && c <= '\r') || c == 0x85)) {
             throw new IllegalArgumentException("partial must not be empty");
+        }
+        if (partial.codePointCount(0, partial.length()) > MAX_PARTIAL) {
+            throw new IllegalArgumentException("partial is over " + MAX_PARTIAL + " characters");
         }
         return new Request<>("/v1/search/autocomplete", List.of(Map.entry("q", partial)), Api::readAutocomplete);
     }

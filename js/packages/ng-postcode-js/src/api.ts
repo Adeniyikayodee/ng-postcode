@@ -10,6 +10,9 @@ import { Postcode, SEGMENTS, type Segment, trimWhiteSpace } from "./postcode.js"
 
 export const BASE_URL = "https://api.postcode.gov.ng";
 
+/** Characters of autocomplete text sent. A full code with its separators is 15. */
+const MAX_PARTIAL = 64;
+
 /** A GET request whose successful response decodes to `T`. */
 export interface Request<T> {
   readonly path: string;
@@ -137,11 +140,16 @@ export function lookup(code: Postcode, level = 1): Request<Lookup> {
 /**
  * Suggest completions for a partial postcode such as `EK 01 A`.
  *
- * Throws `RangeError` for an empty `partial`: the live API never answers one.
+ * Throws `RangeError` for an empty `partial`, which the live API never answers, or one
+ * over 64 characters.
  */
 export function autocomplete(partial: string): Request<Autocomplete> {
   if (typeof partial !== "string") throw new TypeError("partial must be text");
   if (!trimWhiteSpace(partial)) throw new RangeError("partial must not be empty");
+  // Spread counts characters, where `length` counts an emoji as two.
+  if ([...partial].length > MAX_PARTIAL) {
+    throw new RangeError(`partial is over ${MAX_PARTIAL} characters`);
+  }
   return { path: "/v1/search/autocomplete", params: [["q", partial]], read: readAutocomplete };
 }
 

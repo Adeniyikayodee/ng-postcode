@@ -21,6 +21,9 @@ T = TypeVar("T")
 
 BASE_URL = "https://api.postcode.gov.ng"
 
+_MAX_PARTIAL = 64
+"""Characters of autocomplete text sent. A full code with its separators is 15."""
+
 _MAX_DEPTH = 127
 """Levels of nesting a body may have: what serde_json, behind the Rust crate, reads."""
 
@@ -161,12 +164,15 @@ def lookup(code: Postcode, level: int = 1) -> Request[Lookup]:
 def autocomplete(partial: str) -> Request[Autocomplete]:
     """Suggest completions for a partial postcode such as `EK 01 A`.
 
-    Raises `ValueError` for an empty `partial`: the live API never answers one.
+    Raises `ValueError` for an empty `partial`, which the live API never answers, or one
+    over 64 characters.
     """
     if not isinstance(partial, str):
         raise TypeError(f"partial must be text, got {partial!r}")
     if not partial.strip(WHITE_SPACE):
         raise ValueError("partial must not be empty")
+    if len(partial) > _MAX_PARTIAL:
+        raise ValueError(f"partial is over {_MAX_PARTIAL} characters")
     return Request("/v1/search/autocomplete", (("q", partial),), _autocomplete)
 
 

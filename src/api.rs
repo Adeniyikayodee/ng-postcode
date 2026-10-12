@@ -12,6 +12,9 @@ use crate::{Postcode, Segment};
 
 pub const BASE_URL: &str = "https://api.postcode.gov.ng";
 
+/// Characters of autocomplete text sent. A full code with its separators is 15.
+const MAX_PARTIAL: usize = 64;
+
 /// A GET request whose successful response decodes to `T`.
 #[derive(Clone, Debug)]
 pub struct Request<T> {
@@ -41,6 +44,8 @@ pub enum InvalidRequest {
     Level(u8),
     /// The autocomplete text is empty, which the live API never answers.
     EmptyQuery,
+    /// The autocomplete text is over 64 characters.
+    QueryTooLong,
     /// The named coordinate or distance is not a finite number.
     NotFinite(&'static str),
     /// The named coordinate is off the globe: latitude beyond 90, or longitude beyond 180.
@@ -63,6 +68,9 @@ pub fn lookup(code: Postcode, level: u8) -> Result<Request<Lookup>, InvalidReque
 pub fn autocomplete(partial: &str) -> Result<Request<Autocomplete>, InvalidRequest> {
     if partial.trim().is_empty() {
         return Err(InvalidRequest::EmptyQuery);
+    }
+    if partial.chars().count() > MAX_PARTIAL {
+        return Err(InvalidRequest::QueryTooLong);
     }
     let query = [("q", partial.to_owned())];
     Ok(Request::get(
@@ -341,6 +349,9 @@ impl fmt::Display for InvalidRequest {
         match self {
             Self::Level(level) => write!(f, "level must be 1 to 5, got {level}"),
             Self::EmptyQuery => f.write_str("autocomplete text must not be empty"),
+            Self::QueryTooLong => {
+                write!(f, "autocomplete text is over {MAX_PARTIAL} characters")
+            }
             Self::NotFinite(name) => write!(f, "{name} must be a finite number"),
             Self::OutOfRange(name) => write!(f, "{name} is off the globe"),
             Self::Negative(name) => write!(f, "{name} must not be negative"),
