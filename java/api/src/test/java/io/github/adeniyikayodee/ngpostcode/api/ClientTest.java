@@ -170,4 +170,12 @@ class ClientTest {
             assertInstanceOf(TransportError.class, nowhere.failure());
         }
     }
+
+    @Test
+    void aRefusedConnectionSaysWhatFailed() throws IOException {
+        Client client = clientFor(exchange -> {});
+        server.stop(0);
+        var failed = assertInstanceOf(Result.Failed.class, client.send(Api.lookup(CODE)));
+        assertTrue(failed.failure().toString().matches("ConnectException: \\w+"), failed.failure().toString());
+    }
 }
