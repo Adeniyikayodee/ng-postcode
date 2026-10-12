@@ -14,6 +14,7 @@ import contextlib
 import csv
 import os
 import sys
+import time
 from collections import Counter
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
@@ -109,11 +110,16 @@ def write(
     return counts
 
 
-def nipost(key: str) -> Confirm:
-    """Level 1 lookups with the caller's own key. After the first failure NIPOST is not
-    asked again, and the remaining rows are left unconfirmed."""
+WAIT = 60.0
+"""Seconds to wait when NIPOST says the rate limit is reached. It does not publish one."""
+
+
+def nipost(key: str, sleep: Callable[[float], None] = time.sleep) -> Confirm:
+    """Level 1 lookups with the caller's own key. A rate limit is waited out once for each
+    code. After the first failure NIPOST is not asked again, and the remaining rows are left
+    unconfirmed."""
     try:
-        from .api import Lookup, lookup
+        from .api import ApiError, Lookup, lookup
         from .client import Client
     except ImportError:
         sys.exit('ng-postcode: --confirm needs the client: pip install "ng-postcode[client]"')
@@ -124,6 +130,10 @@ def nipost(key: str) -> Confirm:
         if failed:
             return None
         answer = client.send(lookup(code))
+        if isinstance(answer, ApiError) and answer.status == 429:
+            print(f"ng-postcode: rate limit reached, waiting {WAIT:.0f} s", file=sys.stderr)
+            sleep(WAIT)
+            answer = client.send(lookup(code))
         if isinstance(answer, Lookup):
             return answer.valid
         failed.append(str(answer))

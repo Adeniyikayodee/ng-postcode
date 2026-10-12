@@ -125,7 +125,7 @@ def test_a_file_that_cannot_be_read_is_reported_in_one_line(tmp_path: Path) -> N
         main([str(latin), "--column", "pc"])
 
 
-def test_confirming_asks_once_for_each_code_and_stops_at_the_first_failure(
+def test_confirming_asks_once_for_each_code_waits_out_a_rate_limit_and_stops_at_a_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     asked: list[str] = []
@@ -133,7 +133,7 @@ def test_confirming_asks_once_for_each_code_and_stops_at_the_first_failure(
     def handle(request: httpx.Request) -> httpx.Response:
         code = request.url.params["code"]
         asked.append(code)
-        if code == "LA-11-W06-TC-10":
+        if code == "LA-11-W06-TC-10" or (asked.count(code) == 1 and code.startswith("FC")):
             error = {"code": "rate_limited", "message": "slow down"}
             return httpx.Response(429, json={"error": error})
         return httpx.Response(
@@ -144,7 +144,10 @@ def test_confirming_asks_once_for_each_code_and_stops_at_the_first_failure(
     stub = httpx.MockTransport(handle)
     monkeypatch.setattr(httpx, "Client", lambda **options: real(transport=stub, **options))
     cells = ["EK01A03FK01", "ek-01-a03-fk-01", "FC03B06AG12", "LA11W06TC10", "EK01A03ZZ14", "x"]
-    out = list(rows(({"pc": cell} for cell in cells), "pc", nipost("key")))
+    waits: list[float] = []
+    out = list(rows(({"pc": cell} for cell in cells), "pc", nipost("key", waits.append)))
     assert [row["pc_assigned"] for row in out] == ["true", "true", "false", "", "", ""]
-    assert asked == ["EK-01-A03-FK-01", "FC-03-B06-AG-12", "LA-11-W06-TC-10"]
+    # A rate limit is waited out and asked again once: FC then answers, and LA does not.
+    assert asked == ["EK-01-A03-FK-01", *["FC-03-B06-AG-12"] * 2, *["LA-11-W06-TC-10"] * 2]
+    assert waits == [60.0, 60.0]
     assert Postcode("EK01A03FK01").compact == out[0]["pc_compact"]
