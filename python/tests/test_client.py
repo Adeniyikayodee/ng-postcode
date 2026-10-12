@@ -135,6 +135,14 @@ def test_plain_http_is_refused_except_on_this_machine(base_url: str, sent: bool)
         assert seen == []
 
 
+@pytest.mark.parametrize(
+    ("key", "test"),
+    [("nipost_test_1", True), (" nipost_pk_test_1", True), ("nipost_live_1", False), ("", False)],
+)
+def test_a_client_says_whether_its_key_is_a_test_key(key: str, test: bool) -> None:
+    assert (Client(key).test_key, AsyncClient(key).test_key) == (test, test)
+
+
 def test_whitespace_around_a_key_is_dropped() -> None:
     with sync_client(" key\n", api) as client:
         found = client.send(lookup(CODE))
