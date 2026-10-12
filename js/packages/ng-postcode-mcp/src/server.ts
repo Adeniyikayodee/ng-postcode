@@ -53,6 +53,11 @@ export function settingsFromEnv(env: Record<string, string | undefined>): Settin
   if (!/^https?:\/\/[^/]/.test(baseUrl) || !URL.canParse(baseUrl)) {
     return "NG_POSTCODE_BASE_URL must be an http or https URL";
   }
+  // Plain http would send the key unencrypted. A mock on this machine may use it.
+  const { protocol, hostname } = new URL(baseUrl);
+  if (protocol === "http:" && !["localhost", "127.0.0.1", "[::1]"].includes(hostname)) {
+    return "NG_POSTCODE_BASE_URL must be https, except on this machine";
+  }
   return { apiKey, maxLevel: Number(level), maxPaidCalls: Number(paid), baseUrl };
 }
 

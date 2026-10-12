@@ -145,6 +145,25 @@
       "refused": true
     },
     {
+      "name": "base_url_in_plain_http",
+      "env": {
+        "NG_POSTCODE_BASE_URL": "http://staging.example"
+      },
+      "refused": true
+    },
+    {
+      "name": "base_url_in_plain_http_on_this_machine",
+      "env": {
+        "NG_POSTCODE_BASE_URL": "http://localhost:8080"
+      },
+      "settings": {
+        "api_key": null,
+        "max_level": 1,
+        "max_paid_calls": 25,
+        "base_url": "http://localhost:8080"
+      }
+    },
+    {
       "name": "base_url_without_a_host",
       "env": {
         "NG_POSTCODE_BASE_URL": "https://"
