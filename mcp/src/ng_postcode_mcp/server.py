@@ -165,6 +165,9 @@ def settings_from_env(env: Mapping[str, str]) -> Settings | str:
     base_url = read("NG_POSTCODE_BASE_URL", BASE_URL)
     if not is_http(base_url):
         return "NG_POSTCODE_BASE_URL must be an http or https URL"
+    # Plain http would send the key unencrypted. A mock on this machine may use it.
+    if httpx.URL(base_url).scheme == "http" and httpx.URL(base_url).host not in LOOPBACK:
+        return "NG_POSTCODE_BASE_URL must be https, except on this machine"
     return Settings(
         api_key=api_key,
         max_level=int(raw_level),
