@@ -92,6 +92,15 @@ def test_a_row_longer_than_the_header_stops_the_run(tmp_path: Path) -> None:
         main([str(source), "--column", "pc", "--out", str(tmp_path / "out.csv")])
 
 
+def test_confirming_with_a_test_key_says_what_it_may_miss(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    nipost("nipost_pk_test_1")
+    assert "this is a test key" in capsys.readouterr().err
+    nipost("nipost_live_1")
+    assert capsys.readouterr().err == ""
+
+
 def test_one_row_is_counted_in_the_singular(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
