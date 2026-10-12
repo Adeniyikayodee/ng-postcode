@@ -124,6 +124,11 @@ def nipost(key: str, sleep: Callable[[float], None] = time.sleep) -> Confirm:
     except ImportError:
         sys.exit('ng-postcode: --confirm needs the client: pip install "ng-postcode[client]"')
     client = Client(key)
+    if client.test_key:
+        print(
+            "ng-postcode: this is a test key, which may report an assigned code as not assigned",
+            file=sys.stderr,
+        )
     failed: list[str] = []
 
     def confirm(code: Postcode) -> bool | None:
