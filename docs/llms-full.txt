@@ -760,6 +760,8 @@ MCP server for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), 
 
 Built on the [`ng-postcode`](https://pypi.org/project/ng-postcode/) and [`ng-address-resolver`](https://pypi.org/project/ng-address-resolver/) libraries. A Node edition with the same tools, apart from `resolve_address`, is on npm as [`ng-postcode-mcp`](https://www.npmjs.com/package/ng-postcode-mcp) and runs with `npx`.
 
+To validate postcodes in your own code, use the libraries: [`ng-postcode`](https://pypi.org/project/ng-postcode/) for Python, [`ng-postcode-js`](https://www.npmjs.com/package/ng-postcode-js) for JavaScript, [`ng-postcode`](https://crates.io/crates/ng-postcode) for Rust, and [`ng-postcode-api`](https://central.sonatype.com/artifact/io.github.adeniyikayodee/ng-postcode-api) for Java.
+
 <!-- mcp-name: io.github.Adeniyikayodee/ng-postcode -->
 
 ## Tools
