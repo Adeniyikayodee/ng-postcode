@@ -7,7 +7,7 @@
 [![npm](https://img.shields.io/npm/v/ng-postcode-js.svg?label=npm%20ng-postcode-js)](https://www.npmjs.com/package/ng-postcode-js)
 [![npm MCP server](https://img.shields.io/npm/v/ng-postcode-mcp.svg?label=npm%20ng-postcode-mcp)](https://www.npmjs.com/package/ng-postcode-mcp)
 
-Developer tools for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026: libraries for Rust, Python, JavaScript, and Java, MCP servers for AI assistants on PyPI and npm, and a resolver that turns described addresses into postcodes.
+Developer tools for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026: libraries for Rust and Python (`ng-postcode`), JavaScript (`ng-postcode-js` on npm), and Java (`ng-postcode-api`), MCP servers for AI assistants on PyPI and npm, and a resolver that turns described addresses into postcodes.
 
 A postcode has 11 characters in five segments, written `EK-01-A03-FK-01`: state, LGA, district, area and building unit.
 
