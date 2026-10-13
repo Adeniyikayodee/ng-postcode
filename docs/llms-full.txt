@@ -881,6 +881,8 @@ MCP server for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), 
 
 This is the Node edition of the [ng-postcode](https://github.com/Adeniyikayodee/ng-postcode) server. It registers its tools from the same contract as the Python edition, so names, descriptions and schemas are identical. The Python edition also has `resolve_address` and an HTTP transport.
 
+To validate postcodes in your own code, use the library, [`ng-postcode-js`](https://www.npmjs.com/package/ng-postcode-js).
+
 <!-- mcp-name: io.github.Adeniyikayodee/ng-postcode -->
 
 ## Install
