@@ -1,6 +1,6 @@
 [package]
 name = "ng-postcode"
-version = "0.5.4"
+version = "0.5.5"
 edition = "2021"
 rust-version = "1.85"
 description = "Validate, parse and format Nigerian postcodes (postal codes) offline: Nigeria's 11-character NIPOST digital postcode (NDAPS). Includes a client for the postcode.gov.ng API."
