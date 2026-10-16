@@ -190,6 +190,8 @@ class ClientTest {
         Client client = clientFor(exchange -> {});
         server.stop(0);
         var failed = assertInstanceOf(Result.Failed.class, client.send(Api.lookup(CODE)));
-        assertTrue(failed.failure().toString().matches("ConnectException: \\w+"), failed.failure().toString());
+        String reason = failed.failure().toString();
+        // Linux JDKs give no message, so the cause names it; macOS says "Connection refused".
+        assertTrue(reason.matches("ConnectException: \\w+") || reason.contains("refused"), reason);
     }
 }
