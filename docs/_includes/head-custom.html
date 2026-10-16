@@ -1,1 +1,16 @@
 <link rel="icon" type="image/png" href="{{ "/favicon.png" | relative_url }}">
+{% if page.url == "/" %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "ng-postcode",
+  "description": {{ page.description | jsonify }},
+  "codeRepository": "https://github.com/Adeniyikayodee/ng-postcode",
+  "programmingLanguage": ["Rust", "Python", "JavaScript", "TypeScript", "Java", "SQL"],
+  "license": "https://opensource.org/license/mit",
+  "author": { "@type": "Person", "name": "Kayode Adeniyi", "url": "https://github.com/Adeniyikayodee" },
+  "keywords": "Nigeria postcode, Nigerian postal code, NIPOST, NDAPS, address validation, MCP server"
+}
+</script>
+{% endif %}
