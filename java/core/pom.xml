@@ -10,7 +10,7 @@
 
   <artifactId>ng-postcode</artifactId>
   <name>ng-postcode</name>
-  <description>Parse, validate and format Nigeria's NIPOST digital postcode (NDAPS) offline.</description>
+  <description>Parse, validate and format Nigerian postcodes (postal codes) offline: Nigeria's NIPOST digital postcode (NDAPS).</description>
 
   <properties>
     <module.name>io.github.adeniyikayodee.ngpostcode</module.name>

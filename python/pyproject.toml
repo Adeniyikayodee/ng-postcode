@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "ng-postcode"
 version = "0.3.4"
-description = "Validate, parse and format Nigerian postcodes offline: Nigeria's 11-character NIPOST digital postcode (NDAPS). Includes a client for the postcode.gov.ng API."
+description = "Validate, parse and format Nigerian postcodes (postal codes) offline: Nigeria's 11-character NIPOST digital postcode (NDAPS). Includes a client for the postcode.gov.ng API."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"

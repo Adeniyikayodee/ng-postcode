@@ -8,7 +8,7 @@
   <packaging>pom</packaging>
 
   <name>ng-postcode (parent)</name>
-  <description>Java libraries for Nigeria's NIPOST digital postcode (NDAPS).</description>
+  <description>Java libraries for Nigerian postcodes (postal codes): Nigeria's NIPOST digital postcode (NDAPS).</description>
   <url>https://adeniyikayodee.github.io/ng-postcode/</url>
   <licenses>
     <license>
