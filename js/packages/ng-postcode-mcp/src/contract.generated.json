@@ -4,7 +4,7 @@
     {
       "name": "validate_postcode",
       "title": "Validate a Nigerian postcode",
-      "description": "Check a postcode's structure offline and return its canonical forms and segments.\n\nFree and instant. Does not confirm the code is assigned to a building; use\nlookup_postcode for that.",
+      "description": "Check a Nigerian postcode's structure offline; return its canonical forms and segments.\n\nFree and instant. Does not confirm the code is assigned to a building; use\nlookup_postcode for that.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -549,7 +549,7 @@
     {
       "name": "autocomplete_postcode",
       "title": "Autocomplete a Nigerian postcode",
-      "description": "Suggest completions for the next segment of a partly typed postcode.",
+      "description": "Suggest the next segment of a partly typed Nigerian postcode. Free.\n\nUse it while a user is still typing or only knows the start of their code. For a\ncomplete code, use validate_postcode, then lookup_postcode.",
       "inputSchema": {
         "type": "object",
         "properties": {
