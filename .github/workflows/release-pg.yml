@@ -65,6 +65,6 @@ jobs:
         with:
           path: dist/
           merge-multiple: true
-      - run: gh release create "$GITHUB_REF_NAME" dist/*.tar.gz --title "PostgreSQL extension ${GITHUB_REF_NAME#pg-v}" --generate-notes
+      - run: gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" dist/*.tar.gz --title "PostgreSQL extension ${GITHUB_REF_NAME#pg-v}" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
