@@ -367,13 +367,14 @@ def create_server(
                 ge=1,
                 le=1,
                 strict=True,
-                description="Always 1. Higher levels are lookup_postcode_details.",
+                description="Always 1. Address and building details are a separate paid tool.",
             ),
         ] = 1,
     ) -> PostcodeDetails:
         """Confirm a postcode is assigned to a building. Free.
 
-        For the address and building details, use lookup_postcode_details.
+        Address and building details are a paid lookup, listed as its own tool only when
+        the server's NG_POSTCODE_MAX_LEVEL is 2 or more.
         """
         client = api(ctx)
         result = await client.send(lookup(checked(postcode), level))

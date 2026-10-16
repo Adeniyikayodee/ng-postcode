@@ -121,6 +121,7 @@ async def test_lists_five_read_only_tools_with_schemas() -> None:
         assert tool.output_schema is not None
     assert tools["validate_postcode"].annotations.open_world_hint is False  # type: ignore[union-attr]
     assert "lookup_postcode_details" not in instructions
+    assert all("lookup_postcode_details" not in str(t) for t in tools.values())
     assert "ctx" not in tools["lookup_postcode"].input_schema["properties"]
 
 
