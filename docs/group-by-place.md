@@ -1,3 +1,7 @@
+---
+description: "Count or select records by Nigerian state, LGA, district or area by cutting each NIPOST postcode to a prefix, in SQL, Python or Polars."
+---
+
 # Group records by place
 
 A Nigerian postcode says where a building is at five levels: state, LGA, district, area, and building. Cut a code off after one of those and you have a prefix that every building in that place shares. Counting customers, deliveries, or cases by district is then an ordinary group-by, with no map and no boundary files.

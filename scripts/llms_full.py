@@ -14,6 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TARGET = ROOT / "docs" / "llms-full.txt"
 REPO = "https://github.com/Adeniyikayodee/ng-postcode"
+FRONT_MATTER = re.compile(r"\A---\n.*?\n---\n+", re.S)
 LINK = re.compile(r"\]\((?!https?:|#|mailto:)([^)#\s]+)(#[^)\s]*)?\)")
 SOURCES = [
     "docs/llms.txt",
@@ -44,11 +45,12 @@ def absolute(text: str, name: str) -> str:
     return LINK.sub(repl, text)
 
 
+def read(name: str) -> str:
+    return FRONT_MATTER.sub("", (ROOT / name).read_text(encoding="utf-8")).strip()
+
+
 def build() -> str:
-    parts = [
-        f"<!-- {name} -->\n\n{absolute((ROOT / name).read_text(encoding='utf-8').strip(), name)}"
-        for name in SOURCES
-    ]
+    parts = [f"<!-- {name} -->\n\n{absolute(read(name), name)}" for name in SOURCES]
     return "\n\n---\n\n".join(parts) + "\n"
 
 

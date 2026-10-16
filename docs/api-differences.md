@@ -1,3 +1,7 @@
+---
+description: "How the NIPOST postcode API at api.postcode.gov.ng behaves in practice: keys, test keys, lookup levels, autocomplete and reverse geocoding, with dates observed."
+---
+
 # Integration notes for the NIPOST API
 
 How `api.postcode.gov.ng` behaved on the dates given, for anyone building on it. These notes add detail to [NIPOST's documentation](https://docs.postcode.gov.ng), which remains the reference. The observations from 6 October onward were made with a level 1 test key. To repeat the comparison with your own key, run [`scripts/live_check.py`](https://github.com/Adeniyikayodee/ng-postcode/blob/main/scripts/live_check.py).
