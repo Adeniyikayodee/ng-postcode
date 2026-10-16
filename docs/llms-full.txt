@@ -71,20 +71,20 @@ A postcode has 11 characters in five segments, written `EK-01-A03-FK-01`: state,
 
 | Package | What it does | Install | Source |
 | --- | --- | --- | --- |
-| `ng-postcode` (Rust) | Parse, validate and format codes offline; client for the postcode.gov.ng API | `cargo add ng-postcode` | [`src/`](src), [docs](https://docs.rs/ng-postcode) |
-| `ng-postcode` (Python) | The same behaviour, with sync and async clients | `pip install ng-postcode` | [`python/`](python) |
-| `ng-postcode-js` | The same behaviour for JavaScript and TypeScript, with a `fetch` client | `npm install ng-postcode-js` | [`js/packages/ng-postcode-js`](js/packages/ng-postcode-js) |
-| `ng-postcode` and `ng-postcode-api` (Java) | The same behaviour for Java 17 and later; the core has no dependencies | `io.github.adeniyikayodee:ng-postcode-api` | [`java/`](java) |
-| `ng-postcode-mcp` | MCP server: validate, look up, autocomplete, find by location, resolve addresses | `uvx ng-postcode-mcp` | [`mcp/`](mcp) |
-| `ng-postcode-mcp` (npm) | The same server for Node, without address resolution | `npx ng-postcode-mcp` | [`js/packages/ng-postcode-mcp`](js/packages/ng-postcode-mcp) |
-| `ng-postcode-polars` | Polars expressions that parse, format and group codes by place, compiled from the Rust core | `pip install ng-postcode-polars` | [`native/polars`](native/polars) |
-| `ng_postcode` (PostgreSQL) | The postcode as native 8-byte types with index support, compiled from the Rust core | Package from [Releases](https://github.com/Adeniyikayodee/ng-postcode/releases), then `CREATE EXTENSION ng_postcode` | [`native/pg`](native/pg) |
+| `ng-postcode` (Rust) | Parse, validate and format codes offline; client for the postcode.gov.ng API | `cargo add ng-postcode` | [`src/`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/src), [docs](https://docs.rs/ng-postcode) |
+| `ng-postcode` (Python) | The same behaviour, with sync and async clients | `pip install ng-postcode` | [`python/`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/python) |
+| `ng-postcode-js` | The same behaviour for JavaScript and TypeScript, with a `fetch` client | `npm install ng-postcode-js` | [`js/packages/ng-postcode-js`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/js/packages/ng-postcode-js) |
+| `ng-postcode` and `ng-postcode-api` (Java) | The same behaviour for Java 17 and later; the core has no dependencies | `io.github.adeniyikayodee:ng-postcode-api` | [`java/`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/java) |
+| `ng-postcode-mcp` | MCP server: validate, look up, autocomplete, find by location, resolve addresses | `uvx ng-postcode-mcp` | [`mcp/`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/mcp) |
+| `ng-postcode-mcp` (npm) | The same server for Node, without address resolution | `npx ng-postcode-mcp` | [`js/packages/ng-postcode-mcp`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/js/packages/ng-postcode-mcp) |
+| `ng-postcode-polars` | Polars expressions that parse, format and group codes by place, compiled from the Rust core | `pip install ng-postcode-polars` | [`native/polars`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/native/polars) |
+| `ng_postcode` (PostgreSQL) | The postcode as native 8-byte types with index support, compiled from the Rust core | Package from [Releases](https://github.com/Adeniyikayodee/ng-postcode/releases), then `CREATE EXTENSION ng_postcode` | [`native/pg`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/native/pg) |
 | `ng_postcode` (DuckDB) | The same functions as a DuckDB extension, compiled from the Rust core | `INSTALL ng_postcode FROM community` | [ng-postcode-duckdb](https://github.com/Adeniyikayodee/ng-postcode-duckdb) |
-| `ng-address-resolver` | Resolve free-text addresses to postcodes, only as precisely as the evidence allows (pre-alpha) | `pip install ng-address-resolver` | [`agent/`](agent) |
+| `ng-address-resolver` | Resolve free-text addresses to postcodes, only as precisely as the evidence allows (pre-alpha) | `pip install ng-address-resolver` | [`agent/`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/agent) |
 
 Each package has its own README with full usage.
 
-For databases, [`sql/`](sql) holds the postcode as a PostgreSQL domain and as DuckDB macros, in plain SQL that runs the same shared cases.
+For databases, [`sql/`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/sql) holds the postcode as a PostgreSQL domain and as DuckDB macros, in plain SQL that runs the same shared cases.
 
 Two names are easy to get wrong. On npm the library is `ng-postcode-js`, because `ng-postcode` there is another project. `ng-address-resolver` is imported as `ng_address`.
 
@@ -155,7 +155,7 @@ The MCP server works with any MCP client. It runs over stdio as `uvx ng-postcode
 }
 ```
 
-To run it with Node, use `"command": "npx"` and `"args": ["-y", "ng-postcode-mcp"]`; that edition has every tool except address resolution. Per-client steps for Cursor, VS Code, Codex, Claude and others are in the [MCP server README](mcp#install). Validation works without a key; the other tools need one from the [NIPOST developer dashboard](https://dashboard.postcode.gov.ng). The server is listed in the MCP Registry as `io.github.Adeniyikayodee/ng-postcode`.
+To run it with Node, use `"command": "npx"` and `"args": ["-y", "ng-postcode-mcp"]`; that edition has every tool except address resolution. Per-client steps for Cursor, VS Code, Codex, Claude and others are in the [MCP server README](https://github.com/Adeniyikayodee/ng-postcode/tree/main/mcp#install). Validation works without a key; the other tools need one from the [NIPOST developer dashboard](https://dashboard.postcode.gov.ng). The server is listed in the MCP Registry as `io.github.Adeniyikayodee/ng-postcode`.
 
 **PostgreSQL**
 
@@ -175,7 +175,7 @@ GROUP BY 1;
 -- EK-01-A03 | 1
 ```
 
-On a server where you can install an extension, the [native extension](native/pg) has the same functions and stores a code in 8 bytes. Unpack the package for your PostgreSQL version from [Releases](https://github.com/Adeniyikayodee/ng-postcode/releases), then run `CREATE EXTENSION ng_postcode`.
+On a server where you can install an extension, the [native extension](https://github.com/Adeniyikayodee/ng-postcode/tree/main/native/pg) has the same functions and stores a code in 8 bytes. Unpack the package for your PostgreSQL version from [Releases](https://github.com/Adeniyikayodee/ng-postcode/releases), then run `CREATE EXTENSION ng_postcode`.
 
 **DuckDB**
 
@@ -243,13 +243,13 @@ Input may be hyphenated, spaced or compact, in either case. The compact form mat
 
 ## Passing a postcode between systems
 
-[`docs/schemas/postcode-reference.schema.json`](docs/schemas/postcode-reference.schema.json) defines a small JSON object for handing a location from one system or AI agent to another: the code, its level (`state` to `building`), and optionally a confidence and whether NIPOST confirmed it. A resolved or partial `resolve_address` answer already fits it.
+[`docs/schemas/postcode-reference.schema.json`](https://github.com/Adeniyikayodee/ng-postcode/blob/main/docs/schemas/postcode-reference.schema.json) defines a small JSON object for handing a location from one system or AI agent to another: the code, its level (`state` to `building`), and optionally a confidence and whether NIPOST confirmed it. A resolved or partial `resolve_address` answer already fits it.
 
-For a whole address, [`docs/address-record.md`](docs/address-record.md) wraps the reference in an address record and maps it onto ISO 20022, FHIR, schema.org, vCard, and UPU's address layout for Nigeria.
+For a whole address, [`docs/address-record.md`](https://github.com/Adeniyikayodee/ng-postcode/blob/main/docs/address-record.md) wraps the reference in an address record and maps it onto ISO 20022, FHIR, schema.org, vCard, and UPU's address layout for Nigeria.
 
 ## Design
 
-- **One behaviour, four languages:** Rust, Python, JavaScript and Java all run the cases in [`spec/`](spec), so they cannot drift apart. The Node MCP server registers its tools from [`spec/mcp.json`](spec/mcp.json), which the Python server generates.
+- **One behaviour, four languages:** Rust, Python, JavaScript and Java all run the cases in [`spec/`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/spec), so they cannot drift apart. The Node MCP server registers its tools from [`spec/mcp.json`](https://github.com/Adeniyikayodee/ng-postcode/blob/main/spec/mcp.json), which the Python server generates.
 - **Offline first:** parsing and validation never touch the network. API access is a separate, optional layer.
 - **Errors are values:** expected failures, such as a malformed code or a rejected API key, come back as return values.
 - **Careful with money and guesses:** the MCP server caps lookups at the free level unless told otherwise, and never corrects a mistyped code into a paid call. The resolver gives an area or district code when that is all the evidence supports.
@@ -257,13 +257,13 @@ For a whole address, [`docs/address-record.md`](docs/address-record.md) wraps th
 ## Status
 
 - The NIPOST API needs a key for every endpoint, from the [developer dashboard](https://dashboard.postcode.gov.ng). Offline validation needs nothing.
-- The API layer is tested against responses captured from the live API with a level 1 key, kept in [`spec/responses.json`](spec/responses.json). Run [`scripts/live_check.py`](scripts/live_check.py) with your own key to repeat the comparison. Lookup levels 2 and up need a higher-access key and are tested only against NIPOST's documented examples.
+- The API layer is tested against responses captured from the live API with a level 1 key, kept in [`spec/responses.json`](https://github.com/Adeniyikayodee/ng-postcode/blob/main/spec/responses.json). Run [`scripts/live_check.py`](https://github.com/Adeniyikayodee/ng-postcode/blob/main/scripts/live_check.py) with your own key to repeat the comparison. Lookup levels 2 and up need a higher-access key and are tested only against NIPOST's documented examples.
 - The resolver and the `resolve_address` tool are pre-release. They work against the live API, but their accuracy on real addresses is unmeasured. Described addresses need a geocoder you run or pay for; text alone rarely identifies a building, so ask users for a location pin when the exact building matters.
-- Notes for integrators on how the live API behaves, each with the date it was observed, are in [`docs/api-differences.md`](docs/api-differences.md).
+- Notes for integrators on how the live API behaves, each with the date it was observed, are in [`docs/api-differences.md`](https://github.com/Adeniyikayodee/ng-postcode/blob/main/docs/api-differences.md).
 
 ## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the shared spec, how to add a language, and the commit standards.
+See [CONTRIBUTING.md](https://github.com/Adeniyikayodee/ng-postcode/blob/main/CONTRIBUTING.md) for the shared spec, how to add a language, and the commit standards.
 
 ```sh
 cargo test --all-features                              # Rust
@@ -323,13 +323,13 @@ A small JSON object for passing a Nigerian address between systems. It is built 
 }
 ```
 
-Validate a record against the [JSON Schema](schemas/address.schema.json). Only `postcode` and `country` are required, and a receiver ignores fields it does not know.
+Validate a record against the [JSON Schema](https://github.com/Adeniyikayodee/ng-postcode/blob/main/docs/schemas/address.schema.json). Only `postcode` and `country` are required, and a receiver ignores fields it does not know.
 
 ## Fields
 
 | Field | Holds | Where it comes from |
 | --- | --- | --- |
-| `postcode` | A [postcode reference](schemas/postcode-reference.schema.json): the code, its level, and optionally a confidence and whether NIPOST confirmed it | A code the person gave, a location pin, or `resolve_address` |
+| `postcode` | A [postcode reference](https://github.com/Adeniyikayodee/ng-postcode/blob/main/docs/schemas/postcode-reference.schema.json): the code, its level, and optionally a confidence and whether NIPOST confirmed it | A code the person gave, a location pin, or `resolve_address` |
 | `country` | `NG` | Fixed |
 | `state` | State name | `state_name` in NIPOST's lookup |
 | `lga` | Local government area name | `lga_name` in NIPOST's lookup |
@@ -829,7 +829,7 @@ Most clients take this entry in their MCP settings:
 
 ### As a bundle
 
-[`bundle/`](bundle) holds an MCPB manifest for clients that install `.mcpb` files, such as Claude Desktop. It runs the published package with uv and asks for the API key in the client's own settings. Build it with `npx @anthropic-ai/mcpb pack mcp/bundle ng-postcode.mcpb` from the repository root. [`bundle-python/`](bundle-python) is the same bundle for hosts that only run Python bundles, such as Smithery; it starts the server with `uvx`, so uv must be installed. `scripts/smithery_bundle.py` builds the copy Smithery accepts, which also carries each tool's input schema.
+[`bundle/`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/mcp/bundle) holds an MCPB manifest for clients that install `.mcpb` files, such as Claude Desktop. It runs the published package with uv and asks for the API key in the client's own settings. Build it with `npx @anthropic-ai/mcpb pack mcp/bundle ng-postcode.mcpb` from the repository root. [`bundle-python/`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/mcp/bundle-python) is the same bundle for hosts that only run Python bundles, such as Smithery; it starts the server with `uvx`, so uv must be installed. `scripts/smithery_bundle.py` builds the copy Smithery accepts, which also carries each tool's input schema.
 
 ## Configuration
 
@@ -1074,7 +1074,7 @@ MIT
 
 Nigeria's NIPOST digital postcode (NDAPS) as native PostgreSQL types, written in Rust on the same core as the [`ng-postcode`](https://github.com/Adeniyikayodee/ng-postcode) libraries.
 
-It has the function names and answers of the plain SQL file in [`sql/`](../../sql), so a query written for one runs on the other. The difference is storage. A code is held as 8 bytes and compared as an integer, where the SQL file stores 11 characters of text.
+It has the function names and answers of the plain SQL file in [`sql/`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/sql), so a query written for one runs on the other. The difference is storage. A code is held as 8 bytes and compared as an integer, where the SQL file stores 11 characters of text.
 
 Use the SQL file on a managed service that accepts no extensions. Use this extension where you can install one and the table is large.
 
@@ -1156,7 +1156,7 @@ SELECT * FROM customers WHERE ng_postcode_truncate(postcode, 'district') = 'EK01
 
 Both types sort as their compact text does, so a prefix comes just before the codes it contains.
 
-The extension runs the shared cases in [`spec/vectors.json`](../../spec/vectors.json) through the same script as the SQL file. A well-formed code is not necessarily assigned to a building, and only the NIPOST API can confirm that.
+The extension runs the shared cases in [`spec/vectors.json`](https://github.com/Adeniyikayodee/ng-postcode/blob/main/spec/vectors.json) through the same script as the SQL file. A well-formed code is not necessarily assigned to a building, and only the NIPOST API can confirm that.
 
 ## License
 
@@ -1168,7 +1168,7 @@ MIT
 
 # ng-postcode for SQL
 
-Nigeria's NDAPS postcode as a column type in PostgreSQL and DuckDB. Both files are plain SQL with no extension to build, so they load on managed services, and both give the same answers as the libraries: [`scripts/sql_conformance.py`](../scripts/sql_conformance.py) runs the shared cases in [`spec/vectors.json`](../spec/vectors.json) against them.
+Nigeria's NDAPS postcode as a column type in PostgreSQL and DuckDB. Both files are plain SQL with no extension to build, so they load on managed services, and both give the same answers as the libraries: [`scripts/sql_conformance.py`](https://github.com/Adeniyikayodee/ng-postcode/blob/main/scripts/sql_conformance.py) runs the shared cases in [`spec/vectors.json`](https://github.com/Adeniyikayodee/ng-postcode/blob/main/spec/vectors.json) against them.
 
 ```sh
 psql -f sql/postgres.sql          # PostgreSQL, tested on 14 and 17
@@ -1222,6 +1222,6 @@ SELECT * FROM customers WHERE postcode >= 'EK01A03' AND postcode < 'EK01A03' || 
 | `ng_postcode_within(code, prefix)` | Whether the code starts with the prefix |
 | `ng_postcode_version()` | The version of the file that was loaded |
 
-Where you can install an extension and the table is large, [`native/pg`](../native/pg) offers the same functions over a native 8-byte type.
+Where you can install an extension and the table is large, [`native/pg`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/native/pg) offers the same functions over a native 8-byte type.
 
-A well-formed code is not necessarily assigned to a building. Only the NIPOST API can confirm that, through one of the [libraries](../README.md).
+A well-formed code is not necessarily assigned to a building. Only the NIPOST API can confirm that, through one of the [libraries](https://github.com/Adeniyikayodee/ng-postcode/blob/main/README.md).
