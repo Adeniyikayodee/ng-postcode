@@ -7,6 +7,10 @@ on:
   push:
     tags: ["java-v*"]
 
+# GitHub can deliver one tag push twice; the second run waits for the first.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
 permissions:
   contents: read
 
