@@ -692,7 +692,7 @@ wheels = [
 
 [[package]]
 name = "ng-address-resolver"
-version = "0.1.8"
+version = "0.1.9"
 source = { editable = "../agent" }
 dependencies = [
     { name = "httpx" },
