@@ -154,7 +154,7 @@
     {
       "name": "lookup_postcode",
       "title": "Look up a Nigerian postcode",
-      "description": "Confirm a postcode is assigned to a building. Free.\n\nFor the address and building details, use lookup_postcode_details.",
+      "description": "Confirm a postcode is assigned to a building. Free.\n\nAddress and building details are a paid lookup, listed as its own tool only when\nthe server's NG_POSTCODE_MAX_LEVEL is 2 or more.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -166,7 +166,7 @@
           },
           "level": {
             "default": 1,
-            "description": "Always 1. Higher levels are lookup_postcode_details.",
+            "description": "Always 1. Address and building details are a separate paid tool.",
             "maximum": 1,
             "minimum": 1,
             "title": "Level",
