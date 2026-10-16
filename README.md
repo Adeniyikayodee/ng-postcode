@@ -9,7 +9,7 @@
 
 Developer tools for Nigeria's National Digital Alphanumeric Postcode System (NDAPS), the building-level postcode NIPOST launched in October 2026: libraries for Rust and Python (`ng-postcode`), JavaScript (`ng-postcode-js` on npm), and Java (`ng-postcode-api`), MCP servers for AI assistants on PyPI and npm, and a resolver that turns described addresses into postcodes.
 
-A postcode has 11 characters in five segments, written `EK-01-A03-FK-01`: state, LGA, district, area and building unit.
+A postcode has 11 characters in five segments, written `EK-01-A03-FK-01`: state, LGA, district, area and building unit. NIPOST's own example, `FC 02 A09 DB 09`, is the same shape with spaces.
 
 ## Packages
 
