@@ -343,7 +343,7 @@ def create_server(
             str, Field(max_length=64, description="Code in any style, e.g. 'ek 01 a03 fk 01'.")
         ],
     ) -> Validation:
-        """Check a postcode's structure offline and return its canonical forms and segments.
+        """Check a Nigerian postcode's structure offline; return its canonical forms and segments.
 
         Free and instant. Does not confirm the code is assigned to a building; use
         lookup_postcode for that.
@@ -444,7 +444,11 @@ def create_server(
         ],
         ctx: Context[State, Any],
     ) -> Completions:
-        """Suggest completions for the next segment of a partly typed postcode."""
+        """Suggest the next segment of a partly typed Nigerian postcode. Free.
+
+        Use it while a user is still typing or only knows the start of their code. For a
+        complete code, use validate_postcode, then lookup_postcode.
+        """
         if not partial.strip():
             raise ToolError("Give at least the first characters of a postcode.")
         result = await api(ctx).send(autocomplete(partial))

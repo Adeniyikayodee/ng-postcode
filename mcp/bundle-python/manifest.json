@@ -42,7 +42,7 @@
   "tools": [
     {
       "name": "validate_postcode",
-      "description": "Check a postcode's structure offline and return its canonical forms and segments."
+      "description": "Check a Nigerian postcode's structure offline; return its canonical forms and segments."
     },
     {
       "name": "lookup_postcode",
@@ -54,7 +54,7 @@
     },
     {
       "name": "autocomplete_postcode",
-      "description": "Suggest completions for the next segment of a partly typed postcode."
+      "description": "Suggest the next segment of a partly typed Nigerian postcode. Free."
     },
     {
       "name": "find_postcode_at_location",
