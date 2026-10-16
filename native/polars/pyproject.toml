@@ -20,6 +20,7 @@ classifiers = [
 dependencies = ["polars>=1.30"]
 
 [project.urls]
+Homepage = "https://adeniyikayodee.github.io/ng-postcode/"
 Repository = "https://github.com/Adeniyikayodee/ng-postcode"
 Issues = "https://github.com/Adeniyikayodee/ng-postcode/issues"
 

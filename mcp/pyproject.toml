@@ -32,6 +32,7 @@ dependencies = ["mcp>=2.3,<3", "ng-address-resolver>=0.1.8,<0.2", "ng-postcode[c
 ng-postcode-mcp = "ng_postcode_mcp.server:main"
 
 [project.urls]
+Homepage = "https://adeniyikayodee.github.io/ng-postcode/"
 Repository = "https://github.com/Adeniyikayodee/ng-postcode"
 Issues = "https://github.com/Adeniyikayodee/ng-postcode/issues"
 
