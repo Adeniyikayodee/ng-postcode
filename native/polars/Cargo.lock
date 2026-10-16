@@ -867,7 +867,7 @@ version = "0.5.5"
 
 [[package]]
 name = "ng-postcode-polars"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "ng-postcode",
  "polars",

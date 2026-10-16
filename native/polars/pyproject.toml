@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "ng-postcode-polars"
-version = "0.1.0"
+version = "0.1.1"
 description = "Polars expressions for Nigerian postcodes (Nigeria's NIPOST digital postcode, NDAPS): validate, parse, format and group by place."
 readme = "README.md"
 license = "MIT"
