@@ -30,7 +30,9 @@ claude = ["anthropic>=1.11,<2"]
 ng-address = "ng_address.cli:main"
 
 [project.urls]
+Homepage = "https://adeniyikayodee.github.io/ng-postcode/"
 Repository = "https://github.com/Adeniyikayodee/ng-postcode"
+Issues = "https://github.com/Adeniyikayodee/ng-postcode/issues"
 
 [dependency-groups]
 dev = ["anthropic>=1.11,<2", "mypy>=1.13", "pytest>=8", "ruff>=0.8"]

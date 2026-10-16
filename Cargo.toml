@@ -5,6 +5,7 @@ edition = "2021"
 rust-version = "1.85"
 description = "Validate, parse and format Nigerian postcodes offline: Nigeria's 11-character NIPOST digital postcode (NDAPS). Includes a client for the postcode.gov.ng API."
 license = "MIT"
+homepage = "https://adeniyikayodee.github.io/ng-postcode/"
 repository = "https://github.com/Adeniyikayodee/ng-postcode"
 documentation = "https://docs.rs/ng-postcode"
 keywords = ["nigeria", "postcode", "nipost", "ndaps", "postal-code"]
