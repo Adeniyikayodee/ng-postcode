@@ -1,3 +1,7 @@
+---
+description: "A JSON record for Nigerian addresses built on the NIPOST building postcode, mapped to ISO 20022, FHIR, schema.org, vCard and UPU's layout."
+---
+
 # A Nigerian address record
 
 A small JSON object for passing a Nigerian address between systems. It is built around the building postcode NIPOST issues, and it maps onto the address formats that payments, health, web, and postal systems already use.

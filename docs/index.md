@@ -1,5 +1,6 @@
 ---
 title: Validate Nigerian postcodes in Python, JavaScript, Rust, Java, and SQL
+description: "Validate, parse and look up Nigeria's 11-character NIPOST postcode (NDAPS) in Python, JavaScript, Rust, Java, PostgreSQL, DuckDB and Polars, plus MCP servers for AI agents."
 ---
 
 # ng-postcode

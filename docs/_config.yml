@@ -1,5 +1,5 @@
 title: ng-postcode
-description: Rust, Python, JavaScript, and Java libraries and MCP servers for Nigeria's NIPOST digital postcode (NDAPS).
+description: Libraries, database extensions and MCP servers for Nigeria's 11-character NIPOST digital postcode (NDAPS).
 theme: jekyll-theme-primer
 plugins:
   - jekyll-sitemap
