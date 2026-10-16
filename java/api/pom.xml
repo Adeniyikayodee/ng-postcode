@@ -10,7 +10,7 @@
 
   <artifactId>ng-postcode-api</artifactId>
   <name>ng-postcode-api</name>
-  <description>Client for the postcode.gov.ng API: requests, decoding and an HTTP client.</description>
+  <description>Client for Nigeria's postcode API (postcode.gov.ng): look up, autocomplete and reverse geocode Nigerian postcodes.</description>
 
   <properties>
     <module.name>io.github.adeniyikayodee.ngpostcode.api</module.name>
