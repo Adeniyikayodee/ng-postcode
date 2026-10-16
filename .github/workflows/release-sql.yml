@@ -36,6 +36,6 @@ jobs:
           sudo -u postgres createuser --superuser "$USER"
           PGDATABASE=postgres python3 scripts/sql_conformance.py postgres
           uv run --no-project --with duckdb==1.5.5 python scripts/sql_conformance.py duckdb
-      - run: gh release create "$GITHUB_REF_NAME" sql/postgres.sql sql/duckdb.sql --title "SQL files ${GITHUB_REF_NAME#sql-v}" --generate-notes
+      - run: gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" sql/postgres.sql sql/duckdb.sql --title "SQL files ${GITHUB_REF_NAME#sql-v}" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}

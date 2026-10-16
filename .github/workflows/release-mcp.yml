@@ -89,6 +89,7 @@ jobs:
       # The registry reads the README from PyPI, which can lag a fresh upload.
       - name: Publish to the MCP Registry
         run: |
+          curl -sf "https://registry.modelcontextprotocol.io/v0/servers/io.github.Adeniyikayodee%2Fng-postcode/versions/${GITHUB_REF_NAME#mcp-v}" >/dev/null && exit 0
           for attempt in 1 2 3 4 5; do
             ./mcp-publisher publish && exit 0
             echo "attempt $attempt failed; retrying in 30s"
@@ -104,7 +105,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: gh release create "$GITHUB_REF_NAME" --title "MCP server ${GITHUB_REF_NAME#mcp-v}" --generate-notes
+      - run: gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "MCP server ${GITHUB_REF_NAME#mcp-v}" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
 
