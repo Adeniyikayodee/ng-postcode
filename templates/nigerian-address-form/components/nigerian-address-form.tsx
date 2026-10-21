@@ -21,8 +21,8 @@ import {
 } from "@/lib/nigerian-address";
 
 type Props = {
-  /** Return field errors to show them, such as a postcode the server refused. */
-  onSubmit: (address: Address) => Promise<AddressErrors | void> | AddressErrors | void;
+  /** Return field errors to show them, such as a postcode the server refused. Without it the form only validates. */
+  onSubmit?: (address: Address) => Promise<AddressErrors | void> | AddressErrors | void;
   postcodeRequired?: boolean;
   submitLabel?: string;
 };
@@ -98,7 +98,7 @@ export function NigerianAddressForm({ onSubmit, postcodeRequired = false, submit
     setErrors({});
     startTransition(async () => {
       try {
-        const refused = await onSubmit(result.data);
+        const refused = await onSubmit?.(result.data);
         if (refused) show(refused);
       } catch {
         setFailed(true);
@@ -204,3 +204,5 @@ export function NigerianAddressForm({ onSubmit, postcodeRequired = false, submit
     </form>
   );
 }
+
+export default NigerianAddressForm;

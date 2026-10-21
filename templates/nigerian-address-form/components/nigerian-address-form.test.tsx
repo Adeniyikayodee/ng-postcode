@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
-import { NigerianAddressForm } from "./nigerian-address-form";
+import Default, { NigerianAddressForm } from "./nigerian-address-form";
 
 afterEach(cleanup);
 
@@ -95,4 +95,11 @@ it("clears an error once the customer edits the field", async () => {
   expect(screen.queryByRole("alert")).toBeNull();
   await user.tab();
   expect(screen.getByRole("alert").textContent).toMatch(/A postcode has 11/);
+});
+
+it("works as a default import with no props", async () => {
+  render(<Default />);
+  const user = await fill("FC-02-A09-DB-09");
+  await user.click(screen.getByRole("button", { name: "Continue" }));
+  expect(screen.queryByRole("alert")).toBeNull();
 });
