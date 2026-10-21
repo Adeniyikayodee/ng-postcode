@@ -83,3 +83,16 @@ it("says so when sending fails", async () => {
   await user.click(screen.getByRole("button", { name: "Continue" }));
   expect((await screen.findByRole("alert")).textContent).toBe("We could not send your address. Try again.");
 });
+
+it("clears an error once the customer edits the field", async () => {
+  render(<NigerianAddressForm onSubmit={vi.fn()} />);
+  const user = userEvent.setup();
+  const input = screen.getByLabelText(/^Postcode/);
+  await user.type(input, "100271");
+  await user.tab();
+  expect(screen.getByRole("alert").textContent).toMatch(/old six-digit code/);
+  await user.type(input, "{Backspace}");
+  expect(screen.queryByRole("alert")).toBeNull();
+  await user.tab();
+  expect(screen.getByRole("alert").textContent).toMatch(/A postcode has 11/);
+});
