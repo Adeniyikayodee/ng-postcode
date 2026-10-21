@@ -44,10 +44,26 @@ export function NigerianAddressForm({ onSubmit, postcodeRequired = false, submit
 
   function checkOnBlur(event: FocusEvent<HTMLInputElement>) {
     const input = event.currentTarget;
-    const check = input.value.trim() ? checkPostcode(input.value) : undefined;
-    if (check?.ok) input.value = check.postcode;
-    setSuggestion(check && !check.ok ? check.suggestion : undefined);
-    setErrors(({ postcode: _, ...rest }) => (check && !check.ok ? { ...rest, postcode: check.error } : rest));
+    if (!input.value.trim()) return;
+    const check = checkPostcode(input.value);
+    if (check.ok) {
+      input.value = check.postcode;
+      return;
+    }
+    setSuggestion(check.suggestion);
+    setErrors((current) => ({ ...current, postcode: check.error }));
+  }
+
+  // Cleared on edit, not on blur: a message vanishing as the customer clicks
+  // "Place order" moves the button out from under the pointer.
+  function clearOnEdit(event: FormEvent<HTMLFormElement>) {
+    const { name } = event.target as HTMLInputElement;
+    if (name === "postcode") setSuggestion(undefined);
+    setErrors((current) => {
+      if (!(name in current)) return current;
+      const { [name as Name]: _, ...rest } = current;
+      return rest;
+    });
   }
 
   function applySuggestion() {
@@ -94,7 +110,7 @@ export function NigerianAddressForm({ onSubmit, postcodeRequired = false, submit
   }
 
   return (
-    <form ref={form} onSubmit={submit} noValidate aria-busy={pending}>
+    <form ref={form} onSubmit={submit} onChange={clearOnEdit} noValidate aria-busy={pending}>
       <FieldGroup>
         <Field data-invalid={!!errors.name}>
           <FieldLabel htmlFor="name">Full name</FieldLabel>
