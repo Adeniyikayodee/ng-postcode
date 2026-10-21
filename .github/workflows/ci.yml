@@ -104,6 +104,28 @@ jobs:
       - run: npm run check
       - run: npm test
 
+  template:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ["22", "24"]
+    defaults:
+      run:
+        working-directory: templates/nigerian-address-form
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: templates/nigerian-address-form/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: The published registry item matches the source
+        run: npm run registry && test -z "$(git status --porcelain ../../docs/r)"
+
   java:
     runs-on: ubuntu-latest
     strategy:
