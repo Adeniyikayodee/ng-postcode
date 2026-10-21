@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "ng-postcode",
+  "homepage": "https://adeniyikayodee.github.io/ng-postcode/",
+  "items": [
+    {
+      "name": "nigerian-address-form",
+      "type": "registry:block",
+      "title": "Nigerian address form",
+      "description": "Checkout address form for Nigeria that accepts the 11-character NIPOST digital postcode (NDAPS), such as FC-02-A09-DB-09, checked offline with ng-postcode-js.",
+      "dependencies": ["ng-postcode-js@^0.4.4", "zod@^4.6.5"],
+      "registryDependencies": ["button", "field", "input", "native-select"],
+      "files": [
+        { "path": "components/nigerian-address-form.tsx", "type": "registry:component" },
+        { "path": "lib/nigerian-address.ts", "type": "registry:lib" },
+        { "path": "lib/nipost.ts", "type": "registry:lib" }
+      ],
+      "docs": "Validate again on the server with addressSchema().safeParse. To confirm a code is assigned, call isAssigned from lib/nipost.ts with nipostClient(process.env.NG_POSTCODE_API_KEY).",
+      "categories": ["forms", "checkout", "address"]
+    }
+  ]
+}
