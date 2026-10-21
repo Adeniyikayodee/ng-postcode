@@ -1,10 +1,14 @@
 "use client";
 
-import { type FocusEvent, type FormEvent, useRef, useState, useSyncExternalStore, useTransition } from "react";
-import { Button } from "@/components/ui/button";
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import {
+  type FocusEvent,
+  type FormEvent,
+  type ReactNode,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+} from "react";
 import {
   type Address,
   type AddressErrors,
@@ -26,6 +30,13 @@ type Props = {
 type Name = keyof AddressInput;
 
 const noop = () => () => {};
+
+// Plain elements styled with the shadcn theme, so the form needs no other component
+// and installs the same in every shadcn style and in v0.
+const control =
+  "h-9 w-full rounded-md border border-input bg-transparent px-3 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30";
+const button =
+  "inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50";
 
 export function NigerianAddressForm({ onSubmit, postcodeRequired = false, submitLabel = "Continue" }: Props) {
   const form = useRef<HTMLFormElement>(null);
@@ -111,85 +122,85 @@ export function NigerianAddressForm({ onSubmit, postcodeRequired = false, submit
     // Keep the example code on one line.
     const [before, after] = message.split(EXAMPLE);
     return (
-      <FieldError id={`${name}-error`}>
+      <p id={`${name}-error`} role="alert" className="text-sm text-destructive">
         {after === undefined ? message : <>{before}<span className="whitespace-nowrap">{EXAMPLE}</span>{after}</>}
-      </FieldError>
+      </p>
+    );
+  }
+
+  function row(name: Name, label: string, input: ReactNode, extra?: ReactNode) {
+    return (
+      <div className="grid gap-2">
+        <label htmlFor={name} className="text-sm font-medium">
+          {label}
+        </label>
+        {input}
+        {extra}
+        {error(name)}
+      </div>
     );
   }
 
   return (
-    <form ref={form} onSubmit={submit} onChange={clearOnEdit} noValidate aria-busy={pending}>
-      <FieldGroup>
-        <Field data-invalid={!!errors.name}>
-          <FieldLabel htmlFor="name">Full name</FieldLabel>
-          <Input {...field("name")} autoComplete="name" />
-          {error("name")}
-        </Field>
-        <Field data-invalid={!!errors.phone}>
-          <FieldLabel htmlFor="phone">Phone number</FieldLabel>
-          <Input {...field("phone")} type="tel" autoComplete="tel" inputMode="tel" placeholder="0803 123 4567" />
-          {error("phone")}
-        </Field>
-        <Field data-invalid={!!errors.street}>
-          <FieldLabel htmlFor="street">Street address</FieldLabel>
-          <Input {...field("street")} autoComplete="street-address" />
-          {error("street")}
-        </Field>
-        <Field data-invalid={!!errors.city}>
-          <FieldLabel htmlFor="city">Town or city</FieldLabel>
-          <Input {...field("city")} autoComplete="address-level2" />
-          {error("city")}
-        </Field>
-        <Field data-invalid={!!errors.lga}>
-          <FieldLabel htmlFor="lga">Local government area (optional)</FieldLabel>
-          <Input {...field("lga")} />
-          {error("lga")}
-        </Field>
-        <Field data-invalid={!!errors.state}>
-          <FieldLabel htmlFor="state">State</FieldLabel>
-          <NativeSelect {...field("state")} autoComplete="address-level1" defaultValue="" className="w-full">
-            <NativeSelectOption value="" disabled>
-              Choose a state
-            </NativeSelectOption>
-            {STATES.map((state) => (
-              <NativeSelectOption key={state} value={state}>
-                {state}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-          {error("state")}
-        </Field>
-        <Field data-invalid={!!errors.postcode}>
-          <FieldLabel htmlFor="postcode">Postcode{postcodeRequired ? "" : " (optional)"}</FieldLabel>
-          <Input
-            {...field("postcode")}
-            autoComplete="postal-code"
-            autoCapitalize="characters"
-            autoCorrect="off"
-            spellCheck={false}
-            maxLength={24}
-            placeholder={EXAMPLE}
-            onBlur={checkOnBlur}
-          />
-          <FieldDescription>
-            The 11-character NIPOST postcode. Find yours at{" "}
-            <a href="https://postcode.gov.ng/find" target="_blank" rel="noreferrer">
-              postcode.gov.ng
-            </a>
-            .
-          </FieldDescription>
-          {error("postcode")}
-          {suggestion && (
-            <Button type="button" variant="outline" size="sm" className="w-fit" onClick={applySuggestion}>
-              Use {suggestion}
-            </Button>
-          )}
-        </Field>
-        {failed && <FieldError>We could not send your address. Try again.</FieldError>}
-        <Button type="submit" disabled={!ready || pending}>
-          {pending ? "Sending…" : submitLabel}
-        </Button>
-      </FieldGroup>
+    <form ref={form} onSubmit={submit} onChange={clearOnEdit} noValidate aria-busy={pending} className="grid gap-5">
+      {row("name", "Full name", <input {...field("name")} autoComplete="name" className={control} />)}
+      {row(
+        "phone",
+        "Phone number",
+        <input {...field("phone")} type="tel" autoComplete="tel" inputMode="tel" placeholder="0803 123 4567" className={control} />,
+      )}
+      {row("street", "Street address", <input {...field("street")} autoComplete="street-address" className={control} />)}
+      {row("city", "Town or city", <input {...field("city")} autoComplete="address-level2" className={control} />)}
+      {row("lga", "Local government area (optional)", <input {...field("lga")} className={control} />)}
+      {row(
+        "state",
+        "State",
+        <select {...field("state")} autoComplete="address-level1" defaultValue="" className={control}>
+          <option value="" disabled>
+            Choose a state
+          </option>
+          {STATES.map((state) => (
+            <option key={state} value={state}>
+              {state}
+            </option>
+          ))}
+        </select>,
+      )}
+      {row(
+        "postcode",
+        `Postcode${postcodeRequired ? "" : " (optional)"}`,
+        <input
+          {...field("postcode")}
+          autoComplete="postal-code"
+          autoCapitalize="characters"
+          autoCorrect="off"
+          spellCheck={false}
+          maxLength={24}
+          placeholder={EXAMPLE}
+          onBlur={checkOnBlur}
+          className={control}
+        />,
+        <p className="text-sm text-muted-foreground">
+          The 11-character NIPOST postcode. Find yours at{" "}
+          <a href="https://postcode.gov.ng/find" target="_blank" rel="noreferrer" className="underline">
+            postcode.gov.ng
+          </a>
+          .
+        </p>,
+      )}
+      {suggestion && (
+        <button type="button" onClick={applySuggestion} className={`${button} -mt-3 w-fit border border-input`}>
+          Use {suggestion}
+        </button>
+      )}
+      {failed && (
+        <p role="alert" className="text-sm text-destructive">
+          We could not send your address. Try again.
+        </p>
+      )}
+      <button type="submit" disabled={!ready || pending} className={`${button} bg-primary text-primary-foreground`}>
+        {pending ? "Sending…" : submitLabel}
+      </button>
     </form>
   );
 }
