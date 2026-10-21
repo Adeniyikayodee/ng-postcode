@@ -52,6 +52,14 @@ if (code instanceof Postcode) {
 
 `ng-postcode-js/api` and `ng-postcode-js/client` call the NIPOST API with `fetch`.
 
+## Add a Nigerian address form in React
+
+```sh
+npx shadcn@latest add https://adeniyikayodee.github.io/ng-postcode/r/nigerian-address-form.json
+```
+
+A checkout address form built with shadcn/ui and `ng-postcode-js`. It tidies the postcode as the customer types, offers a fix for look-alike characters, explains an old six-digit code, and works with browser autofill. The [template](https://github.com/Adeniyikayodee/ng-postcode/tree/main/templates/nigerian-address-form) is also a Next.js app you can deploy.
+
 ## Validate a postcode in Rust
 
 ```rust

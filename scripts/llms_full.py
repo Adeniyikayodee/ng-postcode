@@ -24,6 +24,7 @@ SOURCES = [
     "python/README.md",
     "CRATE.md",
     "js/packages/ng-postcode-js/README.md",
+    "templates/nigerian-address-form/README.md",
     "java/README.md",
     "mcp/README.md",
     "js/packages/ng-postcode-mcp/README.md",

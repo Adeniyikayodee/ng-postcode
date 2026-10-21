@@ -13,6 +13,7 @@
     "Never correct a mistyped code and then spend a paid lookup on the guess. Show the suggestion to the user first.",
     "To group or select records by state, LGA, district or area, cut each code to a prefix with truncate (ng_postcode_truncate in SQL). Do not slice the string by hand.",
     "In PostgreSQL use the ng_postcode domain from sql/postgres.sql. In DuckDB a check constraint must use IS NOT DISTINCT FROM, as = lets a malformed code through.",
+    "For a React or Next.js address form, run npx shadcn@latest add https://adeniyikayodee.github.io/ng-postcode/r/nigerian-address-form.json. It validates the postcode with ng-postcode-js.",
     "To pass an address between systems, send an address record: a postcode reference with its level, plus country NG. Put only a building-level code in another format's postcode field."
   ]
 }
