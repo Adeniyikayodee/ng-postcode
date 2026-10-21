@@ -185,8 +185,6 @@ jobs:
   # is slow and is not one of the checks a merge waits for.
   native-pg:
     runs-on: ubuntu-latest
-    env:
-      PG: "16"
     defaults:
       run:
         working-directory: native/pg
@@ -196,9 +194,12 @@ jobs:
         with:
           toolchain: stable
           components: clippy, rustfmt
-      - name: PostgreSQL headers, and leave to install an extension
+      - name: Headers for the runner's own PostgreSQL, and leave to install an extension
         run: |
-          sudo apt-get update
+          PG=$(ls /usr/lib/postgresql | sort -n | tail -1)
+          echo "PG=$PG" >> "$GITHUB_ENV"
+          # The runner's PostgreSQL comes from PGDG, so its headers must too.
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
           sudo apt-get install -y "postgresql-server-dev-$PG" libclang-dev
           sudo chmod -R a+rwX "$(pg_config --pkglibdir)" "$(pg_config --sharedir)/extension"
       - run: cargo install cargo-pgrx --version 0.19.3 --locked
