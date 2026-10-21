@@ -52,7 +52,11 @@ export function NigerianAddressForm({ onSubmit, postcodeRequired = false, submit
 
   function applySuggestion() {
     const input = form.current?.elements.namedItem("postcode");
-    if (input instanceof HTMLInputElement && suggestion) input.value = suggestion;
+    if (input instanceof HTMLInputElement && suggestion) {
+      input.value = suggestion;
+      // The button that had focus is about to go away.
+      input.focus();
+    }
     setSuggestion(undefined);
     setErrors(({ postcode: _, ...rest }) => rest);
   }
