@@ -50,6 +50,7 @@ it("offers a fix for look-alike characters", async () => {
   await user.click(screen.getByRole("button", { name: "Use FC-02-A09-DB-09" }));
   expect(input).toHaveProperty("value", "FC-02-A09-DB-09");
   expect(input.getAttribute("aria-invalid")).toBeNull();
+  expect(document.activeElement).toBe(input);
 });
 
 it("explains an old six-digit code and does not send it", async () => {
