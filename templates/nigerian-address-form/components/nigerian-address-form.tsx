@@ -106,7 +106,15 @@ export function NigerianAddressForm({ onSubmit, postcodeRequired = false, submit
   }
 
   function error(name: Name) {
-    return errors[name] && <FieldError id={`${name}-error`}>{errors[name]}</FieldError>;
+    const message = errors[name];
+    if (!message) return null;
+    // Keep the example code on one line.
+    const [before, after] = message.split(EXAMPLE);
+    return (
+      <FieldError id={`${name}-error`}>
+        {after === undefined ? message : <>{before}<span className="whitespace-nowrap">{EXAMPLE}</span>{after}</>}
+      </FieldError>
+    );
   }
 
   return (
