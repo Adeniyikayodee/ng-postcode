@@ -31,6 +31,7 @@ Since 1 October 2026 a Nigerian building's postcode is this 11-character code. A
 - [ng_postcode for PostgreSQL](https://github.com/Adeniyikayodee/ng-postcode/tree/main/native/pg): a native extension for PostgreSQL 14 to 18. Types `ng_postcode` and `ng_postcode_prefix` take 8 bytes and support B-tree and hash indexes. Install a package from the repository's Releases, then `CREATE EXTENSION ng_postcode`.
 - [ng_postcode for DuckDB](https://github.com/Adeniyikayodee/ng-postcode-duckdb): a DuckDB extension in Rust with `ng_postcode_parse`, `ng_postcode_prefix_parse`, `ng_postcode_format`, `ng_postcode_truncate`, `ng_postcode_parent`, and `ng_postcode_within`. Install with `INSTALL ng_postcode FROM community; LOAD ng_postcode;` on DuckDB 1.5.6; other versions report the extension as not found.
 - Convert a CSV file: `pip install ng-postcode`, then `ng-postcode --column postcode customers.csv --out checked.csv`. It adds the compact code, a status of valid, suggested, invalid, or empty, and the reason for each invalid row.
+- [Nigerian address form](https://github.com/Adeniyikayodee/ng-postcode/tree/main/templates/nigerian-address-form): a React checkout form built with shadcn/ui and `ng-postcode-js`. Add it with `npx shadcn@latest add https://adeniyikayodee.github.io/ng-postcode/r/nigerian-address-form.json`. It returns the postcode as `FC-02-A09-DB-09` and a phone number as `+234` and ten digits, and exports `addressSchema` (zod) for the server.
 - [Group records by place](https://adeniyikayodee.github.io/ng-postcode/group-by-place): count or select records by state, LGA, district, or area by cutting each code to a prefix with `truncate`.
 
 ## Docs
@@ -89,6 +90,8 @@ For databases, [`sql/`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/
 Two names are easy to get wrong. On npm the library is `ng-postcode-js`, because `ng-postcode` there is another project. `ng-address-resolver` is imported as `ng_address`.
 
 For online stores, [ng-postcode-woocommerce](https://github.com/Adeniyikayodee/ng-postcode-woocommerce) is a WooCommerce plugin built on the same rules and the same shared test cases: it checks and tidies the postcode at checkout, finds it from the customer's location, and makes shipping zones match on postcode prefixes.
+
+For React and Next.js, [`templates/nigerian-address-form`](https://github.com/Adeniyikayodee/ng-postcode/tree/main/templates/nigerian-address-form) is a checkout address form built with shadcn/ui and `ng-postcode-js`. Add it with `npx shadcn@latest add https://adeniyikayodee.github.io/ng-postcode/r/nigerian-address-form.json`, or deploy the folder as an app.
 
 ## Quick start
 
@@ -672,6 +675,60 @@ Get a key from the [NIPOST developer dashboard](https://dashboard.postcode.gov.n
 ## License
 
 MIT
+
+---
+
+<!-- templates/nigerian-address-form/README.md -->
+
+# Nigerian address form
+
+A React checkout address form for Nigeria that accepts the 11-character NIPOST digital postcode (NDAPS), such as `FC-02-A09-DB-09`. It is built with [shadcn/ui](https://ui.shadcn.com) and [`ng-postcode-js`](https://www.npmjs.com/package/ng-postcode-js), and this folder is a Next.js app that uses it.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FAdeniyikayodee%2Fng-postcode%2Ftree%2Fmain%2Ftemplates%2Fnigerian-address-form&project-name=nigerian-address-form)
+[![Open in v0](https://v0.app/chat-static/button.svg)](https://v0.dev/chat/api/open?url=https%3A%2F%2Fadeniyikayodee.github.io%2Fng-postcode%2Fr%2Fnigerian-address-form.json)
+
+## Add it to your project
+
+In a project set up with shadcn/ui:
+
+```sh
+npx shadcn@latest add https://adeniyikayodee.github.io/ng-postcode/r/nigerian-address-form.json
+```
+
+```tsx
+import { NigerianAddressForm } from "@/components/nigerian-address-form";
+
+<NigerianAddressForm onSubmit={saveAddress} postcodeRequired={false} />;
+```
+
+`onSubmit` receives the address with the postcode as `FC-02-A09-DB-09` and the phone number as `+2348031234567`. Return field errors, such as `{ postcode: "..." }`, to show them on the form.
+
+Check the address again on the server, since the browser's check can be skipped:
+
+```ts
+import { addressSchema, fieldErrors } from "@/lib/nigerian-address";
+
+const result = addressSchema().safeParse(input);
+if (!result.success) return fieldErrors(result.error);
+```
+
+## What it handles
+
+- Hyphens, spaces, no separator, and either case: the postcode is tidied to `FC-02-A09-DB-09` when the customer leaves the field.
+- Look-alike characters, such as `O` for `0`, with a one-tap fix the customer confirms.
+- An old six-digit code, with a message that shows the new format.
+- Errors in plain words, linked to their field for screen readers, with focus moved to the first one.
+- Browser autofill, through the standard `autocomplete` names and a native state picker.
+- Optional confirmation with NIPOST: set `NG_POSTCODE_API_KEY` to a live key from the [NIPOST developer dashboard](https://dashboard.postcode.gov.ng), and the server refuses codes NIPOST has not assigned. If NIPOST is slow or unreachable, the order goes through on the offline check. Test keys answer "not found" for every code, so they are ignored.
+
+## Run it
+
+```sh
+npm install
+npm run dev
+```
+
+`npm test` runs the tests, and `npm run registry` rebuilds the published registry item in `docs/r`.
 
 ---
 

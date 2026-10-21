@@ -34,6 +34,8 @@ Two names are easy to get wrong. On npm the library is `ng-postcode-js`, because
 
 For online stores, [ng-postcode-woocommerce](https://github.com/Adeniyikayodee/ng-postcode-woocommerce) is a WooCommerce plugin built on the same rules and the same shared test cases: it checks and tidies the postcode at checkout, finds it from the customer's location, and makes shipping zones match on postcode prefixes.
 
+For React and Next.js, [`templates/nigerian-address-form`](templates/nigerian-address-form) is a checkout address form built with shadcn/ui and `ng-postcode-js`. Add it with `npx shadcn@latest add https://adeniyikayodee.github.io/ng-postcode/r/nigerian-address-form.json`, or deploy the folder as an app.
+
 ## Quick start
 
 Parsing and validation are offline and need no key.
