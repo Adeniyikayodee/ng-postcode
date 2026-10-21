@@ -3,7 +3,7 @@
 A React checkout address form for Nigeria that accepts the 11-character NIPOST digital postcode (NDAPS), such as `FC-02-A09-DB-09`. It is built with [shadcn/ui](https://ui.shadcn.com) and [`ng-postcode-js`](https://www.npmjs.com/package/ng-postcode-js), and this folder is a Next.js app that uses it.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FAdeniyikayodee%2Fng-postcode%2Ftree%2Fmain%2Ftemplates%2Fnigerian-address-form&project-name=nigerian-address-form)
-[![Open in v0](https://v0.app/chat-static/button.svg)](https://v0.dev/chat/api/open?url=https%3A%2F%2Fadeniyikayodee.github.io%2Fng-postcode%2Fr%2Fnigerian-address-form.json)
+[![Open in v0](https://v0.app/chat-static/button.svg)](https://v0.app/chat/api/open?url=https%3A%2F%2Fadeniyikayodee.github.io%2Fng-postcode%2Fr%2Fnigerian-address-form.json)
 
 ## Add it to your project
 
